@@ -1,5 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { ThemeColor, ThemeLight, ThemeProviderContext, ThemeProviderState, ThemeString } from "../contexts/theme-context";
+import React, { useEffect, useState } from 'react';
+import {
+  ThemeColor,
+  ThemeLight,
+  ThemeProviderContext,
+  ThemeProviderState,
+  ThemeString,
+} from '../contexts/theme-context';
 
 const THEME_STORAGE_KEY = 'www-theme';
 const DEFAULT_THEME = 'light-red';
@@ -17,7 +23,8 @@ interface ThemeProviderProps {
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const [theme, setTheme] = useState(
-    () => (localStorage.getItem(THEME_STORAGE_KEY) as ThemeString) || DEFAULT_THEME
+    () =>
+      (localStorage.getItem(THEME_STORAGE_KEY) as ThemeString) || DEFAULT_THEME,
   );
 
   useEffect(() => {
@@ -36,7 +43,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     setTheme: (theme: ThemeString) => {
       localStorage.setItem(THEME_STORAGE_KEY, theme);
       setTheme(theme);
-    }
+    },
   };
 
   return (
