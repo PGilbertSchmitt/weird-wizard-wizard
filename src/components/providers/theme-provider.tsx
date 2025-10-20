@@ -5,7 +5,7 @@ import {
   ThemeProviderContext,
   ThemeProviderState,
   ThemeString,
-} from '../contexts/theme-context';
+} from '@/contexts/theme-context';
 
 const THEME_STORAGE_KEY = 'www-theme';
 const DEFAULT_THEME = 'light-red';

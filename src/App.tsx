@@ -9,7 +9,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from './components/ui/dropdown-menu';
-import { ThemeProviderContext } from './components/contexts/theme-context';
+import { ThemeProviderContext } from './contexts/theme-context';
+import { times } from 'ramda';
+import { ImportSeed } from './components/pages/import-seed';
+import { Button } from './components/ui/button';
 
 function App() {
   const { data, isFetched } = useQuery({
@@ -36,9 +39,24 @@ function App() {
             <h1>
               Weird Wizard <i>Wizard</i>
             </h1>
+
+            {times(
+              (i) => (
+                <div
+                  key={i}
+                  className="rounded-base border-border bg-main text-main-foreground shadow-shadow border-2 p-4 mb-5 last:mb-0"
+                >
+                  <p>Lorem Ipsum is a great book</p>
+                </div>
+              ),
+              3,
+            )}
+
+            <Button>Click me!</Button>
           </main>
         }
       />
+      <Route path="/seed" Component={ImportSeed} />
       <Route
         path="/themes"
         element={
