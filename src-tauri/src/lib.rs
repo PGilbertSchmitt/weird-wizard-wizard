@@ -1,20 +1,23 @@
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 pub fn migrations() -> Vec<Migration> {
-    vec![
-        Migration {
-            version: 1,
-            description: "Create all tables",
-            sql: include_str!("./schema.sqlite"),
-            kind: MigrationKind::Up,
-        }
-    ]
+    vec![Migration {
+        version: 1,
+        description: "Create all tables",
+        sql: include_str!("./schema.sqlite"),
+        kind: MigrationKind::Up,
+    }]
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_sql::Builder::new().add_migrations("sqlite:www.db", migrations()).build())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(
+            tauri_plugin_sql::Builder::new()
+                .add_migrations("sqlite:www.db", migrations())
+                .build(),
+        )
         .plugin(tauri_plugin_opener::init())
         // .invoke_handler(tauri::generate_handler![])
         .run(tauri::generate_context!())
