@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils";
-import { createRef, DragEvent, useEffect, useState } from "react";
+import { cn } from '@/lib/utils';
+import { createRef, DragEvent, useEffect, useState } from 'react';
 import { listen, Event as TauriEvent } from '@tauri-apps/api/event';
-import { Button } from "@/components/ui/button";
-import { Trash } from "lucide-react";
-import { unzip } from "./unzip";
+import { Button } from '@/components/ui/button';
+import { Trash } from 'lucide-react';
+import { unzip } from './unzip';
 
 export const Dropzone = () => {
   const fileRef = createRef<HTMLInputElement>();
@@ -27,13 +27,16 @@ export const Dropzone = () => {
 
   useEffect(() => {
     if (overDropzone) {
-      const unlistenPromise = listen('tauri://drag-drop', (event: TauriEvent<{ paths: string[] }>) => {
-        console.log(overDropzone, event);
-        setFileSource(event.payload.paths[0]);
-      });
+      const unlistenPromise = listen(
+        'tauri://drag-drop',
+        (event: TauriEvent<{ paths: string[] }>) => {
+          console.log(overDropzone, event);
+          setFileSource(event.payload.paths[0]);
+        },
+      );
 
       return () => {
-        unlistenPromise.then(unlisten => unlisten());
+        unlistenPromise.then((unlisten) => unlisten());
       };
     }
   }, [overDropzone]);
@@ -45,7 +48,7 @@ export const Dropzone = () => {
         className={cn(
           `w-full my-5 border-foreground border-2 border-dashed rounded-base
           flex items-center justify-center p-20 cursor-pointer bg-background`,
-          overDropzone && 'brightness-90'
+          overDropzone && 'brightness-90',
         )}
         onClick={() => {
           fileRef.current?.click();
@@ -53,13 +56,11 @@ export const Dropzone = () => {
         onDragEnter={onDragEnter}
         onDragLeave={onDragLeave}
       >
-        <input type='file' hidden ref={fileRef} />
-        
-        {fileSource ? (
-          pretty(fileSource)
-        ) : (
-          "Drop file or click here to upload a data zip file."
-        )}
+        <input type="file" hidden ref={fileRef} />
+
+        {fileSource
+          ? pretty(fileSource)
+          : 'Drop file or click here to upload a data zip file.'}
       </div>
 
       {fileSource && (
@@ -71,27 +72,23 @@ export const Dropzone = () => {
               setFileSource(null);
             }}
           >
-            <Trash size='20px' strokeWidth="1.2px" />
+            <Trash size="20px" strokeWidth="1.2px" />
           </Button>
           <Button
             className={cn('w-full')}
             onClick={() => {
-              unzip(fileSource).then(data => {
+              unzip(fileSource).then((data) => {
                 setCsvData(data);
                 console.log(data);
               });
-            }}  
+            }}
           >
             Import
           </Button>
         </div>
       )}
 
-      {csvData && (
-        <div>
-          We got it!
-        </div>
-      )}
+      {csvData && <div>We got it!</div>}
     </>
   );
 };
@@ -101,5 +98,5 @@ export const Dropzone = () => {
 // Thie probably won't work correctly on Windows, so will need to add
 // a different source pattern).
 const pretty = (str: string) => {
-  return str.replace(/\//g, "/\u200B");
+  return str.replace(/\//g, '/\u200B');
 };

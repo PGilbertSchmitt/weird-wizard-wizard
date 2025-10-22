@@ -1,6 +1,6 @@
-import { Paragraph } from "@/components/ui/paragraph";
-import { cn } from "@/lib/utils";
-import { Dropzone } from "./dropzone";
+import { Paragraph } from '@/components/ui/paragraph';
+import { cn } from '@/lib/utils';
+import { Dropzone } from './dropzone';
 
 export const ImportSeed = () => (
   <>

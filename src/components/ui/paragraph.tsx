@@ -1,7 +1,7 @@
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 interface ParagraphProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export const Paragraph = ({ children }: ParagraphProps) => (

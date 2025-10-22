@@ -34,5 +34,5 @@ a.default {
 }
 
 a.default:hover {
-  color: var(--color-chart-2)
+  color: var(--color-chart-2);
 }
