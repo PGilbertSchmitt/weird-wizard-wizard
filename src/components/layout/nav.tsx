@@ -5,15 +5,11 @@ import { Link, useLocation } from 'react-router';
 const links = [
   {
     path: '/',
-    text: 'Home',
+    text: 'Characters',
   },
   {
     path: '/seed',
     text: 'Seed',
-  },
-  {
-    path: '/themes',
-    text: 'Themes',
   },
 ];
 
@@ -38,7 +34,7 @@ export default function Nav() {
                 border-border border-l-2 border-r-2 first:border-t-2 last:border-b-2
                 first:rounded-t-base last:rounded-b-base
                 px-5 py-2 transition-color`,
-                pathname === link.path ? 'brightness-90' : '',
+                pathname === link.path && 'brightness-90',
               )}
               to={link.path}
             >

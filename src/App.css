@@ -23,7 +23,16 @@
   text-align: center;
 }
 
-a {
-  font-weight: 500;
-  text-decoration: inherit;
+/* 
+I'll have more react router links than anchors to websites, so it's easier
+to make the default Link unstyled and add an explicit "default" class for
+external anchors.
+*/
+a.default {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+a.default:hover {
+  color: var(--color-chart-2)
 }

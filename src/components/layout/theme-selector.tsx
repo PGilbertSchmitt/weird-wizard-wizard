@@ -10,10 +10,13 @@ export const ThemeSelector = () => {
   return (
     <div className="fixed top-0 right-0 m-5 z-100">
       <DropdownMenu>
-        <DropdownMenuTrigger className={cn('bg-main border-border border-2 shadow-shadow rounded-base')}>
+        <DropdownMenuTrigger className={cn(
+          `bg-main border-border border-2 shadow-shadow rounded-base p-1 text-main-foreground
+          hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all`
+        )}>
           <Palette strokeWidth="1px" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuContent className={cn('m-4')}>
           <DropdownMenuGroup>
             <DropdownMenuItem onSelect={() => setTheme('dark-red')}>
               Dark Red
