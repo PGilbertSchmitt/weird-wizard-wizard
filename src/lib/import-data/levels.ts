@@ -2,9 +2,9 @@ import zod from 'zod';
 import {
   CSVParseResults,
   parseRow,
-  parseCSV,
   Validations,
 } from './import-utils';
+import { CsvRawParseResult } from '.';
 
 const LevelValidator = zod.object({
   path: zod.string(),
@@ -28,7 +28,7 @@ const LevelValidator = zod.object({
 export type LevelRecord = zod.output<typeof LevelValidator>;
 
 export const parseLevelCSV = (
-  data: Uint8Array,
+  data: CsvRawParseResult,
 ): CSVParseResults<LevelRecord> => {
-  return parseCSV(data).map(parseRow(LevelValidator));
+  return data.map(parseRow(LevelValidator));
 };

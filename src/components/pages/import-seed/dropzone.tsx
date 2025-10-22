@@ -3,7 +3,15 @@ import { createRef, DragEvent, useEffect, useState } from 'react';
 import { listen, Event as TauriEvent } from '@tauri-apps/api/event';
 import { Button } from '@/components/ui/button';
 import { Trash } from 'lucide-react';
-import { unzip } from './unzip';
+import {
+  ExtractError,
+  extractFromBuffer,
+  extractFromFilename,
+  ExtractResult,
+} from '../../../lib/import-data/unzip';
+import { ImportData } from '@/lib/import-data';
+import { ExtractErrorAlert } from './extract-error';
+import { fromPairs, toPairs } from 'ramda';
 
 export const Dropzone = () => {
   const fileRef = createRef<HTMLInputElement>();
@@ -11,7 +19,8 @@ export const Dropzone = () => {
   const [overDropzone, setOverDropzone] = useState(false);
 
   const [fileSource, setFileSource] = useState<string | null>(null);
-  const [csvData, setCsvData] = useState<unknown>(null);
+  const [csvData, setCsvData] = useState<ImportData | null>(null);
+  const [alertInfo, setAlertInfo] = useState<ExtractError | null>(null);
 
   const onDragEnter = (e: DragEvent) => {
     e.stopPropagation();
@@ -25,13 +34,41 @@ export const Dropzone = () => {
     setOverDropzone(false);
   };
 
+  const extractionCallback = (filename: string) => (result: ExtractResult) => {
+    if (result.isOk()) {
+      setFileSource(filename);
+      const data = result.value;
+      setCsvData(data);
+      const warnings = toPairs(data).reduce(
+        (acc, [file, rowResults]): [string, string][] => {
+          const badRows = rowResults.filter((r) => r.isErr()).length;
+          if (badRows > 0) {
+            acc.push([file, `${badRows} bad rows out of ${rowResults.length}`]);
+          }
+          return acc;
+        },
+        [],
+      );
+      if (warnings.length > 0) {
+        setAlertInfo({
+          title: 'Row warnings',
+          body: fromPairs(warnings),
+        });
+      }
+    } else {
+      setAlertInfo(result.error);
+      setCsvData(null);
+      setFileSource(null);
+    }
+  };
+
   useEffect(() => {
     if (overDropzone) {
       const unlistenPromise = listen(
         'tauri://drag-drop',
         (event: TauriEvent<{ paths: string[] }>) => {
-          console.log(overDropzone, event);
-          setFileSource(event.payload.paths[0]);
+          const filepath = event.payload.paths[0];
+          extractFromFilename(filepath).then(extractionCallback(filepath));
         },
       );
 
@@ -56,14 +93,29 @@ export const Dropzone = () => {
         onDragEnter={onDragEnter}
         onDragLeave={onDragLeave}
       >
-        <input type="file" hidden ref={fileRef} />
+        <input
+          type="file"
+          hidden
+          ref={fileRef}
+          accept="zip"
+          multiple={false}
+          onChange={async (e) => {
+            const file = e.target.files?.item(0);
+            if (file) {
+              extractFromBuffer(
+                new Uint8Array(await file.arrayBuffer()),
+                file.name,
+              ).then(extractionCallback(file.name));
+            }
+          }}
+        />
 
         {fileSource
           ? pretty(fileSource)
           : 'Drop file or click here to upload a data zip file.'}
       </div>
 
-      {fileSource && (
+      {csvData && (
         <div className={cn('w-full flex')}>
           <Button
             className={cn('w-10 mr-2')}
@@ -77,10 +129,7 @@ export const Dropzone = () => {
           <Button
             className={cn('w-full')}
             onClick={() => {
-              unzip(fileSource).then((data) => {
-                setCsvData(data);
-                console.log(data);
-              });
+              console.log('doot!');
             }}
           >
             Import
@@ -88,7 +137,9 @@ export const Dropzone = () => {
         </div>
       )}
 
-      {csvData && <div>We got it!</div>}
+      {alertInfo && (
+        <ExtractErrorAlert error={alertInfo} onOk={() => setAlertInfo(null)} />
+      )}
     </>
   );
 };

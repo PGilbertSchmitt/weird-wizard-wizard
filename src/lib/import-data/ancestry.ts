@@ -2,9 +2,9 @@ import zod from 'zod';
 import {
   CSVParseResults,
   parseRow,
-  parseCSV,
   Validations,
 } from './import-utils';
+import { CsvRawParseResult } from '.';
 
 const AncestryValidator = zod.object({
   ancestry: zod.string(),
@@ -23,7 +23,7 @@ const AncestryValidator = zod.object({
 export type AncestryRecord = zod.output<typeof AncestryValidator>;
 
 export const parseAncestryCSV = (
-  data: Uint8Array,
+  data: CsvRawParseResult,
 ): CSVParseResults<AncestryRecord> => {
-  return parseCSV(data).map(parseRow(AncestryValidator));
+  return data.map(parseRow(AncestryValidator));
 };

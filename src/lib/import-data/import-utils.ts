@@ -1,6 +1,7 @@
 import { err, ok, Result } from 'neverthrow';
 import zod, { ZodError, ZodObject } from 'zod';
 import { parse as parseCSVRaw } from 'csv-parse/browser/esm/sync';
+import { CsvRawParseResult } from '.';
 
 export type CSVParseResults<T extends zod.output<ZodObject>> = Array<
   Result<T, string[]>
@@ -62,7 +63,7 @@ export const parseRow =
     }
   };
 
-export const parseCSV = (data: Uint8Array): Array<Record<string, string>> => {
+export const parseCSV = (data: Uint8Array): CsvRawParseResult => {
   return parseCSVRaw(data, {
     columns: true,
   });

@@ -31,19 +31,20 @@ export const BufferFiles = {
   novicePathsBuffer: 'novice_paths.csv',
 };
 
-export type CsvBuffers = Record<keyof typeof BufferFiles, Uint8Array>;
+export type CsvRawParseResult = Array<Record<string, string>>;
+export type CsvResults = Record<keyof typeof BufferFiles, CsvRawParseResult>;
 
 export interface ImportData {
   ancestries: ReturnType<typeof parseAncestryCSV>;
   noviceLevels: ReturnType<typeof parseLevelCSV>;
   expertLevels: ReturnType<typeof parseLevelCSV>;
   masterLevels: ReturnType<typeof parseLevelCSV>;
-  novicePaths: unknown;
-  expertPaths: unknown;
-  masterPaths: unknown;
-  magicTraditions: unknown;
-  magicTalents: unknown;
-  magicSpells: unknown;
-  magicTables: unknown;
-  magicOptions: unknown;
+  // novicePaths: unknown;
+  // expertPaths: unknown;
+  // masterPaths: unknown;
+  // magicTraditions: unknown;
+  // magicTalents: unknown;
+  // magicSpells: unknown;
+  // magicTables: unknown;
+  // magicOptions: unknown;
 }
