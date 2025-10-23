@@ -1,5 +1,5 @@
 import zod from 'zod';
-import { CSVParseResults, parseRow, Validations } from './import-utils';
+import { parseRow, Validations } from './import-utils';
 import { CsvRawParseResult } from '.';
 
 const MagicTraditionValidator = zod.object({
@@ -29,7 +29,7 @@ const MagicSpellValidator = zod.object({
   duration: Validations.STRING,
   target: Validations.STRING,
   condition: zod.string(),
-  ritual: zod.literal(['', 'TRUE', 'FALSE']),
+  ritual: Validations.BOOL,
   table: zod.string(),
   options: zod.string(),
   description: Validations.STRING,
@@ -47,38 +47,23 @@ const MagicOptionValidator = zod.object({
   description: Validations.STRING,
 });
 
-type MagicTraditionRecord = zod.output<typeof MagicTraditionValidator>;
-type MagicTalentRecord = zod.output<typeof MagicTalentValidator>;
-type MagicSpellRecord = zod.output<typeof MagicSpellValidator>;
-type MagicTableRecord = zod.output<typeof MagicTableValidator>;
-type MagicOptionRecord = zod.output<typeof MagicOptionValidator>;
+export type MagicTraditionRecord = zod.output<typeof MagicTraditionValidator>;
+export type MagicTalentRecord = zod.output<typeof MagicTalentValidator>;
+export type MagicSpellRecord = zod.output<typeof MagicSpellValidator>;
+export type MagicTableRecord = zod.output<typeof MagicTableValidator>;
+export type MagicOptionRecord = zod.output<typeof MagicOptionValidator>;
 
-export const parseMagicTraditionCSV = (
-  data: CsvRawParseResult,
-): CSVParseResults<MagicTraditionRecord> => {
-  return data.map(parseRow(MagicTraditionValidator));
-};
+export const parseMagicTraditionCSV = (data: CsvRawParseResult) =>
+  data.map(parseRow(MagicTraditionValidator));
 
-export const parseMagicTalentCSV = (
-  data: CsvRawParseResult,
-): CSVParseResults<MagicTalentRecord> => {
-  return data.map(parseRow(MagicTalentValidator));
-};
+export const parseMagicTalentCSV = (data: CsvRawParseResult) =>
+  data.map(parseRow(MagicTalentValidator));
 
-export const parseMagicSpellCSV = (
-  data: CsvRawParseResult,
-): CSVParseResults<MagicSpellRecord> => {
-  return data.map(parseRow(MagicSpellValidator));
-};
+export const parseMagicSpellCSV = (data: CsvRawParseResult) =>
+  data.map(parseRow(MagicSpellValidator));
 
-export const parseMagicTableCSV = (
-  data: CsvRawParseResult,
-): CSVParseResults<MagicTableRecord> => {
-  return data.map(parseRow(MagicTableValidator));
-};
+export const parseMagicTableCSV = (data: CsvRawParseResult) =>
+  data.map(parseRow(MagicTableValidator));
 
-export const parseMagicOptionCSV = (
-  data: CsvRawParseResult,
-): CSVParseResults<MagicOptionRecord> => {
-  return data.map(parseRow(MagicOptionValidator));
-};
+export const parseMagicOptionCSV = (data: CsvRawParseResult) =>
+  data.map(parseRow(MagicOptionValidator));

@@ -1,7 +1,7 @@
 import './App.css';
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { dbSelect } from './client';
+import { dbSelect } from './lib/db/client';
 import { Route, Routes } from 'react-router';
 import { times } from 'ramda';
 import { ImportSeed } from './components/pages/import-seed';

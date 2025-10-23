@@ -12,6 +12,7 @@ import {
 import { ImportData } from '@/lib/import-data';
 import { ExtractErrorAlert } from './extract-error';
 import { fromPairs, toPairs } from 'ramda';
+import { importProcess } from '@/lib/import-data/import-process';
 
 export const Dropzone = () => {
   const fileRef = createRef<HTMLInputElement>();
@@ -56,6 +57,7 @@ export const Dropzone = () => {
           body: fromPairs(warnings),
         });
       }
+      // console.log('Total records:', importProcess(data, () => {}));
     } else {
       setAlertInfo(result.error);
       setCsvData(null);
@@ -131,6 +133,7 @@ export const Dropzone = () => {
             className={cn('w-full')}
             onClick={() => {
               console.log('doot!');
+              importProcess(csvData, () => {});
             }}
           >
             Import

@@ -41,13 +41,11 @@ const RenderError = ({ error }: { error: ExtractError }) => {
     return <AlertDialogDescription>{error.message}</AlertDialogDescription>;
   } else {
     return (
-      <AlertDialogDescription>
-        <ul>
-          {error.message.map((msg) => (
-            <li key={msg}>{msg}</li>
-          ))}
-        </ul>
-      </AlertDialogDescription>
+      <ul>
+        {error.message.map((msg) => (
+          <li key={msg}>{msg}</li>
+        ))}
+      </ul>
     );
   }
 };

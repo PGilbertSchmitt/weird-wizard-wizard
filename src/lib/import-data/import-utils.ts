@@ -3,20 +3,20 @@ import zod, { ZodError, ZodObject } from 'zod';
 import { parse as parseCSVRaw } from 'csv-parse/browser/esm/sync';
 import { CsvRawParseResult } from '.';
 
-export type CSVParseResults<T extends zod.output<ZodObject>> = Array<
-  Result<T, string[]>
->;
-
 export const pipeSeparatedValues = (column: string): string[] => {
   return column.split('|').map((s) => s.trim());
 };
 
 export const Validations = {
   STRING: zod.string().nonempty(),
-  SIZE_REQUIRED: zod
-    .literal(['sm', 'md', 'lg'], "Expected size to be one of 'sm', 'md', or 'lg'."),
-  SIZE: zod
-    .literal(['', 'sm', 'md', 'lg'], "Expected size to be one of 'sm', 'md', or 'lg'."),
+  SIZE_REQUIRED: zod.literal(
+    ['sm', 'md', 'lg'],
+    "Expected size to be one of 'sm', 'md', or 'lg'.",
+  ),
+  SIZE: zod.literal(
+    ['', 'sm', 'md', 'lg'],
+    "Expected size to be one of 'sm', 'md', or 'lg'.",
+  ),
   POS_NUM: zod.coerce
     .number()
     .int()
@@ -28,7 +28,7 @@ export const Validations = {
       'Expected a positive number, zero, or blank, not a negative number.',
     ),
   PIPE_DELIM_ARRAY: zod.string().transform(pipeSeparatedValues),
-  BOOL: zod.literal(['TRUE', 'FALSE']).transform(v => v === 'TRUE'),
+  BOOL: zod.literal(['', 'TRUE', 'FALSE']).transform((v) => v === 'TRUE'),
 };
 
 export const formatZodError = (error: ZodError, rowNumber: number) => {
@@ -62,8 +62,7 @@ export const parseRow =
     }
   };
 
-export const parseCSV = (data: Uint8Array): CsvRawParseResult => {
-  return parseCSVRaw(data, {
+export const parseCSV = (data: Uint8Array): CsvRawParseResult =>
+  parseCSVRaw(data, {
     columns: true,
   });
-};

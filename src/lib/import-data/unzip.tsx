@@ -12,21 +12,39 @@ import { fromPairs, keys, last, toPairs } from 'ramda';
 import { parseLevelCSV } from '@/lib/import-data/level-import';
 import { parseCSV } from '@/lib/import-data/import-utils';
 import { parseNonNovicePathCSV, parseNovicePathCSV } from './path-import';
-import { parseMagicOptionCSV, parseMagicSpellCSV, parseMagicTableCSV, parseMagicTalentCSV, parseMagicTraditionCSV } from './magic-import';
+import {
+  parseMagicOptionCSV,
+  parseMagicSpellCSV,
+  parseMagicTableCSV,
+  parseMagicTalentCSV,
+  parseMagicTraditionCSV,
+} from './magic-import';
+import {
+  parseLanguageCSV,
+  parseSenseCSV,
+  parseSpeedTraitCSV,
+} from './natural-attribute-import';
+import {
+  parseProfessionCategoryCSV,
+  parseProfessionCSV,
+} from './profession-import';
 
 export type ExtractError = {
   title: string;
 } & (
-  {
-    body: Record<string, string>;
-  } | {
-    message: string | string[];
-  }
+  | {
+      body: Record<string, string>;
+    }
+  | {
+      message: string | string[];
+    }
 );
 
 export type ExtractResult = Result<ImportData, ExtractError>;
 
-export const extractFromFilename = async (filepath: string): Promise<ExtractResult> => {
+export const extractFromFilename = async (
+  filepath: string,
+): Promise<ExtractResult> => {
   if (!(await exists(filepath))) {
     return err({
       title: 'File Error',
@@ -48,7 +66,10 @@ export const extractFromFilename = async (filepath: string): Promise<ExtractResu
   return extractFromBuffer(buffer, last(filepath.split('/')));
 };
 
-export const extractFromBuffer = async (buffer: Uint8Array, filename: string = ''): Promise<ExtractResult> => {
+export const extractFromBuffer = async (
+  buffer: Uint8Array,
+  filename: string = '',
+): Promise<ExtractResult> => {
   let unzippedFile: JSZip;
   try {
     unzippedFile = await loadZipAsync(buffer);
@@ -68,12 +89,12 @@ export const extractFromBuffer = async (buffer: Uint8Array, filename: string = '
       message: JSON.stringify(error),
     });
   }
-}
+};
 
 const extractCsvFiles = async (unzippedFile: JSZip): Promise<ExtractResult> => {
   const files = unzippedFile.files;
   const missingFiles: string[] = [];
-  for (const filename of keys(CsvFiles)) {
+  for (const filename of CsvFiles) {
     if (!(filename in files)) {
       missingFiles.push(filename);
     }
@@ -88,24 +109,24 @@ const extractCsvFiles = async (unzippedFile: JSZip): Promise<ExtractResult> => {
   const parseErrors: Record<string, string> = {};
   const csvResults = fromPairs(
     await Promise.all(
-      toPairs(BufferFiles).map(
-        async ([key, filename]) => {
-          try {
-            return [key, parseCSV(await files[filename].async('uint8array'))];
-          } catch (error) {
-            const errorString =
-              typeof error === 'string'
+      toPairs(BufferFiles).map(async ([key, filename]) => {
+        try {
+          return [key, parseCSV(await files[filename].async('uint8array'))];
+        } catch (error) {
+          const errorString =
+            typeof error === 'string'
               ? error
-              : error !== null && typeof error === 'object' && 'toString' in error
-              ? error.toString()
-              : JSON.stringify(error);
-            parseErrors[filename] = errorString;
+              : error !== null &&
+                  typeof error === 'object' &&
+                  'toString' in error
+                ? error.toString()
+                : JSON.stringify(error);
+          parseErrors[filename] = errorString;
 
-            // Just for type checker
-            return ['', []];
-          }
-        },
-      ),
+          // Just for type checker
+          return ['', []];
+        }
+      }),
     ),
   ) as CsvResults; // This typecast is valid as long as parseErrors is empty
 
@@ -129,5 +150,12 @@ const extractCsvFiles = async (unzippedFile: JSZip): Promise<ExtractResult> => {
     magicSpells: parseMagicSpellCSV(csvResults.magicSpellsBuffer),
     magicTables: parseMagicTableCSV(csvResults.magicTablesBuffer),
     magicOptions: parseMagicOptionCSV(csvResults.magicOptionsBuffer),
+    languages: parseLanguageCSV(csvResults.languagesBuffer),
+    speedTraits: parseSpeedTraitCSV(csvResults.speedTraitsBuffer),
+    senses: parseSenseCSV(csvResults.sensesBuffer),
+    professions: parseProfessionCSV(csvResults.professionsBuffer),
+    professionCategories: parseProfessionCategoryCSV(
+      csvResults.professionCategoriesBuffer,
+    ),
   });
 };

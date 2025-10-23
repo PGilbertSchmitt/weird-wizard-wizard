@@ -1,5 +1,5 @@
 import zod from 'zod';
-import { CSVParseResults, parseRow, Validations } from './import-utils';
+import { parseRow, Validations } from './import-utils';
 import { CsvRawParseResult } from '.';
 
 const NovicePathValidator = zod.object({
@@ -20,24 +20,17 @@ const NovicePathValidator = zod.object({
   origin_locked: Validations.BOOL,
 });
 
-export type NovicePathRecord = zod.output<typeof NovicePathValidator>;
-
-export const parseNovicePathCSV = (
-  data: CsvRawParseResult,
-): CSVParseResults<NovicePathRecord> => {
-  return data.map(parseRow(NovicePathValidator));
-};
-
 const NonNovicePathValidator = zod.object({
   name: Validations.STRING,
   description: Validations.STRING,
   sub_path: Validations.STRING,
 });
 
+export type NovicePathRecord = zod.output<typeof NovicePathValidator>;
 export type NonNovicePathRecord = zod.output<typeof NonNovicePathValidator>;
 
-export const parseNonNovicePathCSV = (
-  data: CsvRawParseResult,
-): CSVParseResults<NonNovicePathRecord> => {
-  return data.map(parseRow(NonNovicePathValidator));
-};
+export const parseNovicePathCSV = (data: CsvRawParseResult) =>
+  data.map(parseRow(NovicePathValidator));
+
+export const parseNonNovicePathCSV = (data: CsvRawParseResult) =>
+  data.map(parseRow(NonNovicePathValidator));
