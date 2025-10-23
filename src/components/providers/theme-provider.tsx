@@ -15,6 +15,7 @@ const ALL_THEMES: Array<ThemeLight | ThemeColor> = [
   'dark',
   'red',
   'cyan',
+  'amber',
 ];
 
 interface ThemeProviderProps {

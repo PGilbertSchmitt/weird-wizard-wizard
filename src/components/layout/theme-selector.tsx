@@ -38,6 +38,12 @@ export const ThemeSelector = () => {
             <DropdownMenuItem onSelect={() => setTheme('light-cyan')}>
               Light Cyan
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setTheme('dark-amber')}>
+              Dark Amber
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setTheme('light-amber')}>
+              Light Amber
+            </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
