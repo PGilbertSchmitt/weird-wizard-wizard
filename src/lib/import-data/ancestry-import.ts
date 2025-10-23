@@ -7,7 +7,7 @@ import {
 import { CsvRawParseResult } from '.';
 
 const AncestryValidator = zod.object({
-  ancestry: zod.string(),
+  ancestry: Validations.STRING,
   descriptor: zod.string(),
   size: Validations.SIZE_REQUIRED,
   speed: Validations.POS_NUM,

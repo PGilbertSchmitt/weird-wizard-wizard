@@ -12,12 +12,11 @@ export const pipeSeparatedValues = (column: string): string[] => {
 };
 
 export const Validations = {
+  STRING: zod.string().nonempty(),
   SIZE_REQUIRED: zod
-    .string()
-    .regex(/^(sm|md|lg)$/, "Expected size to be one of 'sm', 'md', or 'lg'."),
+    .literal(['sm', 'md', 'lg'], "Expected size to be one of 'sm', 'md', or 'lg'."),
   SIZE: zod
-    .string()
-    .regex(/^(sm|md|lg|)$/, "Expected size to be one of 'sm', 'md', or 'lg'."),
+    .literal(['', 'sm', 'md', 'lg'], "Expected size to be one of 'sm', 'md', or 'lg'."),
   POS_NUM: zod.coerce
     .number()
     .int()
@@ -29,6 +28,7 @@ export const Validations = {
       'Expected a positive number, zero, or blank, not a negative number.',
     ),
   PIPE_DELIM_ARRAY: zod.string().transform(pipeSeparatedValues),
+  BOOL: zod.literal(['TRUE', 'FALSE']).transform(v => v === 'TRUE'),
 };
 
 export const formatZodError = (error: ZodError, rowNumber: number) => {
@@ -36,7 +36,6 @@ export const formatZodError = (error: ZodError, rowNumber: number) => {
     (subError) =>
       `[Row ${rowNumber}][Column ${String(subError.path[0])}] ${subError.message}`,
   );
-  // error.message;
 };
 
 export const parseRow =

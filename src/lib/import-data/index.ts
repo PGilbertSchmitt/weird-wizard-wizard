@@ -1,5 +1,5 @@
-import { parseAncestryCSV } from './ancestry';
-import { parseLevelCSV } from './levels';
+import { parseAncestryCSV } from './ancestry-import';
+import { parseLevelCSV } from './level-import';
 
 export const CsvFiles = {
   'ancestries.csv': 'Ancestries',

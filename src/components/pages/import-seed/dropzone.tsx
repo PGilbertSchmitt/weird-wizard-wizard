@@ -38,6 +38,7 @@ export const Dropzone = () => {
     if (result.isOk()) {
       setFileSource(filename);
       const data = result.value;
+      console.log(data);
       setCsvData(data);
       const warnings = toPairs(data).reduce(
         (acc, [file, rowResults]): [string, string][] => {

@@ -1,7 +1,7 @@
 import { exists, readFile } from '@tauri-apps/plugin-fs';
 import JSZip, { loadAsync as loadZipAsync } from 'jszip';
 import { ok, err, Result } from 'neverthrow';
-import { parseAncestryCSV } from '@/lib/import-data/ancestry';
+import { parseAncestryCSV } from '@/lib/import-data/ancestry-import';
 import {
   BufferFiles,
   CsvResults,
@@ -9,8 +9,10 @@ import {
   ImportData,
 } from '@/lib/import-data';
 import { fromPairs, keys, last, toPairs } from 'ramda';
-import { parseLevelCSV } from '@/lib/import-data/levels';
+import { parseLevelCSV } from '@/lib/import-data/level-import';
 import { parseCSV } from '@/lib/import-data/import-utils';
+import { parseNonNovicePathCSV, parseNovicePathCSV } from './path-import';
+import { parseMagicOptionCSV, parseMagicSpellCSV, parseMagicTableCSV, parseMagicTalentCSV, parseMagicTraditionCSV } from './magic-import';
 
 export type ExtractError = {
   title: string;
@@ -119,13 +121,13 @@ const extractCsvFiles = async (unzippedFile: JSZip): Promise<ExtractResult> => {
     noviceLevels: parseLevelCSV(csvResults.noviceLevelsBuffer),
     expertLevels: parseLevelCSV(csvResults.expertLevelsBuffer),
     masterLevels: parseLevelCSV(csvResults.masterLevelsBuffer),
-    // novicePaths: null,
-    // expertPaths: null,
-    // masterPaths: null,
-    // magicOptions: null,
-    // magicSpells: null,
-    // magicTables: null,
-    // magicTalents: null,
-    // magicTraditions: null,
+    novicePaths: parseNovicePathCSV(csvResults.novicePathsBuffer),
+    expertPaths: parseNonNovicePathCSV(csvResults.expertPathsBuffer),
+    masterPaths: parseNonNovicePathCSV(csvResults.masterPathsBuffer),
+    magicTraditions: parseMagicTraditionCSV(csvResults.magicTraditionsBuffer),
+    magicTalents: parseMagicTalentCSV(csvResults.magicTalentsBuffer),
+    magicSpells: parseMagicSpellCSV(csvResults.magicSpellsBuffer),
+    magicTables: parseMagicTableCSV(csvResults.magicTablesBuffer),
+    magicOptions: parseMagicOptionCSV(csvResults.magicOptionsBuffer),
   });
 };

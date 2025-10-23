@@ -7,7 +7,7 @@ import {
 import { CsvRawParseResult } from '.';
 
 const LevelValidator = zod.object({
-  path: zod.string(),
+  path: Validations.STRING,
   size: Validations.SIZE.optional(),
   level: Validations.POS_NUM,
   health: Validations.POS_NUM,
