@@ -3,9 +3,8 @@ import zod, { ZodError, ZodObject } from 'zod';
 import { parse as parseCSVRaw } from 'csv-parse/browser/esm/sync';
 import { CsvRawParseResult } from '.';
 
-export const pipeSeparatedValues = (column: string): string[] => {
-  return column.split('|').map((s) => s.trim());
-};
+export const pipeSeparatedValues = (column: string): string[] =>
+  column === '' ? [] : column.split('|').map((s) => s.trim());
 
 export const Validations = {
   STRING: zod.string().nonempty(),

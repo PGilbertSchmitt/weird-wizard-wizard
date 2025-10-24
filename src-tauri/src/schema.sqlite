@@ -74,11 +74,11 @@ CREATE TABLE IF NOT EXISTS ancestry_immunities (
     PRIMARY KEY (ancestry_id, immunity_id)
 );
 
-CREATE TABLE IF NOT EXISTS ancestry_traits (
-    ancestry_id REFERENCES ancestries(id) NOT NULL,
-    trait_id    REFERENCES traits(id) NOT NULL,
-    PRIMARY KEY (ancestry_id, trait_id)
-);
+-- CREATE TABLE IF NOT EXISTS ancestry_traits (
+--     ancestry_id REFERENCES ancestries(id) NOT NULL,
+--     trait_id    REFERENCES traits(id) NOT NULL,
+--     PRIMARY KEY (ancestry_id, trait_id)
+-- );
 
 CREATE TABLE IF NOT EXISTS paths (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,19 +102,19 @@ CREATE TABLE IF NOT EXISTS levels (
 );
 
 CREATE TABLE IF NOT EXISTS level_talents (
-    level_id  REFERENCES level(id),
+    level_id  REFERENCES levels(id),
     talent_id REFERENCES talents(id),
     PRIMARY KEY (level_id, talent_id)
 );
 
 CREATE TABLE IF NOT EXISTS level_traditions (
-    level_id     REFERENCES level(id),
+    level_id     REFERENCES levels(id),
     tradition_id REFERENCES traditions(id),
     PRIMARY KEY (level_id, tradition_id)
 );
 
 CREATE TABLE IF NOT EXISTS level_languages (
-    level_id    REFERENCES level(id),
+    level_id    REFERENCES levels(id),
     language_id REFERENCES languages(id),
     PRIMARY KEY (level_id, language_id)
 );
@@ -190,7 +190,7 @@ CREATE TABLE IF NOT EXISTS activate_tags (
 );
 
 CREATE TABLE IF NOT EXISTS talent_activations (
-    talent_id       REFERENCES talent(id) NOT NULL,
+    talent_id       REFERENCES talents(id) NOT NULL,
     activate_tag_id REFERENCES activate_tags(id) NOT NULL,
     PRIMARY KEY (talent_id, activate_tag_id)
 );

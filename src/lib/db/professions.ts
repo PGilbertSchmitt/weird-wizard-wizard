@@ -2,17 +2,17 @@ import {
   ProfessionCategoryRecord,
   ProfessionRecord,
 } from '../import-data/profession-import';
-import { dbExecute, id, nameAndDescQuery } from './client';
+import { dbExecute, id, nameAndDescQuery, Tables } from './client';
 
 export const createProfessionCategory = async (
   record: ProfessionCategoryRecord,
 ) => {
-  return await nameAndDescQuery('profession_categories', record);
+  return await nameAndDescQuery(Tables.PROFESSION_CATEGORIES, record);
 };
 
 export const createProfession = async (record: ProfessionRecord) => {
   return id(
-    'professions',
+    Tables.PROFESSIONS,
     await dbExecute(
       `
 INSERT INTO professions (

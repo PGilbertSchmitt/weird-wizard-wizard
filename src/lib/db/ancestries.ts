@@ -1,12 +1,12 @@
 import { AncestryRecord } from '../import-data/ancestry-import';
-import { dbExecute, id } from './client';
+import { dbExecute, id, Tables } from './client';
 
 export const createAncestry = async (record: AncestryRecord) => {
   return id(
-    'ancestries',
+    Tables.ANCESTRIES,
     await dbExecute(
       `
-INSERT INTO ancestries (
+INSERT INTO ${Tables.ANCESTRIES} (
   name,
   descriptor,
   size,

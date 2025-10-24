@@ -3,11 +3,11 @@ import {
   SenseRecord,
   SpeedTraitRecord,
 } from '../import-data/natural-attribute-import';
-import { dbExecute, id, nameAndDescQuery } from './client';
+import { dbExecute, id, nameAndDescQuery, Tables } from './client';
 
 export const createLanguage = async (record: LanguageRecord) => {
   return id(
-    'languages',
+    Tables.LANGUAGES,
     await dbExecute(
       `
 INSERT INTO languages (
@@ -20,16 +20,16 @@ INSERT INTO languages (
 };
 
 export const createSpeedTrait = async (record: SpeedTraitRecord) => {
-  return await nameAndDescQuery('speed_traits', record);
+  return await nameAndDescQuery(Tables.SPEED_TRAITS, record);
 };
 
 export const createSense = async (record: SenseRecord) => {
-  return await nameAndDescQuery('senses', record);
+  return await nameAndDescQuery(Tables.SENSES, record);
 };
 
 export const createImmunity = async (name: string) => {
   return id(
-    'immunities',
+    Tables.IMMUNITIES,
     await dbExecute(`INSERT INTO immunities (name) VALUES ($1)`, [name]),
   );
 };
