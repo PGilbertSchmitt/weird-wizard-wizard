@@ -67,4 +67,4 @@ export const Tables = {
   CHARACTERS: 'characters',
 } as const;
 
-export type TableName = typeof Tables[keyof typeof Tables];
+export type TableName = (typeof Tables)[keyof typeof Tables];

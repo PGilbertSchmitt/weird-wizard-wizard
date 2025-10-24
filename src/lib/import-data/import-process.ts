@@ -10,7 +10,11 @@ import {
   createSpeedTrait,
 } from '../db/natural-attributes';
 import { createAncestry } from '../db/ancestries';
-import { createAncestryImmunity, createAncestryLanguage, createAncestrySpeedTrait } from '../db/junctions';
+import {
+  createAncestryImmunity,
+  createAncestryLanguage,
+  createAncestrySpeedTrait,
+} from '../db/junctions';
 import { dbExecute, Tables } from '../db/client';
 
 type IdMap = Map<string, number>;
@@ -100,19 +104,26 @@ export const importProcess = async (
   currentTable = 'Ancestries';
 
   const ancestries = onlyOks(data.ancestries);
-  const immunities = uniq(flatten(ancestries.map(a => a.immunities)));
-  const immunityMap: IdMap = new Map(await Promise.all(immunities.map(async immunity => {
-    const immunityId = await createImmunity(immunity);
-    return [immunity, immunityId] as const;
-  })));
+  const immunities = uniq(flatten(ancestries.map((a) => a.immunities)));
+  const immunityMap: IdMap = new Map(
+    await Promise.all(
+      immunities.map(async (immunity) => {
+        const immunityId = await createImmunity(immunity);
+        return [immunity, immunityId] as const;
+      }),
+    ),
+  );
 
-  const associateLanguage = (ancestryId: number, ancestryName: string) => async (lang: string) => {
-    const id = languageMap.get(lang);
-    if (!id) {
-      throw new Error(`Tried to associate language '${lang}' with ancestry '${ancestryName}', but no such language was found`);
-    }
-    await createAncestryLanguage(ancestryId, id);
-  };
+  const associateLanguage =
+    (ancestryId: number, ancestryName: string) => async (lang: string) => {
+      const id = languageMap.get(lang);
+      if (!id) {
+        throw new Error(
+          `Tried to associate language '${lang}' with ancestry '${ancestryName}', but no such language was found`,
+        );
+      }
+      await createAncestryLanguage(ancestryId, id);
+    };
 
   // const associateSpeedTraits = (ancestryId: number, ancestryName: string) => async (trait: string) => {
   //   const id = speedTraitMap.get(trait);
@@ -122,23 +133,30 @@ export const importProcess = async (
   //   await createAncestrySpeedTrait(ancestryId, id);
   // };
 
-  const associateImmunity = (ancestryId: number, ancestryName: string) => async (immunity: string) => {
-    const id = immunityMap.get(immunity);
-    if (!id) {
-      throw new Error(`Tried to associate immunity '${immunities}' with ancestry '${ancestryName}', but no such immunity was found`);
-    }
-    await createAncestryImmunity(ancestryId, id);
-  };
+  const associateImmunity =
+    (ancestryId: number, ancestryName: string) => async (immunity: string) => {
+      const id = immunityMap.get(immunity);
+      if (!id) {
+        throw new Error(
+          `Tried to associate immunity '${immunities}' with ancestry '${ancestryName}', but no such immunity was found`,
+        );
+      }
+      await createAncestryImmunity(ancestryId, id);
+    };
 
   await Promise.all(
     ancestries.map(async (ancestry) => {
       const ancestryId = await createAncestry(ancestry);
 
       await Promise.all([
-        ...ancestry.languages.map(associateLanguage(ancestryId, ancestry.ancestry)),
+        ...ancestry.languages.map(
+          associateLanguage(ancestryId, ancestry.ancestry),
+        ),
         // ...ancestry.speed_traits.map(associateSpeedTraits(ancestryId, ancestry.ancestry)),
         // ...ancestry.senses.map(),
-        ...ancestry.immunities.map(associateImmunity(ancestryId, ancestry.ancestry)),
+        ...ancestry.immunities.map(
+          associateImmunity(ancestryId, ancestry.ancestry),
+        ),
       ]);
     }),
   );
@@ -158,6 +176,7 @@ export const countRecords = (data: ImportData) => {
 };
 
 const destroyAll = async () => {
-  console.log(values(Tables).map(table => (`DELETE FROM ${table}`)))
-  await Promise.all(values(Tables).map(table => dbExecute(`DELETE FROM ${table}`)));
+  await Promise.all(
+    values(Tables).map((table) => dbExecute(`DELETE FROM ${table}`)),
+  );
 };
