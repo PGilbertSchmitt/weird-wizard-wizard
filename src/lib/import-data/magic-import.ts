@@ -1,37 +1,56 @@
 import zod from 'zod';
 import { parseRow, Validations } from './import-utils';
 import { CsvRawParseResult } from '.';
+import {
+  MagicTalentCharge,
+  MagicTalentCharges,
+  PathKinds,
+  TableTypes,
+} from '../db/enums';
+import { values } from 'ramda';
 
 const MagicTraditionValidator = zod.object({
   name: Validations.STRING,
-  table: zod.string(),
+  table: Validations.STRING_OPT,
   blurb: Validations.STRING,
-  special_info: zod.string(),
+  special_info: Validations.STRING_OPT,
   description: Validations.STRING,
 });
 
 const MagicTalentValidator = zod.object({
   tradition: Validations.STRING,
   talent_name: Validations.STRING,
-  charges: zod.literal(['', '1', '1:1|2:3|3:7']),
+  charges: zod
+    .enum(['1', '1:1|2:3|3:7'])
+    .nullable()
+    .transform((value): MagicTalentCharge => {
+      switch (value) {
+        case '1':
+          return MagicTalentCharges.ONE;
+        case '1:1|2:3|3:7':
+          return MagicTalentCharges.ONE_TWO_THREE;
+        default:
+          return MagicTalentCharges.NONE;
+      }
+    }),
   restore: Validations.STRING,
   activate: Validations.STRING,
-  table: zod.string(),
-  options: zod.string(),
+  table: Validations.STRING_OPT,
+  options: Validations.STRING_OPT,
   description: Validations.STRING,
 });
 
 const MagicSpellValidator = zod.object({
   name: Validations.STRING,
   tradition: Validations.STRING,
-  path_type: zod.literal(['Novice', 'Expert', 'Master']),
+  path_type: zod.enum(values(PathKinds)),
   castings: Validations.POS_NUM,
   duration: Validations.STRING,
   target: Validations.STRING,
-  condition: zod.string(),
+  condition: Validations.STRING_OPT,
   ritual: Validations.BOOL,
-  table: zod.string(),
-  options: zod.string(),
+  table: Validations.STRING_OPT,
+  options: Validations.STRING_OPT,
   description: Validations.STRING,
 });
 
@@ -39,7 +58,9 @@ const MagicTableValidator = zod.object({
   table_id: Validations.STRING,
   key: Validations.STRING,
   value: Validations.STRING,
-  table_type: zod.literal(['', 'BLOCK', 'TABLE', 'ROLL']),
+  table_type: zod
+    .enum(values(TableTypes))
+    .nullable(),
 });
 
 const MagicOptionValidator = zod.object({

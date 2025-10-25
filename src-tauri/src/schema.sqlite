@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS languages (
 CREATE TABLE IF NOT EXISTS speed_traits (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
-    description TEXT NOT NULL
+    description TEXT NOT NULL,
+    unit       TEXT CHECK (unit IN ('inches', 'yards'))
 );
 
 CREATE TABLE IF NOT EXISTS senses (
@@ -91,6 +92,7 @@ CREATE TABLE IF NOT EXISTS paths (
 
 CREATE TABLE IF NOT EXISTS levels (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    path          REFERENCES paths(id) NOT NULL,
     level         INTEGER NOT NULL UNIQUE,
     add_health    INTEGER NOT NULL,
     add_nat_def   INTEGER DEFAULT 0,
@@ -102,20 +104,20 @@ CREATE TABLE IF NOT EXISTS levels (
 );
 
 CREATE TABLE IF NOT EXISTS level_talents (
-    level_id  REFERENCES levels(id),
-    talent_id REFERENCES talents(id),
+    level_id  REFERENCES levels(id) NOT NULL,
+    talent_id REFERENCES talents(id) NOT NULL,
     PRIMARY KEY (level_id, talent_id)
 );
 
 CREATE TABLE IF NOT EXISTS level_traditions (
-    level_id     REFERENCES levels(id),
-    tradition_id REFERENCES traditions(id),
+    level_id     REFERENCES levels(id) NOT NULL,
+    tradition_id REFERENCES traditions(id) NOT NULL,
     PRIMARY KEY (level_id, tradition_id)
 );
 
 CREATE TABLE IF NOT EXISTS level_languages (
-    level_id    REFERENCES levels(id),
-    language_id REFERENCES languages(id),
+    level_id    REFERENCES levels(id) NOT NULL,
+    language_id REFERENCES languages(id) NOT NULL,
     PRIMARY KEY (level_id, language_id)
 );
 
@@ -130,7 +132,7 @@ CREATE TABLE IF NOT EXISTS talents (
     magical         BOOL NOT NULL,
     charges         TEXT CHECK (charges IN ('None', 'One', 'OneTwoThree')) NOT NULL,
     restore         TEXT CHECK (charges IN ('None', 'LuckEnds', 'Rest', 'Day', 'Hour', 'Minute', 'StartOfNextTurn', 'EndOfNextTurn')) NOT NULL,
-    info_table_id   REFERENCES info_table(id),
+    info_table_id   REFERENCES info_tables(id),
     option_block_id REFERENCES option_blocks(id)
 );
 
@@ -144,7 +146,7 @@ CREATE TABLE IF NOT EXISTS spells (
     target          TEXT NOT NULL,
     condition       TEXT,
     ritual          BOOL NOT NULL,
-    info_table_id   REFERENCES info_table(id),
+    info_table_id   REFERENCES info_tables(id),
     option_block_id REFERENCES option_blocks(id)
 );
 
@@ -153,7 +155,7 @@ CREATE TABLE IF NOT EXISTS traditions (
     name          TEXT NOT NULL UNIQUE,
     blurb         TEXT NOT NULL,
     description   TEXT NOT NULL,
-    info_table_id REFERENCES info_table(id)
+    info_table_id REFERENCES info_tables(id)
 );
 
 CREATE TABLE IF NOT EXISTS tradition_special_info (
@@ -161,14 +163,14 @@ CREATE TABLE IF NOT EXISTS tradition_special_info (
     info         TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS info_table (
+CREATE TABLE IF NOT EXISTS info_tables (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
     kind TEXT CHECK (kind IN ('TABLE', 'BLOCK', 'ROLL')) NOT NULL,
     name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS info_table_row (
-    info_table_id REFERENCES info_table(id) NOT NULL,
+    info_table_id REFERENCES info_tables(id) NOT NULL,
     label         TEXT NOT NULL,
     value         TEXT NOT NULL
 );

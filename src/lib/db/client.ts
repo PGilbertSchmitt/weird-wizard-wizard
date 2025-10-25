@@ -1,5 +1,6 @@
 import Database, { QueryResult } from '@tauri-apps/plugin-sql';
 import { isNil } from 'ramda';
+import { ValueOf } from '../types';
 
 // Could be more robust
 const dbPromise = Database.load('sqlite:www.db');
@@ -58,7 +59,7 @@ export const Tables = {
   SPELLS: 'spells',
   TRADITIONS: 'traditions',
   TRADITION_SPECIAL_INFO: 'tradition_special_info',
-  INFO_TABLE: 'info_table',
+  INFO_TABLES: 'info_tables',
   INFO_TABLE_ROW: 'info_table_row',
   OPTION_BLOCKS: 'option_blocks',
   OPTION_BLOCK_ROWS: 'option_block_rows',
@@ -67,4 +68,53 @@ export const Tables = {
   CHARACTERS: 'characters',
 } as const;
 
-export type TableName = (typeof Tables)[keyof typeof Tables];
+export type TableName = ValueOf<typeof Tables>;
+
+// Ordered to be deleted cleanly since many foreign keys are required
+export const CLEAR_TABLES: TableName[] = [
+  // Currently, imports will wipe characters, but it could be possible to
+  // reconstruct them after re-importing them using other labels.
+  'characters',
+
+  // Junctions between ancestries and attribute tables
+  'ancestry_immunities',
+  'ancestry_languages',
+  'ancestry_senses',
+  'ancestry_speed_traits',
+
+  // Junctions between levels and attribute tables
+  'level_languages',
+  'level_talents',
+  'level_traditions',
+
+  // References paths
+  'levels',
+
+  // References ancestries
+  'paths',
+
+  // References traditions
+  'tradition_special_info',
+
+  // References talents
+  'talent_activations',
+
+  // References info_tables, option_blocks, or both
+  'talents',
+  'spells',
+  'traditions',
+  'info_table_row',
+  'option_block_rows',
+  
+  // No dependencies
+  'profession_categories',
+  'professions',
+  'ancestries',
+  'info_tables',
+  'option_blocks',
+  'activate_tags',
+  'immunities',
+  'languages',
+  'senses',
+  'speed_traits',
+];

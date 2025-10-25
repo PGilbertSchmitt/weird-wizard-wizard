@@ -1,6 +1,8 @@
 import zod from 'zod';
 import { parseRow, Validations } from './import-utils';
 import { CsvRawParseResult } from '.';
+import { values } from 'ramda';
+import { Units } from '../db/enums';
 
 const LanguageValidator = zod.object({
   name: Validations.STRING,
@@ -11,6 +13,9 @@ const LanguageValidator = zod.object({
 const SpeedTraitValidator = zod.object({
   name: Validations.STRING,
   description: Validations.STRING,
+  unit: zod
+    .enum(values(Units))
+    .nullable(),
 });
 
 const SenseValidator = zod.object({

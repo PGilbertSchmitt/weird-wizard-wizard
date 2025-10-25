@@ -5,18 +5,17 @@ import { CsvRawParseResult } from '.';
 const NovicePathValidator = zod.object({
   name: Validations.STRING,
   description: Validations.STRING,
-  init_scores_lvl_1: zod
-    .string()
-    .regex(/^[\d]+\|[\d]+\|[\d]+\|[\d]+$/)
-    .transform((scores) => {
-      const [str, agl, int, will] = scores.split('|');
-      return {
-        strength: parseInt(str),
-        agility: parseInt(agl),
-        intellect: parseInt(int),
-        will: parseInt(will),
-      };
-    }),
+  init_scores_lvl_1: Validations.STRING.regex(
+    /^[\d]+\|[\d]+\|[\d]+\|[\d]+$/,
+  ).transform((scores) => {
+    const [str, agl, int, will] = scores.split('|');
+    return {
+      strength: parseInt(str),
+      agility: parseInt(agl),
+      intellect: parseInt(int),
+      will: parseInt(will),
+    };
+  }),
   origin_locked: Validations.BOOL,
 });
 

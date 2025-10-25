@@ -13,9 +13,8 @@ import { createAncestry } from '../db/ancestries';
 import {
   createAncestryImmunity,
   createAncestryLanguage,
-  createAncestrySpeedTrait,
 } from '../db/junctions';
-import { dbExecute, Tables } from '../db/client';
+import { CLEAR_TABLES, dbExecute } from '../db/client';
 
 type IdMap = Map<string, number>;
 
@@ -176,7 +175,10 @@ export const countRecords = (data: ImportData) => {
 };
 
 const destroyAll = async () => {
-  await Promise.all(
-    values(Tables).map((table) => dbExecute(`DELETE FROM ${table}`)),
-  );
+  // This could technically be a modicum faster if these were batched up such that
+  // required foreign references were respected, but it would only save on overhead,
+  // so this will be fast enough.
+  for (const table of CLEAR_TABLES) {
+    await dbExecute(`DELETE FROM ${table}`);
+  }
 };
