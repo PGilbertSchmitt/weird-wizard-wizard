@@ -30,7 +30,7 @@ WHERE l.path = $1;
 
 <!-- But query results here -->
 
-Do note that this example 
+Do note that this example
 
 ## Eager Loading
 
@@ -78,44 +78,44 @@ WHERE a.name = 'Tatterdemalion';
 The `Tatterdemalion` ancestry has 4 speed traits and 9 immunities, which compounds to
 a sum total of 36 rows just for this one record:
 
-| id |    ancestry    | speed_traits | speed_unit | speed_amount |   senses    | sense_unit | sense_amount | immunities  | languages |
-|----|----------------|--------------|------------|--------------|-------------|------------|--------------|-------------|-----------|
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | asleep      |           |
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | blinded     |           |
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | deafened    |           |
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | poisoned    |           |
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | slowed      |           |
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | exposure    |           |
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | deprivation |           |
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | infection   |           |
-| 81 | Tatterdemalion | Silent       |            |              | True Vision |            |              | suffocation |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | asleep      |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | blinded     |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | deafened    |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | poisoned    |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | slowed      |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | exposure    |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | deprivation |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | infection   |           |
-| 81 | Tatterdemalion | Slippery     |            |              | True Vision |            |              | suffocation |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | asleep      |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | blinded     |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | deafened    |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | poisoned    |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | slowed      |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | exposure    |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | deprivation |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | infection   |           |
-| 81 | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | suffocation |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | asleep      |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | blinded     |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | deafened    |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | poisoned    |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | slowed      |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | exposure    |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | deprivation |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | infection   |           |
-| 81 | Tatterdemalion | Strider      |            |              | True Vision |            |              | suffocation |           |
+| id  | ancestry       | speed_traits | speed_unit | speed_amount | senses      | sense_unit | sense_amount | immunities  | languages |
+| --- | -------------- | ------------ | ---------- | ------------ | ----------- | ---------- | ------------ | ----------- | --------- |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | asleep      |           |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | blinded     |           |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | deafened    |           |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | poisoned    |           |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | slowed      |           |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | exposure    |           |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | deprivation |           |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | infection   |           |
+| 81  | Tatterdemalion | Silent       |            |              | True Vision |            |              | suffocation |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | asleep      |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | blinded     |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | deafened    |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | poisoned    |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | slowed      |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | exposure    |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | deprivation |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | infection   |           |
+| 81  | Tatterdemalion | Slippery     |            |              | True Vision |            |              | suffocation |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | asleep      |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | blinded     |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | deafened    |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | poisoned    |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | slowed      |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | exposure    |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | deprivation |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | infection   |           |
+| 81  | Tatterdemalion | Squeeze      | inches     | 1            | True Vision |            |              | suffocation |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | asleep      |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | blinded     |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | deafened    |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | poisoned    |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | slowed      |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | exposure    |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | deprivation |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | infection   |           |
+| 81  | Tatterdemalion | Strider      |            |              | True Vision |            |              | suffocation |           |
 
 # Combined approach
 
@@ -161,43 +161,47 @@ There are 4 queries, but the DBMS only needs to collect 1 ancestry record, 9 spe
 trait records, 4 immunity records, 1 sense record, and no language records:
 
 ### Ancestry
-| id |      name      | descriptor | size | speed | add_health | add_nat_def |
-|----|----------------|------------|------|-------|------------|-------------|
-| 81 | Tatterdemalion | Spirit     | sm   | 5     | 0          | 0           |
+
+| id  | name           | descriptor | size | speed | add_health | add_nat_def |
+| --- | -------------- | ---------- | ---- | ----- | ---------- | ----------- |
+| 81  | Tatterdemalion | Spirit     | sm   | 5     | 0          | 0           |
 
 ### Immunities
-| id |    name     |
-|----|-------------|
-| 21 | asleep      |
-| 22 | deprivation |
-| 23 | infection   |
-| 25 | poisoned    |
-| 26 | exposure    |
-| 27 | suffocation |
-| 28 | blinded     |
-| 29 | deafened    |
-| 30 | slowed      |
+
+| id  | name        |
+| --- | ----------- |
+| 21  | asleep      |
+| 22  | deprivation |
+| 23  | infection   |
+| 25  | poisoned    |
+| 26  | exposure    |
+| 27  | suffocation |
+| 28  | blinded     |
+| 29  | deafened    |
+| 30  | slowed      |
 
 ### Speed traits
-| id |   name   |                         description                          |  unit  | amount |
-|----|----------|--------------------------------------------------------------|--------|--------|
-| 30 | Slippery | The creature’s moves do not enable other creatures to make f |        |        |
-|    |          | ree attacks against it.                                      |        |        |
-| 31 | Strider  | The creature reduces by 1 the number of yards of movement it |        |        |
-|    |          |  expends to move each yard across challenging terrain.       |        |        |
-| 32 | Silent   | The creature can sneak 1 yard for each yard of movement it e |        |        |
-|    |          | xpends and rolls to sneak with 1 boon.                       |        |        |
-| 38 | Squeeze  | The creature can squeeze through openings of the indicated s | inches | 1      |
-|    |          | ize.                                                         |        |        |
+
+| id  | name     | description                                                  | unit   | amount |
+| --- | -------- | ------------------------------------------------------------ | ------ | ------ |
+| 30  | Slippery | The creature’s moves do not enable other creatures to make f |        |        |
+|     |          | ree attacks against it.                                      |        |        |
+| 31  | Strider  | The creature reduces by 1 the number of yards of movement it |        |        |
+|     |          | expends to move each yard across challenging terrain.        |        |        |
+| 32  | Silent   | The creature can sneak 1 yard for each yard of movement it e |        |        |
+|     |          | xpends and rolls to sneak with 1 boon.                       |        |        |
+| 38  | Squeeze  | The creature can squeeze through openings of the indicated s | inches | 1      |
+|     |          | ize.                                                         |        |        |
 
 ### Sense
-| id |    name     |                         description                          | unit | amount |
-|----|-------------|--------------------------------------------------------------|------|--------|
-| 17 | True Vision | The creature needs no light to see and treats everything wit |      |        |
-|    |             | hin its line of sight as being illuminated. It perceives out |      |        |
-|    |             | lines around invisible creatures and objects in its line of  |      |        |
-|    |             | sight. It also sees through mundane and magical disguises, p |      |        |
-|    |             | erceives transformed creatures in their normal forms, and re |      |        |
-|    |             | cognizes visual illusions for what they are.                 |      |        |
+
+| id  | name        | description                                                  | unit | amount |
+| --- | ----------- | ------------------------------------------------------------ | ---- | ------ |
+| 17  | True Vision | The creature needs no light to see and treats everything wit |      |        |
+|     |             | hin its line of sight as being illuminated. It perceives out |      |        |
+|     |             | lines around invisible creatures and objects in its line of  |      |        |
+|     |             | sight. It also sees through mundane and magical disguises, p |      |        |
+|     |             | erceives transformed creatures in their normal forms, and re |      |        |
+|     |             | cognizes visual illusions for what they are.                 |      |        |
 
 This is a lot easier to work with, and to collect into a single structure using code.

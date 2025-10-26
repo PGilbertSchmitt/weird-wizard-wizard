@@ -1,27 +1,23 @@
 import { cn } from '@/lib/utils';
 import { createRef, DragEvent, useEffect, useState } from 'react';
 import { listen, Event as TauriEvent } from '@tauri-apps/api/event';
-import { Button } from '@/components/ui/button';
-import { Trash } from 'lucide-react';
-import {
-  ExtractError,
-  extractFromBuffer,
-  extractFromFilename,
-  ExtractResult,
-} from '../../../lib/import-data/unzip';
-import { ImportData } from '@/lib/import-data';
-import { ExtractErrorAlert } from './extract-error';
-import { fromPairs, toPairs } from 'ramda';
-import { importProcess } from '@/lib/import-data/import-process';
 
-export const Dropzone = () => {
+interface DropzoneProps {
+  disabled: boolean;
+  fileSource: string | null;
+  onFileHandle: (file: File) => Promise<void>;
+  onFilePath: (filepath: string) => Promise<void>;
+}
+
+export const Dropzone = ({
+  disabled = false,
+  fileSource,
+  onFileHandle,
+  onFilePath,
+}: DropzoneProps) => {
   const fileRef = createRef<HTMLInputElement>();
   const dropRef = createRef<HTMLDivElement>();
   const [overDropzone, setOverDropzone] = useState(false);
-
-  const [fileSource, setFileSource] = useState<string | null>(null);
-  const [csvData, setCsvData] = useState<ImportData | null>(null);
-  const [alertInfo, setAlertInfo] = useState<ExtractError | null>(null);
 
   const onDragEnter = (e: DragEvent) => {
     e.stopPropagation();
@@ -35,43 +31,13 @@ export const Dropzone = () => {
     setOverDropzone(false);
   };
 
-  const extractionCallback = (filename: string) => (result: ExtractResult) => {
-    if (result.isOk()) {
-      setFileSource(filename);
-      const data = result.value;
-      console.log(data);
-      setCsvData(data);
-      const warnings = toPairs(data).reduce(
-        (acc, [file, rowResults]): [string, string][] => {
-          const badRows = rowResults.filter((r) => r.isErr()).length;
-          if (badRows > 0) {
-            acc.push([file, `${badRows} bad rows out of ${rowResults.length}`]);
-          }
-          return acc;
-        },
-        [],
-      );
-      if (warnings.length > 0) {
-        setAlertInfo({
-          title: 'Row warnings',
-          body: fromPairs(warnings),
-        });
-      }
-      // console.log('Total records:', importProcess(data, () => {}));
-    } else {
-      setAlertInfo(result.error);
-      setCsvData(null);
-      setFileSource(null);
-    }
-  };
-
   useEffect(() => {
     if (overDropzone) {
       const unlistenPromise = listen(
         'tauri://drag-drop',
         (event: TauriEvent<{ paths: string[] }>) => {
           const filepath = event.payload.paths[0];
-          extractFromFilename(filepath).then(extractionCallback(filepath));
+          onFilePath(filepath);
         },
       );
 
@@ -88,7 +54,9 @@ export const Dropzone = () => {
         className={cn(
           `w-full my-5 border-foreground border-2 border-dashed rounded-base
           flex items-center justify-center p-20 cursor-pointer bg-background`,
-          overDropzone && 'brightness-90',
+          disabled
+            ? 'opacity-50 cursor-default'
+            : overDropzone && 'brightness-90',
         )}
         onClick={() => {
           fileRef.current?.click();
@@ -98,6 +66,7 @@ export const Dropzone = () => {
       >
         <input
           type="file"
+          disabled={disabled}
           hidden
           ref={fileRef}
           accept="zip"
@@ -105,10 +74,7 @@ export const Dropzone = () => {
           onChange={async (e) => {
             const file = e.target.files?.item(0);
             if (file) {
-              extractFromBuffer(
-                new Uint8Array(await file.arrayBuffer()),
-                file.name,
-              ).then(extractionCallback(file.name));
+              onFileHandle(file);
             }
           }}
         />
@@ -117,33 +83,6 @@ export const Dropzone = () => {
           ? pretty(fileSource)
           : 'Drop file or click here to upload a data zip file.'}
       </div>
-
-      {csvData && (
-        <div className={cn('w-full flex')}>
-          <Button
-            className={cn('w-10 mr-2')}
-            onClick={() => {
-              setCsvData(null);
-              setFileSource(null);
-            }}
-          >
-            <Trash size="20px" strokeWidth="1.2px" />
-          </Button>
-          <Button
-            className={cn('w-full')}
-            onClick={() => {
-              console.log('doot!');
-              importProcess(csvData, () => {});
-            }}
-          >
-            Import
-          </Button>
-        </div>
-      )}
-
-      {alertInfo && (
-        <ExtractErrorAlert error={alertInfo} onOk={() => setAlertInfo(null)} />
-      )}
     </>
   );
 };

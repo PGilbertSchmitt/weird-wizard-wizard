@@ -129,6 +129,7 @@ export const importProcess = async (
             associateAncestryImmunity(immunityMap, ancestryId, ancestryName),
           ),
         ]);
+        trackProgress();
         return [ancestryName, ancestryId] as const;
       }),
     ),
@@ -141,14 +142,17 @@ export const importProcess = async (
       ...onlyOks(data.novicePaths).map(async (novicePath) => {
         const ancestryId = ancestryMap.get(novicePath.name);
         const pathId = await createNovicePath(novicePath, ancestryId);
+        trackProgress();
         return [novicePath.name, pathId] as const;
       }),
       ...onlyOks(data.expertPaths).map(async (expertPath) => {
         const pathId = await createNonNovicePath(expertPath, PathKinds.EXPERT);
+        trackProgress();
         return [expertPath.name, pathId] as const;
       }),
       ...onlyOks(data.masterPaths).map(async (masterPath) => {
         const pathId = await createNonNovicePath(masterPath, PathKinds.MASTER);
+        trackProgress();
         return [masterPath.name, pathId] as const;
       }),
     ]),
@@ -178,10 +182,9 @@ export const importProcess = async (
           associateLevelSpeedTraits(speedTraitMap, levelId, levelLabel),
         ),
       ]);
+      trackProgress();
     }),
   );
-
-  console.log('Done!');
 };
 
 const onlyOks = <T>(res: Array<Result<T, unknown>>): T[] => {
