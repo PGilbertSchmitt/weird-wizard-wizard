@@ -1,7 +1,7 @@
 // It's called "enums.ts", but you'll never catch me using a real TS enum
 // (outside of work)
 
-import { ValueOf } from "../types";
+import { ValueOf } from '../types';
 
 export const Sizes = {
   SMALL: 'sm',

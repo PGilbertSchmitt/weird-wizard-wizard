@@ -1,45 +1,46 @@
 -- START: SEEDABLE TABLES --
 
-CREATE TABLE IF NOT EXISTS languages (
+CREATE TABLE languages (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
     secret      BOOL NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS speed_traits (
+CREATE TABLE speed_traits (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
-    unit       TEXT CHECK (unit IN ('inches', 'yards'))
+    unit        TEXT CHECK (unit IN ('inches', 'yards'))
 );
 
-CREATE TABLE IF NOT EXISTS senses (
+CREATE TABLE senses (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
-    description TEXT NOT NULL
+    description TEXT NOT NULL,
+    unit        TEXT CHECK (unit IN ('inches', 'yards'))
 );
 
-CREATE TABLE IF NOT EXISTS immunities (
+CREATE TABLE immunities (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS profession_categories (
+CREATE TABLE profession_categories (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL
 );
 
 -- I could relate professions to their categories, but it's not really necessary.
-CREATE TABLE IF NOT EXISTS professions (
+CREATE TABLE professions (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
     category    TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS ancestries (
+CREATE TABLE ancestries (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL,
     descriptor  TEXT,
@@ -49,39 +50,39 @@ CREATE TABLE IF NOT EXISTS ancestries (
     add_nat_def INTEGER NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS ancestry_languages (
+CREATE TABLE ancestry_languages (
     ancestry_id REFERENCES ancestries(id) NOT NULL,
     language_id REFERENCES languages(id) NOT NULL,
     PRIMARY KEY (ancestry_id, language_id)
 );
 
-CREATE TABLE IF NOT EXISTS ancestry_speed_traits (
+CREATE TABLE ancestry_speed_traits (
     ancestry_id    REFERENCES ancestries(id) NOT NULL,
     speed_trait_id REFERENCES speed_traits(id) NOT NULL,
     amount         TEXT, -- Optional, needed for Squeeze and Teleport
     PRIMARY KEY    (ancestry_id, speed_trait_id)
 );
 
-CREATE TABLE IF NOT EXISTS ancestry_senses (
+CREATE TABLE ancestry_senses (
     ancestry_id REFERENCES ancestries(id) NOT NULL,
     sense_id    REFERENCES senses(id) NOT NULL,
     amount      TEXT, -- Optional, needed for Awareness
     PRIMARY KEY (ancestry_id, sense_id)
 );
 
-CREATE TABLE IF NOT EXISTS ancestry_immunities (
+CREATE TABLE ancestry_immunities (
     ancestry_id REFERENCES ancestries(id) NOT NULL,
     immunity_id REFERENCES immunities(id) NOT NULL,
     PRIMARY KEY (ancestry_id, immunity_id)
 );
 
--- CREATE TABLE IF NOT EXISTS ancestry_traits (
+-- CREATE TABLE ancestry_traits (
 --     ancestry_id REFERENCES ancestries(id) NOT NULL,
 --     trait_id    REFERENCES traits(id) NOT NULL,
 --     PRIMARY KEY (ancestry_id, trait_id)
 -- );
 
-CREATE TABLE IF NOT EXISTS paths (
+CREATE TABLE paths (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
     kind        TEXT CHECK (kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
@@ -90,7 +91,7 @@ CREATE TABLE IF NOT EXISTS paths (
     ancestry    REFERENCES ancestries(id) -- A novice path with an Ancestry references locks the character to that specific Ancestry record
 );
 
-CREATE TABLE IF NOT EXISTS levels (
+CREATE TABLE levels (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     path          REFERENCES paths(id) NOT NULL,
     level         INTEGER NOT NULL UNIQUE,
@@ -103,19 +104,19 @@ CREATE TABLE IF NOT EXISTS levels (
     size          TEXT CHECK (size IN ('sm', 'md', 'lg')) -- Only used for Pollywog level 5 (but I haven't checked all master paths yet)
 );
 
-CREATE TABLE IF NOT EXISTS level_talents (
+CREATE TABLE level_talents (
     level_id  REFERENCES levels(id) NOT NULL,
     talent_id REFERENCES talents(id) NOT NULL,
     PRIMARY KEY (level_id, talent_id)
 );
 
-CREATE TABLE IF NOT EXISTS level_traditions (
+CREATE TABLE level_traditions (
     level_id     REFERENCES levels(id) NOT NULL,
     tradition_id REFERENCES traditions(id) NOT NULL,
     PRIMARY KEY (level_id, tradition_id)
 );
 
-CREATE TABLE IF NOT EXISTS level_languages (
+CREATE TABLE level_languages (
     level_id    REFERENCES levels(id) NOT NULL,
     language_id REFERENCES languages(id) NOT NULL,
     PRIMARY KEY (level_id, language_id)
@@ -125,7 +126,7 @@ CREATE TABLE IF NOT EXISTS level_languages (
 -- May need to consider uniqueness on combination of name and something else,
 -- in case there are 2 talents for different paths/traditions that share
 -- a name.
-CREATE TABLE IF NOT EXISTS talents (
+CREATE TABLE talents (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
@@ -136,7 +137,7 @@ CREATE TABLE IF NOT EXISTS talents (
     option_block_id REFERENCES option_blocks(id)
 );
 
-CREATE TABLE IF NOT EXISTS spells (
+CREATE TABLE spells (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     name            TEXT NOT NULL UNIQUE,
     description     TEXT NOT NULL,
@@ -150,7 +151,7 @@ CREATE TABLE IF NOT EXISTS spells (
     option_block_id REFERENCES option_blocks(id)
 );
 
-CREATE TABLE IF NOT EXISTS traditions (
+CREATE TABLE traditions (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     name          TEXT NOT NULL UNIQUE,
     blurb         TEXT NOT NULL,
@@ -158,40 +159,40 @@ CREATE TABLE IF NOT EXISTS traditions (
     info_table_id REFERENCES info_tables(id)
 );
 
-CREATE TABLE IF NOT EXISTS tradition_special_info (
+CREATE TABLE tradition_special_info (
     tradition_id REFERENCES traditions(id) NOT NULL,
     info         TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS info_tables (
+CREATE TABLE info_tables (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
     kind TEXT CHECK (kind IN ('TABLE', 'BLOCK', 'ROLL')) NOT NULL,
     name TEXT NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS info_table_row (
+CREATE TABLE info_table_row (
     info_table_id REFERENCES info_tables(id) NOT NULL,
     label         TEXT NOT NULL,
     value         TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS option_blocks (
+CREATE TABLE option_blocks (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS option_block_rows (
+CREATE TABLE option_block_rows (
     option_block_id REFERENCES option_blocks(id) NOT NULL,
     value           TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS activate_tags (
+CREATE TABLE activate_tags (
     id          INTEGER PRIMARY KEY,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS talent_activations (
+CREATE TABLE talent_activations (
     talent_id       REFERENCES talents(id) NOT NULL,
     activate_tag_id REFERENCES activate_tags(id) NOT NULL,
     PRIMARY KEY (talent_id, activate_tag_id)
@@ -201,7 +202,7 @@ CREATE TABLE IF NOT EXISTS talent_activations (
 
 -- START: USER-GENERATED RECORD TABLES 
 
-CREATE TABLE IF NOT EXISTS characters (
+CREATE TABLE characters (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     name           TEXT    NOT NULL,
     level          INTEGER NOT NULL,
@@ -217,15 +218,26 @@ CREATE TABLE IF NOT EXISTS characters (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER validate_novice_path_assoc BEFORE UPDATE ON characters
-FOR EACH ROW
-    BEGIN
-    SELECT CASE
+CREATE TRIGGER validate_path_assoc BEFORE UPDATE ON characters
+BEGIN
+    SELECT
+        CASE
         WHEN ('Novice' <> (SELECT kind FROM paths WHERE paths.id = NEW.novice_path_id))
-            THEN raise(ABORT, 'expected Novice path for character association')
+            THEN raise(ABORT, 'EXPECTED_NOVICE_PATH')
         WHEN ('Expert' <> (SELECT kind FROM paths WHERE paths.id = NEW.expert_path_id))
-            THEN raise(ABORT, 'expected Expert path for character association')
+            THEN raise(ABORT, 'EXPECTED_EXPERT_PATH')
         WHEN ('Master' <> (SELECT kind FROM paths WHERE paths.id = NEW.master_path_id))
-            THEN raise(ABORT, 'expected Master path for character association')
-    END;
+            THEN raise(ABORT, 'EXPECTED_MASTER_PATH')
+        END;
+END;
+
+CREATE TRIGGER validate_ancestry_speed_trait_units BEFORE INSERT ON ancestry_speed_traits
+BEGIN
+    SELECT
+        CASE
+        WHEN NEW.amount IS NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NOT NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_REQUIRED')
+        WHEN NEW.amount IS NOT NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_FORBIDDEN')
+        END;
 END;

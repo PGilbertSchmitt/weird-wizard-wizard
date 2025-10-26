@@ -16,7 +16,7 @@ INSERT INTO ${Tables.ANCESTRY_LANGUAGES} (
 export const createAncestrySpeedTrait = async (
   ancestryId: number,
   speedTraitId: number,
-  amount?: string,
+  amount: string | null,
 ) => {
   await dbExecute(
     `
@@ -27,10 +27,10 @@ INSERT INTO ${Tables.ANCESTRY_SPEED_TRAITS} (
   );
 };
 
-export const createAncestrySenses = async (
+export const createAncestrySense = async (
   ancestryId: number,
   senseId: number,
-  amount?: string,
+  amount: string | null,
 ) => {
   await dbExecute(
     `

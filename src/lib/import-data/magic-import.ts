@@ -58,9 +58,7 @@ const MagicTableValidator = zod.object({
   table_id: Validations.STRING,
   key: Validations.STRING,
   value: Validations.STRING,
-  table_type: zod
-    .enum(values(TableTypes))
-    .nullable(),
+  table_type: zod.enum(values(TableTypes)).nullable(),
 });
 
 const MagicOptionValidator = zod.object({

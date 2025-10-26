@@ -10,17 +10,18 @@ const LanguageValidator = zod.object({
   secret: Validations.BOOL,
 });
 
+const UnitValidation = zod.enum(values(Units)).nullable();
+
 const SpeedTraitValidator = zod.object({
   name: Validations.STRING,
   description: Validations.STRING,
-  unit: zod
-    .enum(values(Units))
-    .nullable(),
+  unit: UnitValidation,
 });
 
 const SenseValidator = zod.object({
   name: Validations.STRING,
   description: Validations.STRING,
+  unit: UnitValidation,
 });
 
 export type LanguageRecord = zod.output<typeof LanguageValidator>;

@@ -105,7 +105,7 @@ export const CLEAR_TABLES: TableName[] = [
   'traditions',
   'info_table_row',
   'option_block_rows',
-  
+
   // No dependencies
   'profession_categories',
   'professions',
