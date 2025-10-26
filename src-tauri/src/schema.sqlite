@@ -88,38 +88,50 @@ CREATE TABLE paths (
     kind        TEXT CHECK (kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
     category    TEXT NOT NULL,
     description TEXT NOT NULL,
+    req_str     INTEGER,
+    req_agl     INTEGER,
+    req_int     INTEGER,
+    req_will    INTEGER,
     ancestry    REFERENCES ancestries(id) -- A novice path with an Ancestry references locks the character to that specific Ancestry record
 );
 
 CREATE TABLE levels (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     path          REFERENCES paths(id) NOT NULL,
-    level         INTEGER NOT NULL UNIQUE,
+    level         INTEGER NOT NULL,
     add_health    INTEGER NOT NULL,
     add_nat_def   INTEGER DEFAULT 0,
     add_arm_def   INTEGER DEFAULT 0,
     add_bonus_dmg INTEGER DEFAULT 0,
     add_speed     INTEGER DEFAULT 0,
-    speed_trait   TEXT, -- Only used for Halfling level 5 (but I haven't checked all master paths yet)
-    size          TEXT CHECK (size IN ('sm', 'md', 'lg')) -- Only used for Pollywog level 5 (but I haven't checked all master paths yet)
+    size          TEXT CHECK (size IN ('sm', 'md', 'lg')) -- Only used officially for Pollywog level 5
 );
 
+CREATE UNIQUE INDEX unique_levels ON levels (path, level);
+
 CREATE TABLE level_talents (
-    level_id  REFERENCES levels(id) NOT NULL,
-    talent_id REFERENCES talents(id) NOT NULL,
+    level_id    REFERENCES levels(id) NOT NULL,
+    talent_id   REFERENCES talents(id) NOT NULL,
     PRIMARY KEY (level_id, talent_id)
 );
 
 CREATE TABLE level_traditions (
     level_id     REFERENCES levels(id) NOT NULL,
     tradition_id REFERENCES traditions(id) NOT NULL,
-    PRIMARY KEY (level_id, tradition_id)
+    PRIMARY KEY  (level_id, tradition_id)
 );
 
 CREATE TABLE level_languages (
     level_id    REFERENCES levels(id) NOT NULL,
     language_id REFERENCES languages(id) NOT NULL,
     PRIMARY KEY (level_id, language_id)
+);
+
+CREATE TABLE level_speed_traits (
+    level_id       REFERENCES levels(id) NOT NULL,
+    speed_trait_id REFERENCES speed_traits(id) NOT NULL,
+    amount         TEXT, -- Optional, needed for Squeeze and Teleport
+    PRIMARY KEY    (level_id, speed_trait_id)
 );
 
 -- Both magical-based and path-based talents are stored in this table
@@ -232,6 +244,28 @@ BEGIN
 END;
 
 CREATE TRIGGER validate_ancestry_speed_trait_units BEFORE INSERT ON ancestry_speed_traits
+BEGIN
+    SELECT
+        CASE
+        WHEN NEW.amount IS NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NOT NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_REQUIRED')
+        WHEN NEW.amount IS NOT NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_FORBIDDEN')
+        END;
+END;
+
+CREATE TRIGGER validate_ancestry_sense_units BEFORE INSERT ON ancestry_senses
+BEGIN
+    SELECT
+        CASE
+        WHEN NEW.amount IS NULL AND (SELECT unit FROM senses WHERE id = NEW.sense_id) IS NOT NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_REQUIRED')
+        WHEN NEW.amount IS NOT NULL AND (SELECT unit FROM senses WHERE id = NEW.sense_id) IS NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_FORBIDDEN')
+        END;
+END;
+
+CREATE TRIGGER validate_level_speed_trait_units BEFORE INSERT ON level_speed_traits
 BEGIN
     SELECT
         CASE

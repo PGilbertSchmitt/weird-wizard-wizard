@@ -8,7 +8,7 @@ export const createLanguage = async (record: LanguageRecord) => {
     Tables.LANGUAGES,
     await dbExecute(
       `
-INSERT INTO languages (
+INSERT INTO ${Tables.LANGUAGES} (
   name, description, secret
 ) VALUES ($1, $2, $3)
   ON CONFLICT(name) DO UPDATE SET description=excluded.description`,
@@ -20,7 +20,7 @@ INSERT INTO languages (
 export const createImmunity = async (name: string) => {
   return id(
     Tables.IMMUNITIES,
-    await dbExecute(`INSERT INTO immunities (name) VALUES ($1)`, [name]),
+    await dbExecute(`INSERT INTO ${Tables.IMMUNITIES} (name) VALUES ($1)`, [name]),
   );
 };
 

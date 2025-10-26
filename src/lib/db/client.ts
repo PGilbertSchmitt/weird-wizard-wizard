@@ -55,6 +55,7 @@ export const Tables = {
   LEVEL_TALENTS: 'level_talents',
   LEVEL_TRADITIONS: 'level_traditions',
   LEVEL_LANGUAGES: 'level_languages',
+  LEVEL_SPEED_TRAITS: 'level_speed_traits',
   TALENTS: 'talents',
   SPELLS: 'spells',
   TRADITIONS: 'traditions',
@@ -86,6 +87,7 @@ export const CLEAR_TABLES: TableName[] = [
   'level_languages',
   'level_talents',
   'level_traditions',
+  'level_speed_traits',
 
   // References paths
   'levels',

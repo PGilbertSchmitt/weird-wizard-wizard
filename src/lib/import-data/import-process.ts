@@ -15,8 +15,13 @@ import {
   createAncestryLanguage,
   createAncestrySense,
   createAncestrySpeedTrait,
+  createLevelLanguage,
+  createLevelSpeedTrait,
 } from '../db/junctions';
 import { CLEAR_TABLES, dbExecute } from '../db/client';
+import { createNonNovicePath, createNovicePath } from '../db/paths';
+import { PathKinds } from '../db/enums';
+import { createLevel } from '../db/levels';
 
 type IdMap = Map<string, number>;
 
@@ -29,14 +34,14 @@ export const importProcess = async (
   const totalRecords = countRecords(data);
   let currentRecords = 0;
   let currentPercentage = -1;
-  let currentTable = 'Profession Categories';
+  let currentWork = 'Profession';
 
   const trackProgress = () => {
     currentRecords++;
     const newPercent = Math.floor((currentRecords / totalRecords) * 100);
     if (newPercent > currentPercentage) {
       currentPercentage = newPercent;
-      onProgress(currentTable, currentPercentage);
+      onProgress(currentWork, currentPercentage);
     }
   };
 
@@ -50,8 +55,6 @@ export const importProcess = async (
     }),
   );
 
-  currentTable = 'Professions';
-
   await Promise.all(
     onlyOks(data.professions).map(async (record) => {
       await createProfession(record);
@@ -59,7 +62,7 @@ export const importProcess = async (
     }),
   );
 
-  currentTable = 'Languages';
+  currentWork = 'Ancestries';
 
   const languageMap: IdMap = new Map(
     await Promise.all(
@@ -71,8 +74,6 @@ export const importProcess = async (
     ),
   );
 
-  currentTable = 'Speed Traits';
-
   const speedTraitMap: IdMap = new Map(
     await Promise.all(
       onlyOks(data.speedTraits).map(async (record) => {
@@ -83,8 +84,6 @@ export const importProcess = async (
     ),
   );
 
-  currentTable = 'Senses';
-
   const senseMap: IdMap = new Map(
     await Promise.all(
       onlyOks(data.senses).map(async (record) => {
@@ -94,8 +93,6 @@ export const importProcess = async (
       }),
     ),
   );
-
-  currentTable = 'Ancestries';
 
   const ancestries = onlyOks(data.ancestries);
   const immunities = uniq(flatten(ancestries.map((a) => a.immunities)));
@@ -108,29 +105,83 @@ export const importProcess = async (
     ),
   );
 
+  const ancestryMap: IdMap = new Map(
+    await Promise.all(
+      ancestries.map(async (ancestry) => {
+        const ancestryId = await createAncestry(ancestry);
+        const ancestryName = ancestry.ancestry;
+
+        await Promise.all([
+          ...ancestry.languages.map(
+            associateAncestryLanguage(languageMap, ancestryId, ancestryName),
+          ),
+          ...ancestry.speed_traits.map(
+            associateAncestrySpeedTraits(
+              speedTraitMap,
+              ancestryId,
+              ancestryName,
+            ),
+          ),
+          ...ancestry.senses.map(
+            associateAncestrySenses(senseMap, ancestryId, ancestryName),
+          ),
+          ...ancestry.immunities.map(
+            associateAncestryImmunity(immunityMap, ancestryId, ancestryName),
+          ),
+        ]);
+        return [ancestryName, ancestryId] as const;
+      }),
+    ),
+  );
+
+  currentWork = 'Paths and Levels';
+
+  const pathMap: IdMap = new Map(
+    await Promise.all([
+      ...onlyOks(data.novicePaths).map(async (novicePath) => {
+        const ancestryId = ancestryMap.get(novicePath.name);
+        const pathId = await createNovicePath(novicePath, ancestryId);
+        return [novicePath.name, pathId] as const;
+      }),
+      ...onlyOks(data.expertPaths).map(async (expertPath) => {
+        const pathId = await createNonNovicePath(expertPath, PathKinds.EXPERT);
+        return [expertPath.name, pathId] as const;
+      }),
+      ...onlyOks(data.masterPaths).map(async (masterPath) => {
+        const pathId = await createNonNovicePath(masterPath, PathKinds.MASTER);
+        return [masterPath.name, pathId] as const;
+      }),
+    ]),
+  );
+
   await Promise.all(
-    ancestries.map(async (ancestry) => {
-      const ancestryId = await createAncestry(ancestry);
-      const ancestryName = ancestry.ancestry;
+    onlyOks([
+      ...data.noviceLevels,
+      ...data.expertLevels,
+      ...data.masterLevels,
+    ]).map(async (level) => {
+      const pathId = pathMap.get(level.path);
+      if (!pathId) {
+        throw new Error(
+          `Failed to associate a level with path named '${level.path}', no such such path was found`,
+        );
+      }
+
+      const levelId = await createLevel(level, pathId);
+      const levelLabel = `${level.path}:${level.level}`;
 
       await Promise.all([
-        ...ancestry.languages.map(
-          associateLanguage(languageMap, ancestryId, ancestryName),
+        ...level.languages.map(
+          associateLevelLanguages(languageMap, levelId, levelLabel),
         ),
-        ...ancestry.speed_traits.map(
-          associateSpeedTraits(speedTraitMap, ancestryId, ancestryName),
-        ),
-        ...ancestry.senses.map(
-          associatedSenses(senseMap, ancestryId, ancestryName),
-        ),
-        ...ancestry.immunities.map(
-          associateImmunity(immunityMap, ancestryId, ancestryName),
+        ...level.speed_traits.map(
+          associateLevelSpeedTraits(speedTraitMap, levelId, levelLabel),
         ),
       ]);
     }),
   );
 
-  console.log(speedTraitMap);
+  console.log('Done!');
 };
 
 const onlyOks = <T>(res: Array<Result<T, unknown>>): T[] => {
@@ -167,49 +218,94 @@ const destroyAll = async () => {
   }
 };
 
-const checkAncestryAssociationId = (tableLabel: string, recordLabel: string, ancestryName: string, id?: number): id is number => {
-  if (isNil(id)) {
-    throw new Error(
-      `Tried to associate a ${tableLabel} named '${recordLabel}' with ancestry '${ancestryName}', but no '${recordLabel}' ${tableLabel} record was found`,
-    );
-  }
-  return true;
-};
+// This looks a little horrendous, but hey, that's DRY
+const checkAssociationId =
+  (centralTable: string) =>
+  (
+    tableLabel: string,
+    recordLabel: string,
+    centralRecordLabel: string,
+    id?: number,
+  ): id is number => {
+    if (isNil(id)) {
+      throw new Error(
+        `Failed to associate a ${tableLabel} named '${recordLabel}' with a ${centralTable} named '${centralRecordLabel}', no '${recordLabel}' ${tableLabel} record was found`,
+      );
+    }
+    return true;
+  };
 
-const associateLanguage =
+const checkAncestryAssociationId = checkAssociationId('ancestry');
+const checkLevelAssociationId = checkAssociationId('level');
+
+const associateAncestryLanguage =
   (languageMap: IdMap, ancestryId: number, ancestryName: string) =>
-  async (lang: string) => {
-    const langId = languageMap.get(lang);
-    if (checkAncestryAssociationId('language', lang, ancestryName, langId)) {
+  async (language: string) => {
+    const langId = languageMap.get(language);
+    if (
+      checkAncestryAssociationId('language', language, ancestryName, langId)
+    ) {
       await createAncestryLanguage(ancestryId, langId);
     }
   };
 
-const associateSpeedTraits =
+const associateAncestrySpeedTraits =
   (speedTraitMap: IdMap, ancestryId: number, ancestryName: string) =>
   async (trait: string) => {
     const [traitLabel, traitAmount] = extractUnitAmount(trait);
     const speedTraitId = speedTraitMap.get(traitLabel);
-    if (checkAncestryAssociationId('speed trait', traitLabel, ancestryName, speedTraitId)) {
+    if (
+      checkAncestryAssociationId(
+        'speed trait',
+        traitLabel,
+        ancestryName,
+        speedTraitId,
+      )
+    ) {
       await createAncestrySpeedTrait(ancestryId, speedTraitId, traitAmount);
     }
   };
 
-const associatedSenses =
+const associateAncestrySenses =
   (senseMap: IdMap, ancestryId: number, ancestryName: string) =>
   async (sense: string) => {
     const [senseLabel, senseAmount] = extractUnitAmount(sense);
     const senseId = senseMap.get(senseLabel);
-    if (checkAncestryAssociationId('sense', senseLabel, ancestryName, senseId)) {
+    if (
+      checkAncestryAssociationId('sense', senseLabel, ancestryName, senseId)
+    ) {
       await createAncestrySense(ancestryId, senseId, senseAmount);
     }
   };
 
-const associateImmunity =
+const associateAncestryImmunity =
   (immunityMap: IdMap, ancestryId: number, ancestryName: string) =>
   async (immunity: string) => {
     const immunityId = immunityMap.get(immunity);
-    if (checkAncestryAssociationId('immunity', immunity, ancestryName, immunityId)) {
+    if (
+      checkAncestryAssociationId('immunity', immunity, ancestryName, immunityId)
+    ) {
       await createAncestryImmunity(ancestryId, immunityId);
+    }
+  };
+
+const associateLevelLanguages =
+  (languageMap: IdMap, levelId: number, levelLabel: string) =>
+  async (language: string) => {
+    const langId = languageMap.get(language);
+    if (checkLevelAssociationId('language', language, levelLabel, langId)) {
+      await createLevelLanguage(levelId, langId);
+    }
+  };
+
+const associateLevelSpeedTraits =
+  (speedTraitMap: IdMap, levelId: number, levelLabel: string) =>
+  async (trait: string) => {
+    const [traitLabel, traitAmount] = extractUnitAmount(trait);
+    const traitId = speedTraitMap.get(traitLabel);
+    if (
+      checkLevelAssociationId('speed trait', traitLabel, levelLabel, traitId)
+    ) {
+      await createLevelSpeedTrait(levelId, traitId, traitAmount);
     }
   };
