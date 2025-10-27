@@ -2,6 +2,7 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
@@ -28,9 +29,19 @@ export const ImportLoadProgress = ({
         </AlertDialogTitle>
       </AlertDialogHeader>
       {done ? (
-        <AlertDialogAction onClick={onOk}>Ok</AlertDialogAction>
+        <>
+          <AlertDialogDescription>
+            All records successfully imported
+          </AlertDialogDescription>
+          <AlertDialogAction onClick={onOk}>Ok</AlertDialogAction>
+        </>
       ) : (
-        <Progress value={currentPercent} />
+        <>
+          <AlertDialogDescription>
+            Import at {currentPercent}% completed
+          </AlertDialogDescription>
+          <Progress value={currentPercent} />
+        </>
       )}
     </AlertDialogContent>
   </AlertDialog>

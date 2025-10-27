@@ -1,7 +1,7 @@
 // import { CSVParseResults } from './import-utils';
 import { ImportData } from '.';
 import { Result } from 'neverthrow';
-import { flatten, isNil, sum, uniq, values } from 'ramda';
+import { flatten, isNil, sum, toPairs, uniq, values } from 'ramda';
 import { createProfession, createProfessionCategory } from '../db/professions';
 import {
   createImmunity,
@@ -20,8 +20,14 @@ import {
 } from '../db/junctions';
 import { CLEAR_TABLES, dbExecute } from '../db/client';
 import { createNonNovicePath, createNovicePath } from '../db/paths';
-import { PathKinds } from '../db/enums';
+import { PathKinds, TableType } from '../db/enums';
 import { createLevel } from '../db/levels';
+import {
+  createInfoTable,
+  createInfoTableRows,
+  createOptionBlock,
+  createOptionBlockRows,
+} from '../db/tables-and-options';
 
 type IdMap = Map<string, number>;
 
@@ -36,8 +42,8 @@ export const importProcess = async (
   let currentPercentage = -1;
   let currentWork = 'Profession';
 
-  const trackProgress = () => {
-    currentRecords++;
+  const trackProgress = (count = 1) => {
+    currentRecords += count;
     const newPercent = Math.floor((currentRecords / totalRecords) * 100);
     if (newPercent > currentPercentage) {
       currentPercentage = newPercent;
@@ -185,6 +191,75 @@ export const importProcess = async (
       trackProgress();
     }),
   );
+
+  currentWork = 'Tables and Info Blocks';
+
+  const optionBlocks = onlyOks(data.magicOptions).reduce(
+    (acc: Record<string, string[]>, row) => {
+      acc[row.options_id] ||= [];
+      acc[row.options_id].push(row.description);
+      return acc;
+    },
+    {},
+  );
+  const optionBlockMap: IdMap = new Map(
+    await Promise.all(
+      toPairs(optionBlocks).map(async ([label, opts]) => {
+        const blockId = await createOptionBlock(label);
+        await createOptionBlockRows(blockId, opts);
+        trackProgress(opts.length);
+        return [label, blockId] as const;
+      }),
+    ),
+  );
+
+  type TableRow = Record<
+    string,
+    {
+      tableType: TableType;
+      keyLabel: string;
+      valueLabel: string;
+      rows: Array<{ key: string; value: string }>;
+    }
+  >;
+  const magicTables = onlyOks(data.magicTables).reduce((acc: TableRow, row) => {
+    const tableData = acc[row.table_id];
+    if (tableData) {
+      tableData.rows.push({
+        key: row.key,
+        value: row.value,
+      });
+    } else {
+      if (isNil(row.table_type)) {
+        throw new Error(
+          `Failed to create table ${row.table_id}, first row definition for this table needs to have a table_type`,
+        );
+      }
+      acc[row.table_id] = {
+        tableType: row.table_type,
+        keyLabel: row.key,
+        valueLabel: row.value,
+        rows: [],
+      };
+    }
+    return acc;
+  }, {});
+  const magicTableMap: IdMap = new Map(
+    await Promise.all(
+      toPairs(magicTables).map(async ([label, table]) => {
+        const tableId = await createInfoTable(
+          label,
+          table.tableType,
+          table.keyLabel,
+          table.valueLabel,
+        );
+        await createInfoTableRows(tableId, table.rows);
+        return [label, tableId] as const;
+      }),
+    ),
+  );
+
+  console.log(optionBlockMap, magicTableMap);
 };
 
 const onlyOks = <T>(res: Array<Result<T, unknown>>): T[] => {

@@ -109,11 +109,11 @@ CREATE TABLE levels (
 
 CREATE UNIQUE INDEX unique_levels ON levels (path, level);
 
-CREATE TABLE level_talents (
-    level_id    REFERENCES levels(id) NOT NULL,
-    talent_id   REFERENCES talents(id) NOT NULL,
-    PRIMARY KEY (level_id, talent_id)
-);
+-- CREATE TABLE level_talents (
+--     level_id    REFERENCES levels(id) NOT NULL,
+--     talent_id   REFERENCES talents(id) NOT NULL,
+--     PRIMARY KEY (level_id, talent_id)
+-- );
 
 CREATE TABLE level_traditions (
     level_id     REFERENCES levels(id) NOT NULL,
@@ -134,12 +134,17 @@ CREATE TABLE level_speed_traits (
     PRIMARY KEY    (level_id, speed_trait_id)
 );
 
--- Both magical-based and path-based talents are stored in this table
--- May need to consider uniqueness on combination of name and something else,
--- in case there are 2 talents for different paths/traditions that share
--- a name.
-CREATE TABLE talents (
+CREATE TABLE traditions (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL UNIQUE,
+    blurb         TEXT NOT NULL,
+    description   TEXT NOT NULL,
+    info_table_id REFERENCES info_tables(id)
+);
+
+CREATE TABLE magic_talents (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    tradition_id    REFERENCES traditions(id) NOT NULL,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
     magical         BOOL NOT NULL,
@@ -163,34 +168,28 @@ CREATE TABLE spells (
     option_block_id REFERENCES option_blocks(id)
 );
 
-CREATE TABLE traditions (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    name          TEXT NOT NULL UNIQUE,
-    blurb         TEXT NOT NULL,
-    description   TEXT NOT NULL,
-    info_table_id REFERENCES info_tables(id)
-);
-
 CREATE TABLE tradition_special_info (
     tradition_id REFERENCES traditions(id) NOT NULL,
     info         TEXT NOT NULL
 );
 
 CREATE TABLE info_tables (
-    id   INTEGER PRIMARY KEY AUTOINCREMENT,
-    kind TEXT CHECK (kind IN ('TABLE', 'BLOCK', 'ROLL')) NOT NULL,
-    name TEXT NOT NULL UNIQUE
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    kind        TEXT CHECK (kind IN ('TABLE', 'BLOCK', 'ROLL')) NOT NULL,
+    key_label   TEXT NOT NULL,
+    value_label TEXT NOT NULL
 );
 
-CREATE TABLE info_table_row (
+CREATE TABLE info_table_rows (
     info_table_id REFERENCES info_tables(id) NOT NULL,
-    label         TEXT NOT NULL,
+    key           TEXT NOT NULL,
     value         TEXT NOT NULL
 );
 
 CREATE TABLE option_blocks (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE option_block_rows (
@@ -204,8 +203,8 @@ CREATE TABLE activate_tags (
     description TEXT NOT NULL
 );
 
-CREATE TABLE talent_activations (
-    talent_id       REFERENCES talents(id) NOT NULL,
+CREATE TABLE magic_talent_activations (
+    talent_id       REFERENCES magic_talents(id) NOT NULL,
     activate_tag_id REFERENCES activate_tags(id) NOT NULL,
     PRIMARY KEY (talent_id, activate_tag_id)
 );

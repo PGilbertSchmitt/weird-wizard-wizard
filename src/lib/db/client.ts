@@ -52,20 +52,20 @@ export const Tables = {
   ANCESTRY_IMMUNITIES: 'ancestry_immunities',
   PATHS: 'paths',
   LEVELS: 'levels',
-  LEVEL_TALENTS: 'level_talents',
+  // LEVEL_TALENTS: 'level_talents',
   LEVEL_TRADITIONS: 'level_traditions',
   LEVEL_LANGUAGES: 'level_languages',
   LEVEL_SPEED_TRAITS: 'level_speed_traits',
-  TALENTS: 'talents',
-  SPELLS: 'spells',
   TRADITIONS: 'traditions',
+  MAGIC_TALENTS: 'magic_talents',
+  SPELLS: 'spells',
   TRADITION_SPECIAL_INFO: 'tradition_special_info',
   INFO_TABLES: 'info_tables',
-  INFO_TABLE_ROW: 'info_table_row',
+  INFO_TABLE_ROWS: 'info_table_rows',
   OPTION_BLOCKS: 'option_blocks',
   OPTION_BLOCK_ROWS: 'option_block_rows',
   ACTIVATE_TAGS: 'activate_tags',
-  TALENT_ACTIVATIONS: 'talent_activations',
+  MAGIC_TALENT_ACTIVATIONS: 'magic_talent_activations',
   CHARACTERS: 'characters',
 } as const;
 
@@ -85,7 +85,7 @@ export const CLEAR_TABLES: TableName[] = [
 
   // Junctions between levels and attribute tables
   'level_languages',
-  'level_talents',
+  // 'level_talents',
   'level_traditions',
   'level_speed_traits',
 
@@ -99,13 +99,13 @@ export const CLEAR_TABLES: TableName[] = [
   'tradition_special_info',
 
   // References talents
-  'talent_activations',
+  'magic_talent_activations',
 
   // References info_tables, option_blocks, or both
-  'talents',
+  'magic_talents',
   'spells',
   'traditions',
-  'info_table_row',
+  'info_table_rows',
   'option_block_rows',
 
   // No dependencies
