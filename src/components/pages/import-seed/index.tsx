@@ -7,7 +7,6 @@ import { importProcess } from '@/lib/import-data/import-process';
 import { ExtractErrorAlert } from './extract-error';
 import { useState } from 'react';
 import {
-  ExtractError,
   extractFromBuffer,
   extractFromFilename,
   ExtractResult,
@@ -15,11 +14,12 @@ import {
 import { ImportData } from '@/lib/import-data';
 import { fromPairs, toPairs } from 'ramda';
 import { ImportLoadProgress } from './import-status';
+import { ImportError } from '@/lib/import-data/import-error';
 
 export const ImportSeed = () => {
   const [fileSource, setFileSource] = useState<string | null>(null);
   const [csvData, setCsvData] = useState<ImportData | null>(null);
-  const [alertInfo, setAlertInfo] = useState<ExtractError | null>(null);
+  const [alertInfo, setAlertInfo] = useState<ImportError | null>(null);
   const [importing, setImporting] = useState(false);
   const [currentItem, setCurrentItem] = useState('');
   const [currentPercent, setCurrentPercent] = useState(0);
@@ -52,6 +52,37 @@ export const ImportSeed = () => {
       setCsvData(null);
       setFileSource(null);
     }
+  };
+
+  const onReset = () => {
+    setFileSource(null);
+    setCsvData(null);
+    setCurrentItem('');
+    setCurrentPercent(0);
+    setImporting(false);
+  };
+
+  const onImportStart = (csvData: ImportData) => {
+    setImporting(true);
+    importProcess(csvData, (item, percent) => {
+      setCurrentItem(item);
+      setCurrentPercent(percent);
+    })
+      .then((res) => {
+        onReset();
+        if (res.isOk()) {
+          setDone(true);
+        } else {
+          setAlertInfo(res.error);
+        }
+      })
+      .catch((err) => {
+        onReset();
+        setAlertInfo({
+          title: 'Unexpected DB Error',
+          message: `${err}`,
+        });
+      });
   };
 
   return (
@@ -100,29 +131,14 @@ export const ImportSeed = () => {
             <Button
               className={cn('w-10 mr-2')}
               disabled={importing}
-              onClick={() => {
-                setCsvData(null);
-                setFileSource(null);
-              }}
+              onClick={onReset}
             >
               <Trash size="20px" strokeWidth="1.2px" />
             </Button>
             <Button
               className={cn('w-full')}
               disabled={importing}
-              onClick={() => {
-                setImporting(true);
-                importProcess(csvData, (item, percent) => {
-                  setCurrentItem(item);
-                  setCurrentPercent(percent);
-                }).then(() => {
-                  setDone(true);
-                  setFileSource(null);
-                  setCsvData(null);
-                  setCurrentItem('');
-                  setCurrentPercent(0);
-                });
-              }}
+              onClick={() => onImportStart(csvData)}
             >
               Import
             </Button>
@@ -132,7 +148,17 @@ export const ImportSeed = () => {
         {alertInfo && (
           <ExtractErrorAlert
             error={alertInfo}
-            onOk={() => setAlertInfo(null)}
+            onCancel={() => {
+              onReset();
+              setAlertInfo(null);
+            }}
+            canContinue={!!csvData}
+            onOk={() => {
+              if (csvData) {
+                onImportStart(csvData);
+                setAlertInfo(null);
+              }
+            }}
           />
         )}
 

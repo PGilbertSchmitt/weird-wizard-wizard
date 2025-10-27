@@ -1,32 +1,52 @@
 import { toPairs } from 'ramda';
-import { ExtractError } from '../../../lib/import-data/unzip';
 import {
   AlertDialog,
+  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ImportError } from '@/lib/import-data/import-error';
 
 interface ExtractErrorAlertProps {
-  error: ExtractError;
+  error: ImportError;
+  canContinue: boolean;
   onOk: () => void;
+  onCancel: () => void;
 }
 
-export const ExtractErrorAlert = ({ error, onOk }: ExtractErrorAlertProps) => (
-  <AlertDialog open>
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>{error.title}</AlertDialogTitle>
-      </AlertDialogHeader>
-      <RenderError error={error} />
-      <AlertDialogCancel onClick={onOk}>Ok</AlertDialogCancel>
-    </AlertDialogContent>
-  </AlertDialog>
-);
+export const ExtractErrorAlert = ({
+  error,
+  canContinue,
+  onOk,
+  onCancel,
+}: ExtractErrorAlertProps) => {
+  return (
+    <AlertDialog open>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{error.title}</AlertDialogTitle>
+        </AlertDialogHeader>
+        <RenderError error={error} />
+        <AlertDialogFooter>
+          {canContinue ? (
+            <>
+              <AlertDialogAction onClick={onOk}>Continue</AlertDialogAction>
+              <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+            </>
+          ) : (
+            <AlertDialogCancel onClick={onCancel}>Ok</AlertDialogCancel>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
 
-const RenderError = ({ error }: { error: ExtractError }) => {
+const RenderError = ({ error }: { error: ImportError }) => {
   if ('body' in error) {
     return (
       <>

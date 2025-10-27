@@ -1,6 +1,6 @@
 // import { CSVParseResults } from './import-utils';
 import { ImportData } from '.';
-import { Result } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 import { flatten, isNil, sum, toPairs, uniq, values } from 'ramda';
 import { createProfession, createProfessionCategory } from '../db/professions';
 import {
@@ -28,238 +28,258 @@ import {
   createOptionBlock,
   createOptionBlockRows,
 } from '../db/tables-and-options';
+import { ImportError } from './import-error';
 
 type IdMap = Map<string, number>;
+
+type DbResult = Result<number, ImportError>;
 
 export const importProcess = async (
   data: ImportData,
   onProgress: (workingOn: string, percent: number) => void,
-) => {
-  await destroyAll();
+): Promise<DbResult> => {
+  try {
+    await destroyAll();
 
-  const totalRecords = countRecords(data);
-  let currentRecords = 0;
-  let currentPercentage = -1;
-  let currentWork = 'Profession';
+    const totalRecords = countRecords(data);
+    let currentRecords = 0;
+    let currentPercentage = -1;
+    let currentWork = 'Profession';
 
-  const trackProgress = (count = 1) => {
-    currentRecords += count;
-    const newPercent = Math.floor((currentRecords / totalRecords) * 100);
-    if (newPercent > currentPercentage) {
-      currentPercentage = newPercent;
-      onProgress(currentWork, currentPercentage);
-    }
-  };
+    const trackProgress = (count = 1) => {
+      currentRecords += count;
+      const newPercent = Math.floor((currentRecords / totalRecords) * 100);
+      if (newPercent > currentPercentage) {
+        currentPercentage = newPercent;
+        onProgress(currentWork, currentPercentage);
+      }
+    };
 
-  // Initial progress update
-  trackProgress();
+    // Initial progress update
+    trackProgress();
 
-  await Promise.all(
-    onlyOks(data.professionCategories).map(async (record) => {
-      await createProfessionCategory(record);
-      trackProgress();
-    }),
-  );
-
-  await Promise.all(
-    onlyOks(data.professions).map(async (record) => {
-      await createProfession(record);
-      trackProgress();
-    }),
-  );
-
-  currentWork = 'Ancestries';
-
-  const languageMap: IdMap = new Map(
     await Promise.all(
-      onlyOks(data.languages).map(async (record) => {
-        const langId = await createLanguage(record);
+      onlyOks(data.professionCategories).map(async (record) => {
+        await createProfessionCategory(record);
         trackProgress();
-        return [record.name, langId] as const;
       }),
-    ),
-  );
+    );
 
-  const speedTraitMap: IdMap = new Map(
     await Promise.all(
-      onlyOks(data.speedTraits).map(async (record) => {
-        const speedTraitId = await createSpeedTrait(record);
+      onlyOks(data.professions).map(async (record) => {
+        await createProfession(record);
         trackProgress();
-        return [record.name, speedTraitId] as const;
       }),
-    ),
-  );
+    );
 
-  const senseMap: IdMap = new Map(
-    await Promise.all(
-      onlyOks(data.senses).map(async (record) => {
-        const senseId = await createSense(record);
-        trackProgress();
-        return [record.name, senseId] as const;
-      }),
-    ),
-  );
+    currentWork = 'Ancestries';
 
-  const ancestries = onlyOks(data.ancestries);
-  const immunities = uniq(flatten(ancestries.map((a) => a.immunities)));
-  const immunityMap: IdMap = new Map(
-    await Promise.all(
-      immunities.map(async (immunity) => {
-        const immunityId = await createImmunity(immunity);
-        return [immunity, immunityId] as const;
-      }),
-    ),
-  );
+    const languageMap: IdMap = new Map(
+      await Promise.all(
+        onlyOks(data.languages).map(async (record) => {
+          const langId = await createLanguage(record);
+          trackProgress();
+          return [record.name, langId] as const;
+        }),
+      ),
+    );
 
-  const ancestryMap: IdMap = new Map(
+    const speedTraitMap: IdMap = new Map(
+      await Promise.all(
+        onlyOks(data.speedTraits).map(async (record) => {
+          const speedTraitId = await createSpeedTrait(record);
+          trackProgress();
+          return [record.name, speedTraitId] as const;
+        }),
+      ),
+    );
+
+    const senseMap: IdMap = new Map(
+      await Promise.all(
+        onlyOks(data.senses).map(async (record) => {
+          const senseId = await createSense(record);
+          trackProgress();
+          return [record.name, senseId] as const;
+        }),
+      ),
+    );
+
+    const ancestries = onlyOks(data.ancestries);
+    const immunities = uniq(flatten(ancestries.map((a) => a.immunities)));
+    const immunityMap: IdMap = new Map(
+      await Promise.all(
+        immunities.map(async (immunity) => {
+          const immunityId = await createImmunity(immunity);
+          return [immunity, immunityId] as const;
+        }),
+      ),
+    );
+
+    const ancestryMap: IdMap = new Map(
+      await Promise.all(
+        ancestries.map(async (ancestry) => {
+          const ancestryId = await createAncestry(ancestry);
+          const ancestryName = ancestry.ancestry;
+
+          await Promise.all([
+            ...ancestry.languages.map(
+              associateAncestryLanguage(languageMap, ancestryId, ancestryName),
+            ),
+            ...ancestry.speed_traits.map(
+              associateAncestrySpeedTraits(
+                speedTraitMap,
+                ancestryId,
+                ancestryName,
+              ),
+            ),
+            ...ancestry.senses.map(
+              associateAncestrySenses(senseMap, ancestryId, ancestryName),
+            ),
+            ...ancestry.immunities.map(
+              associateAncestryImmunity(immunityMap, ancestryId, ancestryName),
+            ),
+          ]);
+          trackProgress();
+          return [ancestryName, ancestryId] as const;
+        }),
+      ),
+    );
+
+    currentWork = 'Paths and Levels';
+
+    const pathMap: IdMap = new Map(
+      await Promise.all([
+        ...onlyOks(data.novicePaths).map(async (novicePath) => {
+          const ancestryId = ancestryMap.get(novicePath.name);
+          const pathId = await createNovicePath(novicePath, ancestryId);
+          trackProgress();
+          return [novicePath.name, pathId] as const;
+        }),
+        ...onlyOks(data.expertPaths).map(async (expertPath) => {
+          const pathId = await createNonNovicePath(
+            expertPath,
+            PathKinds.EXPERT,
+          );
+          trackProgress();
+          return [expertPath.name, pathId] as const;
+        }),
+        ...onlyOks(data.masterPaths).map(async (masterPath) => {
+          const pathId = await createNonNovicePath(
+            masterPath,
+            PathKinds.MASTER,
+          );
+          trackProgress();
+          return [masterPath.name, pathId] as const;
+        }),
+      ]),
+    );
+
     await Promise.all(
-      ancestries.map(async (ancestry) => {
-        const ancestryId = await createAncestry(ancestry);
-        const ancestryName = ancestry.ancestry;
+      onlyOks([
+        ...data.noviceLevels,
+        ...data.expertLevels,
+        ...data.masterLevels,
+      ]).map(async (level) => {
+        const pathId = pathMap.get(level.path);
+        if (!pathId) {
+          throw new Error(
+            `Failed to associate a level with path named '${level.path}', no such such path was found`,
+          );
+        }
+
+        const levelId = await createLevel(level, pathId);
+        const levelLabel = `${level.path}:${level.level}`;
 
         await Promise.all([
-          ...ancestry.languages.map(
-            associateAncestryLanguage(languageMap, ancestryId, ancestryName),
+          ...level.languages.map(
+            associateLevelLanguages(languageMap, levelId, levelLabel),
           ),
-          ...ancestry.speed_traits.map(
-            associateAncestrySpeedTraits(
-              speedTraitMap,
-              ancestryId,
-              ancestryName,
-            ),
-          ),
-          ...ancestry.senses.map(
-            associateAncestrySenses(senseMap, ancestryId, ancestryName),
-          ),
-          ...ancestry.immunities.map(
-            associateAncestryImmunity(immunityMap, ancestryId, ancestryName),
+          ...level.speed_traits.map(
+            associateLevelSpeedTraits(speedTraitMap, levelId, levelLabel),
           ),
         ]);
         trackProgress();
-        return [ancestryName, ancestryId] as const;
       }),
-    ),
-  );
+    );
 
-  currentWork = 'Paths and Levels';
+    currentWork = 'Tables and Info Blocks';
 
-  const pathMap: IdMap = new Map(
-    await Promise.all([
-      ...onlyOks(data.novicePaths).map(async (novicePath) => {
-        const ancestryId = ancestryMap.get(novicePath.name);
-        const pathId = await createNovicePath(novicePath, ancestryId);
-        trackProgress();
-        return [novicePath.name, pathId] as const;
-      }),
-      ...onlyOks(data.expertPaths).map(async (expertPath) => {
-        const pathId = await createNonNovicePath(expertPath, PathKinds.EXPERT);
-        trackProgress();
-        return [expertPath.name, pathId] as const;
-      }),
-      ...onlyOks(data.masterPaths).map(async (masterPath) => {
-        const pathId = await createNonNovicePath(masterPath, PathKinds.MASTER);
-        trackProgress();
-        return [masterPath.name, pathId] as const;
-      }),
-    ]),
-  );
+    const optionBlocks = onlyOks(data.magicOptions).reduce(
+      (acc: Record<string, string[]>, row) => {
+        acc[row.options_id] ||= [];
+        acc[row.options_id].push(row.description);
+        return acc;
+      },
+      {},
+    );
+    const optionBlockMap: IdMap = new Map(
+      await Promise.all(
+        toPairs(optionBlocks).map(async ([label, opts]) => {
+          const blockId = await createOptionBlock(label);
+          await createOptionBlockRows(blockId, opts);
+          trackProgress(opts.length);
+          return [label, blockId] as const;
+        }),
+      ),
+    );
 
-  await Promise.all(
-    onlyOks([
-      ...data.noviceLevels,
-      ...data.expertLevels,
-      ...data.masterLevels,
-    ]).map(async (level) => {
-      const pathId = pathMap.get(level.path);
-      if (!pathId) {
-        throw new Error(
-          `Failed to associate a level with path named '${level.path}', no such such path was found`,
-        );
+    type TableRow = Record<
+      string,
+      {
+        tableType: TableType;
+        keyLabel: string;
+        valueLabel: string;
+        rows: Array<{ key: string; value: string }>;
       }
+    >;
+    const magicTables = onlyOks(data.magicTables).reduce(
+      (acc: TableRow, row) => {
+        const tableData = acc[row.table_id];
+        if (tableData) {
+          tableData.rows.push({
+            key: row.key,
+            value: row.value,
+          });
+        } else {
+          if (isNil(row.table_type)) {
+            throw new Error(
+              `Failed to create table ${row.table_id}, first row definition for this table needs to have a table_type`,
+            );
+          }
+          acc[row.table_id] = {
+            tableType: row.table_type,
+            keyLabel: row.key,
+            valueLabel: row.value,
+            rows: [],
+          };
+        }
+        return acc;
+      },
+      {},
+    );
+    const magicTableMap: IdMap = new Map(
+      await Promise.all(
+        toPairs(magicTables).map(async ([label, table]) => {
+          const tableId = await createInfoTable(
+            label,
+            table.tableType,
+            table.keyLabel,
+            table.valueLabel,
+          );
+          await createInfoTableRows(tableId, table.rows);
+          return [label, tableId] as const;
+        }),
+      ),
+    );
 
-      const levelId = await createLevel(level, pathId);
-      const levelLabel = `${level.path}:${level.level}`;
-
-      await Promise.all([
-        ...level.languages.map(
-          associateLevelLanguages(languageMap, levelId, levelLabel),
-        ),
-        ...level.speed_traits.map(
-          associateLevelSpeedTraits(speedTraitMap, levelId, levelLabel),
-        ),
-      ]);
-      trackProgress();
-    }),
-  );
-
-  currentWork = 'Tables and Info Blocks';
-
-  const optionBlocks = onlyOks(data.magicOptions).reduce(
-    (acc: Record<string, string[]>, row) => {
-      acc[row.options_id] ||= [];
-      acc[row.options_id].push(row.description);
-      return acc;
-    },
-    {},
-  );
-  const optionBlockMap: IdMap = new Map(
-    await Promise.all(
-      toPairs(optionBlocks).map(async ([label, opts]) => {
-        const blockId = await createOptionBlock(label);
-        await createOptionBlockRows(blockId, opts);
-        trackProgress(opts.length);
-        return [label, blockId] as const;
-      }),
-    ),
-  );
-
-  type TableRow = Record<
-    string,
-    {
-      tableType: TableType;
-      keyLabel: string;
-      valueLabel: string;
-      rows: Array<{ key: string; value: string }>;
-    }
-  >;
-  const magicTables = onlyOks(data.magicTables).reduce((acc: TableRow, row) => {
-    const tableData = acc[row.table_id];
-    if (tableData) {
-      tableData.rows.push({
-        key: row.key,
-        value: row.value,
-      });
-    } else {
-      if (isNil(row.table_type)) {
-        throw new Error(
-          `Failed to create table ${row.table_id}, first row definition for this table needs to have a table_type`,
-        );
-      }
-      acc[row.table_id] = {
-        tableType: row.table_type,
-        keyLabel: row.key,
-        valueLabel: row.value,
-        rows: [],
-      };
-    }
-    return acc;
-  }, {});
-  const magicTableMap: IdMap = new Map(
-    await Promise.all(
-      toPairs(magicTables).map(async ([label, table]) => {
-        const tableId = await createInfoTable(
-          label,
-          table.tableType,
-          table.keyLabel,
-          table.valueLabel,
-        );
-        await createInfoTableRows(tableId, table.rows);
-        return [label, tableId] as const;
-      }),
-    ),
-  );
-
-  console.log(optionBlockMap, magicTableMap);
+    console.log(optionBlockMap, magicTableMap);
+    return ok(totalRecords);
+  } catch (error) {
+    return err({
+      title: 'DB Import Error',
+      message: `${error}`,
+    });
+  }
 };
 
 const onlyOks = <T>(res: Array<Result<T, unknown>>): T[] => {

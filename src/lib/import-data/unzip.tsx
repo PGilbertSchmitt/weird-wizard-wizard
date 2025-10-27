@@ -28,19 +28,9 @@ import {
   parseProfessionCategoryCSV,
   parseProfessionCSV,
 } from './profession-import';
+import { ImportError } from './import-error';
 
-export type ExtractError = {
-  title: string;
-} & (
-  | {
-      body: Record<string, string>;
-    }
-  | {
-      message: string | string[];
-    }
-);
-
-export type ExtractResult = Result<ImportData, ExtractError>;
+export type ExtractResult = Result<ImportData, ImportError>;
 
 export const extractFromFilename = async (
   filepath: string,
