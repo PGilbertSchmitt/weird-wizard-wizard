@@ -31,27 +31,27 @@ export const MagicTalentCharges = {
   ONE: 'One',
   // One at level one, two at level 3, and 3 at level 7
   ONE_TWO_THREE: 'OneTwoThree',
-};
+} as const;
 
 export type MagicTalentCharge = ValueOf<typeof MagicTalentCharges>;
 
-export const MagicTalenRestorations = {
+export const MagicTalentRestorations = {
   NONE: 'None',
-  LUCK_ENDS: 'LuckEnds',
+  LUCK_ENDS: 'Luck Ends',
   REST: 'Rest',
   DAY: 'Day',
   HOUR: 'Hour',
   MINUTE: 'Minute',
-  START_OF_NEXT_TURN: 'StartOfNextTurn',
-  END_OF_NEXT_TURN: 'EndOfNextTurn',
-};
+  START_OF_NEXT_TURN: 'Start Of Next Turn',
+  END_OF_NEXT_TURN: 'End Of Next Turn',
+} as const;
 
-export type MagicTalenRestoration = ValueOf<typeof MagicTalenRestorations>;
+export type MagicTalentRestoration = ValueOf<typeof MagicTalentRestorations>;
 
 export const TableTypes = {
   TABLE: 'TABLE',
   BLOCK: 'BLOCK',
   ROLL: 'ROLL',
-};
+} as const;
 
 export type TableType = ValueOf<typeof TableTypes>;

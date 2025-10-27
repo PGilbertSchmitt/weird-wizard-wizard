@@ -51,34 +51,34 @@ CREATE TABLE ancestries (
 );
 
 CREATE TABLE ancestry_languages (
-    ancestry_id REFERENCES ancestries(id) NOT NULL,
-    language_id REFERENCES languages(id) NOT NULL,
+    ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
+    language_id INTEGER REFERENCES languages(id) NOT NULL,
     PRIMARY KEY (ancestry_id, language_id)
 );
 
 CREATE TABLE ancestry_speed_traits (
-    ancestry_id    REFERENCES ancestries(id) NOT NULL,
-    speed_trait_id REFERENCES speed_traits(id) NOT NULL,
+    ancestry_id    INTEGER REFERENCES ancestries(id) NOT NULL,
+    speed_trait_id INTEGER REFERENCES speed_traits(id) NOT NULL,
     amount         TEXT, -- Optional, needed for Squeeze and Teleport
     PRIMARY KEY    (ancestry_id, speed_trait_id)
 );
 
 CREATE TABLE ancestry_senses (
-    ancestry_id REFERENCES ancestries(id) NOT NULL,
-    sense_id    REFERENCES senses(id) NOT NULL,
+    ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
+    sense_id    INTEGER REFERENCES senses(id) NOT NULL,
     amount      TEXT, -- Optional, needed for Awareness
     PRIMARY KEY (ancestry_id, sense_id)
 );
 
 CREATE TABLE ancestry_immunities (
-    ancestry_id REFERENCES ancestries(id) NOT NULL,
-    immunity_id REFERENCES immunities(id) NOT NULL,
+    ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
+    immunity_id INTEGER REFERENCES immunities(id) NOT NULL,
     PRIMARY KEY (ancestry_id, immunity_id)
 );
 
 -- CREATE TABLE ancestry_traits (
---     ancestry_id REFERENCES ancestries(id) NOT NULL,
---     trait_id    REFERENCES traits(id) NOT NULL,
+--     ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
+--     trait_id    INTEGER REFERENCES traits(id) NOT NULL,
 --     PRIMARY KEY (ancestry_id, trait_id)
 -- );
 
@@ -92,12 +92,12 @@ CREATE TABLE paths (
     req_agl     INTEGER,
     req_int     INTEGER,
     req_will    INTEGER,
-    ancestry    REFERENCES ancestries(id) -- A novice path with an Ancestry references locks the character to that specific Ancestry record
+    ancestry    INTEGER REFERENCES ancestries(id) -- A novice path with an Ancestry INTEGER REFERENCES locks the character to that specific Ancestry record
 );
 
 CREATE TABLE levels (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    path          REFERENCES paths(id) NOT NULL,
+    path          INTEGER REFERENCES paths(id) NOT NULL,
     level         INTEGER NOT NULL,
     add_health    INTEGER NOT NULL,
     add_nat_def   INTEGER DEFAULT 0,
@@ -110,26 +110,26 @@ CREATE TABLE levels (
 CREATE UNIQUE INDEX unique_levels ON levels (path, level);
 
 -- CREATE TABLE level_talents (
---     level_id    REFERENCES levels(id) NOT NULL,
---     talent_id   REFERENCES talents(id) NOT NULL,
+--     level_id    INTEGER REFERENCES levels(id) NOT NULL,
+--     talent_id   INTEGER REFERENCES talents(id) NOT NULL,
 --     PRIMARY KEY (level_id, talent_id)
 -- );
 
 CREATE TABLE level_traditions (
-    level_id     REFERENCES levels(id) NOT NULL,
-    tradition_id REFERENCES traditions(id) NOT NULL,
+    level_id     INTEGER REFERENCES levels(id) NOT NULL,
+    tradition_id INTEGER REFERENCES traditions(id) NOT NULL,
     PRIMARY KEY  (level_id, tradition_id)
 );
 
 CREATE TABLE level_languages (
-    level_id    REFERENCES levels(id) NOT NULL,
-    language_id REFERENCES languages(id) NOT NULL,
+    level_id    INTEGER REFERENCES levels(id) NOT NULL,
+    language_id INTEGER REFERENCES languages(id) NOT NULL,
     PRIMARY KEY (level_id, language_id)
 );
 
 CREATE TABLE level_speed_traits (
-    level_id       REFERENCES levels(id) NOT NULL,
-    speed_trait_id REFERENCES speed_traits(id) NOT NULL,
+    level_id       INTEGER REFERENCES levels(id) NOT NULL,
+    speed_trait_id INTEGER REFERENCES speed_traits(id) NOT NULL,
     amount         TEXT, -- Optional, needed for Squeeze and Teleport
     PRIMARY KEY    (level_id, speed_trait_id)
 );
@@ -139,24 +139,28 @@ CREATE TABLE traditions (
     name          TEXT NOT NULL UNIQUE,
     blurb         TEXT NOT NULL,
     description   TEXT NOT NULL,
-    info_table_id REFERENCES info_tables(id)
+    special_info  TEXT,
+    info_table_id INTEGER REFERENCES info_tables(id)
 );
 
-CREATE TABLE magic_talents (
+CREATE TABLE talents (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    tradition_id    REFERENCES traditions(id) NOT NULL,
+    tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
     magical         BOOL NOT NULL,
     charges         TEXT CHECK (charges IN ('None', 'One', 'OneTwoThree')) NOT NULL,
-    restore         TEXT CHECK (charges IN ('None', 'LuckEnds', 'Rest', 'Day', 'Hour', 'Minute', 'StartOfNextTurn', 'EndOfNextTurn')) NOT NULL,
-    info_table_id   REFERENCES info_tables(id),
-    option_block_id REFERENCES option_blocks(id)
+    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn')) NOT NULL,
+    info_table_id   INTEGER REFERENCES info_tables(id),
+    option_block_id INTEGER REFERENCES option_blocks(id)
 );
+
+CREATE UNIQUE INDEX unique_talents ON talents (tradition_id, name);
 
 CREATE TABLE spells (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    name            TEXT NOT NULL UNIQUE,
+    tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
+    name            TEXT NOT NULL,
     description     TEXT NOT NULL,
     path_kind       TEXT CHECK (path_kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
     castings        INTEGER NOT NULL,
@@ -164,14 +168,11 @@ CREATE TABLE spells (
     target          TEXT NOT NULL,
     condition       TEXT,
     ritual          BOOL NOT NULL,
-    info_table_id   REFERENCES info_tables(id),
-    option_block_id REFERENCES option_blocks(id)
+    info_table_id   INTEGER REFERENCES info_tables(id),
+    option_block_id INTEGER REFERENCES option_blocks(id)
 );
 
-CREATE TABLE tradition_special_info (
-    tradition_id REFERENCES traditions(id) NOT NULL,
-    info         TEXT NOT NULL
-);
+CREATE UNIQUE INDEX unique_spells ON spells (tradition_id, name);
 
 CREATE TABLE info_tables (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -182,7 +183,7 @@ CREATE TABLE info_tables (
 );
 
 CREATE TABLE info_table_rows (
-    info_table_id REFERENCES info_tables(id) NOT NULL,
+    info_table_id INTEGER REFERENCES info_tables(id) NOT NULL,
     key           TEXT NOT NULL,
     value         TEXT NOT NULL
 );
@@ -193,19 +194,18 @@ CREATE TABLE option_blocks (
 );
 
 CREATE TABLE option_block_rows (
-    option_block_id REFERENCES option_blocks(id) NOT NULL,
+    option_block_id INTEGER REFERENCES option_blocks(id) NOT NULL,
     value           TEXT NOT NULL
 );
 
 CREATE TABLE activate_tags (
-    id          INTEGER PRIMARY KEY,
-    name        TEXT NOT NULL UNIQUE,
-    description TEXT NOT NULL
+    id   INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE magic_talent_activations (
-    talent_id       REFERENCES magic_talents(id) NOT NULL,
-    activate_tag_id REFERENCES activate_tags(id) NOT NULL,
+    talent_id       INTEGER REFERENCES talents(id) NOT NULL,
+    activate_tag_id INTEGER REFERENCES activate_tags(id) NOT NULL,
     PRIMARY KEY (talent_id, activate_tag_id)
 );
 
@@ -221,10 +221,10 @@ CREATE TABLE characters (
     agility        INTEGER,
     intellect      INTEGER,
     will           INTEGER,
-    ancestry_id    REFERENCES ancestries(id),
-    novice_path_id REFERENCES paths(id), 
-    master_path_id REFERENCES paths(id), 
-    expert_path_id REFERENCES paths(id), 
+    ancestry_id    INTEGER REFERENCES ancestries(id),
+    novice_path_id INTEGER REFERENCES paths(id), 
+    master_path_id INTEGER REFERENCES paths(id), 
+    expert_path_id INTEGER REFERENCES paths(id), 
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

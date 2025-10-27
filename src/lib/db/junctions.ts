@@ -80,3 +80,17 @@ INSERT INTO ${Tables.ANCESTRY_IMMUNITIES} (
     [ancestryId, immunityId],
   );
 };
+
+export const createMagicTalentActivation = async (
+  talentId: number,
+  activateTagId: number,
+) => {
+  await dbExecute(
+    `
+INSERT INTO ${Tables.MAGIC_TALENT_ACTIVATIONS} (
+  talent_id,
+  activate_tag_id
+) VALUES ($1, $2)`,
+    [talentId, activateTagId],
+  );
+};

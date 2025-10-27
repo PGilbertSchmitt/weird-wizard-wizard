@@ -17,6 +17,7 @@ import {
   createAncestrySpeedTrait,
   createLevelLanguage,
   createLevelSpeedTrait,
+  createMagicTalentActivation,
 } from '../db/junctions';
 import { CLEAR_TABLES, dbExecute } from '../db/client';
 import { createNonNovicePath, createNovicePath } from '../db/paths';
@@ -29,6 +30,12 @@ import {
   createOptionBlockRows,
 } from '../db/tables-and-options';
 import { ImportError } from './import-error';
+import {
+  createActivationTag,
+  createMagicSpell,
+  createMagicTalent,
+  createTradition,
+} from '../db/magic';
 
 type IdMap = Map<string, number>;
 
@@ -56,7 +63,7 @@ export const importProcess = async (
     };
 
     // Initial progress update
-    trackProgress();
+    trackProgress(0);
 
     await Promise.all(
       onlyOks(data.professionCategories).map(async (record) => {
@@ -183,7 +190,7 @@ export const importProcess = async (
         const pathId = pathMap.get(level.path);
         if (!pathId) {
           throw new Error(
-            `Failed to associate a level with path named '${level.path}', no such such path was found`,
+            `Failed to associate a level with a path named '${level.path}', no such path was found`,
           );
         }
 
@@ -243,7 +250,7 @@ export const importProcess = async (
         } else {
           if (isNil(row.table_type)) {
             throw new Error(
-              `Failed to create table ${row.table_id}, first row definition for this table needs to have a table_type`,
+              `Failed to create a table called '${row.table_id}', first row definition for this table needs to have a table_type`,
             );
           }
           acc[row.table_id] = {
@@ -267,12 +274,105 @@ export const importProcess = async (
             table.valueLabel,
           );
           await createInfoTableRows(tableId, table.rows);
+          trackProgress(table.rows.length + 1);
           return [label, tableId] as const;
         }),
       ),
     );
 
-    console.log(optionBlockMap, magicTableMap);
+    currentWork = 'Traditions';
+
+    const traditionMap: IdMap = new Map(
+      await Promise.all(
+        onlyOks(data.magicTraditions).map(async (record) => {
+          const magicTableId = record.table
+            ? magicTableMap.get(record.table)
+            : null;
+          if (magicTableId === undefined) {
+            // but not null
+            throw new Error(
+              `Failed to associate a tradition with a table named '${record.table}', no such table was found`,
+            );
+          }
+          const traditionId = await createTradition(record, magicTableId);
+          trackProgress();
+          return [record.name, traditionId] as const;
+        }),
+      ),
+    );
+
+    currentWork = 'Magic Talents';
+
+    const magicReferenceGetter = getMagicReferences(
+      traditionMap,
+      magicTableMap,
+      optionBlockMap,
+    );
+    const magicTalents = onlyOks(data.magicTalents);
+    const talentActivations = uniq(
+      flatten(magicTalents.map((t) => t.activate)),
+    );
+    const talentActivationMap: IdMap = new Map(
+      await Promise.all(
+        talentActivations.map(async (activation) => {
+          const activationId = await createActivationTag(activation);
+          return [activation, activationId] as const;
+        }),
+      ),
+    );
+
+    await Promise.all(
+      magicTalents.map(async (record) => {
+        const [traditionId, magicTableId, optionBlockId] =
+          magicReferenceGetter(
+            record.tradition,
+            record.table,
+            record.options,
+          );
+
+        const magicTalentId = await createMagicTalent(
+          record,
+          traditionId,
+          magicTableId,
+          optionBlockId,
+        );
+
+        await Promise.all(
+          record.activate.map(
+            associateTalentActivations(
+              talentActivationMap,
+              magicTalentId,
+              record.talent_name,
+            ),
+          ),
+        );
+
+        trackProgress();
+        return [record.talent_name, magicTalentId] as const;
+      }),
+    );
+
+    currentWork = 'Magic Spells';
+
+    await Promise.all(
+      onlyOks(data.magicSpells).map(async (record) => {
+        const [traditionId, magicTableId, optionBlockId] = magicReferenceGetter(
+          record.tradition,
+          record.table,
+          record.options,
+        );
+
+        await createMagicSpell(
+          record,
+          traditionId,
+          magicTableId,
+          optionBlockId,
+        );
+
+        trackProgress();
+      }),
+    );
+
     return ok(totalRecords);
   } catch (error) {
     return err({
@@ -335,6 +435,7 @@ const checkAssociationId =
 
 const checkAncestryAssociationId = checkAssociationId('ancestry');
 const checkLevelAssociationId = checkAssociationId('level');
+const checkTalentAssociationId = checkAssociationId('talent');
 
 const associateAncestryLanguage =
   (languageMap: IdMap, ancestryId: number, ancestryName: string) =>
@@ -406,4 +507,50 @@ const associateLevelSpeedTraits =
     ) {
       await createLevelSpeedTrait(levelId, traitId, traitAmount);
     }
+  };
+
+const associateTalentActivations =
+  (talentActivationMap: IdMap, talentId: number, talentLabel: string) =>
+  async (activation: string) => {
+    const activationId = talentActivationMap.get(activation);
+    if (
+      checkTalentAssociationId(
+        'activate tag',
+        activation,
+        talentLabel,
+        activationId,
+      )
+    ) {
+      await createMagicTalentActivation(talentId, activationId);
+    }
+  };
+
+// This set of references is needed twice the same way, so I'm DRYing it
+const getMagicReferences =
+  (traditionMap: IdMap, magicTableMap: IdMap, optionBlockMap: IdMap) =>
+  (tradition: string, magicTable: string | null, options: string | null) => {
+    const traditionId = traditionMap.get(tradition);
+    if (!traditionId) {
+      throw new Error(
+        `Failed to associate a magic talent with a tradition named '${tradition}', no such tradition was found`,
+      );
+    }
+
+    const magicTableId = magicTable ? magicTableMap.get(magicTable) : null;
+    if (magicTableId === undefined) {
+      // but not null
+      throw new Error(
+        `Failed to associate a magic talent with a table named '${magicTable}', no such table was found`,
+      );
+    }
+
+    const optionBlockId = options ? optionBlockMap.get(options) : null;
+    if (optionBlockId === undefined) {
+      // but not null
+      throw new Error(
+        `Failed to associate a magic talent with options named '${options}', no such option block was found`,
+      );
+    }
+
+    return [traditionId, magicTableId, optionBlockId] as const;
   };

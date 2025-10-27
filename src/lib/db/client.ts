@@ -57,9 +57,8 @@ export const Tables = {
   LEVEL_LANGUAGES: 'level_languages',
   LEVEL_SPEED_TRAITS: 'level_speed_traits',
   TRADITIONS: 'traditions',
-  MAGIC_TALENTS: 'magic_talents',
+  TALENTS: 'talents',
   SPELLS: 'spells',
-  TRADITION_SPECIAL_INFO: 'tradition_special_info',
   INFO_TABLES: 'info_tables',
   INFO_TABLE_ROWS: 'info_table_rows',
   OPTION_BLOCKS: 'option_blocks',
@@ -82,6 +81,7 @@ export const CLEAR_TABLES: TableName[] = [
   'ancestry_languages',
   'ancestry_senses',
   'ancestry_speed_traits',
+  'magic_talent_activations',
 
   // Junctions between levels and attribute tables
   'level_languages',
@@ -95,14 +95,8 @@ export const CLEAR_TABLES: TableName[] = [
   // References ancestries
   'paths',
 
-  // References traditions
-  'tradition_special_info',
-
-  // References talents
-  'magic_talent_activations',
-
   // References info_tables, option_blocks, or both
-  'magic_talents',
+  'talents',
   'spells',
   'traditions',
   'info_table_rows',

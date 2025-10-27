@@ -4,6 +4,7 @@ import { CsvRawParseResult } from '.';
 import {
   MagicTalentCharge,
   MagicTalentCharges,
+  MagicTalentRestorations,
   PathKinds,
   TableTypes,
 } from '../db/enums';
@@ -33,8 +34,8 @@ const MagicTalentValidator = zod.object({
           return MagicTalentCharges.NONE;
       }
     }),
-  restore: Validations.STRING,
-  activate: Validations.STRING,
+  restore: zod.enum(values(MagicTalentRestorations)),
+  activate: Validations.PIPE_DELIM_ARRAY,
   table: Validations.STRING_OPT,
   options: Validations.STRING_OPT,
   description: Validations.STRING,
