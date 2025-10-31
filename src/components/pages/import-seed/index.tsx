@@ -1,11 +1,11 @@
 import { Paragraph } from '@/components/ui/paragraph';
 import { cn } from '@/lib/utils';
 import { Dropzone } from './dropzone';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/neo/button';
 import { Trash } from 'lucide-react';
 import { importProcess } from '@/lib/import-data/import-process';
 import { ExtractErrorAlert } from './extract-error';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   extractFromBuffer,
   extractFromFilename,
@@ -15,6 +15,7 @@ import { ImportData } from '@/lib/import-data';
 import { fromPairs, toPairs } from 'ramda';
 import { ImportLoadProgress } from './import-status';
 import { ImportError } from '@/lib/import-data/import-error';
+import { ExtLink } from '@/components/ui/external-link';
 
 export const ImportSeed = () => {
   const [fileSource, setFileSource] = useState<string | null>(null);
@@ -64,6 +65,7 @@ export const ImportSeed = () => {
 
   const onImportStart = (csvData: ImportData) => {
     setImporting(true);
+    // TODO: Wrap this with a transaction, and on success, invalidate static data queries
     importProcess(csvData, (item, percent) => {
       setCurrentItem(item);
       setCurrentPercent(percent);
@@ -85,30 +87,39 @@ export const ImportSeed = () => {
       });
   };
 
+  const onPrintState = () => {
+    console.log({
+      fileSource,
+      csvData,
+      alertInfo,
+      importing,
+      currentItem,
+      currentPercent,
+      done,
+    });
+  };
+
   return (
     <>
       <h1>Import Static Data</h1>
-      <div className={cn('flex flex-col items-center max w-100')}>
+      <div className={cn('flex flex-col items-center max-w-100')}>
         <Paragraph>
           Static data refers to <i>Shadow of the Weird Wizard</i>-specific
           information that is needed to create a character. This includes things
           like ancestries, paths, traditions, and spells. This tool does not
           ship with this data because it's not my data to distribute (it belongs
           to Robert J. Schwalb and{' '}
-          <a className="default" href="https://schwalbentertainment.com/">
+          <ExtLink href="https://schwalbentertainment.com/">
             Schwalb Entertainment
-          </a>
+          </ExtLink>
           ).
         </Paragraph>
         <Paragraph>
           If you have zip file of the seed data, you can drop it off here. If
           you don't have one yet, you can create one if you have the{' '}
-          <a
-            className="default"
-            href="https://schwalbentertainment.com/shadow-of-the-weird-wizard/"
-          >
+          <ExtLink href="https://schwalbentertainment.com/shadow-of-the-weird-wizard/">
             SofWW rule book
-          </a>{' '}
+          </ExtLink>{' '}
           and a bunch of time on your hands.
         </Paragraph>
 
@@ -138,7 +149,10 @@ export const ImportSeed = () => {
             <Button
               className={cn('w-full')}
               disabled={importing}
-              onClick={() => onImportStart(csvData)}
+              onClick={() => {
+                onPrintState();
+                onImportStart(csvData);
+              }}
             >
               Import
             </Button>
@@ -162,7 +176,7 @@ export const ImportSeed = () => {
           />
         )}
 
-        {importing && (
+        {(importing || done) && (
           <ImportLoadProgress
             currentItem={currentItem}
             currentPercent={currentPercent}

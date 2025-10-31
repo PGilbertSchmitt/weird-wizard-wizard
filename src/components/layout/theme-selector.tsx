@@ -5,21 +5,23 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+} from '../ui/neo/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useContext } from 'react';
 import { ThemeProviderContext } from '@/contexts/theme-context';
+import { cardStyle, pressStyle } from '../ui/styles';
 
 export const ThemeSelector = () => {
   const { setTheme } = useContext(ThemeProviderContext);
 
   return (
-    <div className="fixed top-0 right-0 m-5 z-100">
+    <div className="fixed top-0 right-0 m-4 z-100">
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
-            `bg-main border-border border-2 shadow-shadow rounded-base p-1 text-main-foreground
-            hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all`,
+            cardStyle,
+            pressStyle,
+            'p-2',
           )}
         >
           <Palette strokeWidth="1px" />

@@ -5,8 +5,8 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Progress } from '@/components/ui/progress';
+} from '@/components/ui/neo/alert-dialog';
+import { Progress } from '@/components/ui/neo/progress';
 
 interface ImportLoadProgressProps {
   currentItem: string;

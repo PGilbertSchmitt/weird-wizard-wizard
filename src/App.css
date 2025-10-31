@@ -21,6 +21,7 @@
   flex-direction: column;
   justify-content: center;
   text-align: center;
+  min-width: 500px;
 }
 
 /* 
@@ -35,4 +36,13 @@ a.default {
 
 a.default:hover {
   color: var(--color-chart-2);
+}
+
+.masonry {
+  column-count: 2;
+  column-gap: 0.5rem;
+}
+
+.masonry .brick {
+  break-inside: avoid;
 }

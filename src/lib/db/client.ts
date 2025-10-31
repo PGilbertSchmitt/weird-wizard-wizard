@@ -5,8 +5,8 @@ import { ValueOf } from '../types';
 // Could be more robust
 const dbPromise = Database.load('sqlite:www.db');
 
-export const dbSelect = async (query: string, bindValues?: unknown[]) => {
-  return (await dbPromise).select(query, bindValues);
+export const dbSelect = async <T>(query: string, bindValues?: unknown[]) => {
+  return (await dbPromise).select<T[]>(query, bindValues);
 };
 
 export const dbExecute = async (query: string, bindValues?: unknown[]) => {

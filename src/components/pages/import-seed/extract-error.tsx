@@ -8,7 +8,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/neo/alert-dialog';
 import { ImportError } from '@/lib/import-data/import-error';
 
 interface ExtractErrorAlertProps {
