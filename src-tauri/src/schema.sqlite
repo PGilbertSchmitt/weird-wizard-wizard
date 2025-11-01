@@ -4,7 +4,7 @@ CREATE TABLE languages (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
-    secret      BOOL NOT NULL
+    secret      INTEGER NOT NULL -- bool
 );
 
 CREATE TABLE speed_traits (
@@ -148,7 +148,7 @@ CREATE TABLE talents (
     tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
-    magical         BOOL NOT NULL,
+    magical         INTEGER NOT NULL, -- bool
     charges         TEXT CHECK (charges IN ('None', 'One', 'OneTwoThree')) NOT NULL,
     restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn')) NOT NULL,
     info_table_id   INTEGER REFERENCES info_tables(id),
@@ -167,7 +167,7 @@ CREATE TABLE spells (
     duration        TEXT NOT NULL,
     target          TEXT NOT NULL,
     condition       TEXT,
-    ritual          BOOL NOT NULL,
+    ritual          INTEGER NOT NULL, -- bool
     info_table_id   INTEGER REFERENCES info_tables(id),
     option_block_id INTEGER REFERENCES option_blocks(id)
 );

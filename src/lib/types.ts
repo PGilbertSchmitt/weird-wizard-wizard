@@ -64,4 +64,5 @@ export interface TalentItem {
   restore: MagicTalentRestoration;
   infoTable: InfoTable | null;
   optionBlock: OptionBlock | null;
+  activations: string[];
 }

@@ -1,6 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/neo/tabs";
 import { Paragraph } from "@/components/ui/paragraph";
-import { getTradition } from "@/lib/db/magic";
+import { getFullTradition } from "@/lib/db/magic";
 import { cn } from "@/lib/utils";
 import { TabsContent } from "@radix-ui/react-tabs";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +9,8 @@ import { useEffect } from "react";
 import { useParams } from "react-router";
 import { SpellCard } from "./spell-card";
 import { TalentCard } from "./talent-card";
-import { Grid, SpecialInfo } from "./magic-utils";
+import { SpecialInfo } from "./magic-utils";
+import { Grid } from "@/components/ui/grid";
 
 export const TraditionPage = () => {
   const { traditionId: traditionIdParam } = useParams();
@@ -18,7 +19,7 @@ export const TraditionPage = () => {
     queryKey: ['tradition', traditionIdParam],
     queryFn: async () => {
       const traditionId = parseInt(traditionIdParam || '');
-      return await getTradition(traditionId);
+      return await getFullTradition(traditionId);
     },
     enabled: isNotNil(traditionIdParam),
     retry: false,

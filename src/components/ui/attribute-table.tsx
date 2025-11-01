@@ -1,7 +1,9 @@
 import { cn } from "@/lib/utils";
 
+export type AttributeRows = Array<{ label: string; value: React.ReactNode; }>;
+
 interface AttributeTableProps {
-  rows: Array<{ label: string; value: React.ReactNode; }>
+  rows: AttributeRows;
 }
 
 export const AttributeTable = ({ rows }: AttributeTableProps) => (

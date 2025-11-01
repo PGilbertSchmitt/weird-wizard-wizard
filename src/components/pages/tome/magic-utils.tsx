@@ -1,11 +1,4 @@
 import { Paragraph } from "@/components/ui/paragraph";
-import { cn } from "@/lib/utils";
-
-export const Grid = ({ children }: { children: React.ReactNode }) => (
-  <div className={cn('mt-8 masonry')}>
-    {children}
-  </div>
-);
 
 export const SpecialInfo = ({ text }: { text: string; }) => {
   const [first, ...rest] = text.split('|').map(s => s.trim());

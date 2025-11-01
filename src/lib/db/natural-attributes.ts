@@ -10,7 +10,7 @@ INSERT INTO ${Tables.LANGUAGES} (
   name, description, secret
 ) VALUES ($1, $2, $3)
   ON CONFLICT(name) DO UPDATE SET description=excluded.description`,
-      [record.name, record.description, record.secret],
+      [record.name, record.description, record.secret ? 1 : 0],
     ),
   );
 };

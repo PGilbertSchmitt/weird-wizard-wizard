@@ -1,13 +1,28 @@
+import { prop, sortBy } from 'ramda';
 import {
   MagicSpellRecord,
   MagicTalentRecord,
   MagicTraditionRecord,
 } from '../import-data/magic-import';
-import { SpellItem, FullTradition, TraditionIndexItem, TalentItem } from '../types';
+import {
+  SpellItem,
+  FullTradition,
+  TraditionIndexItem,
+  TalentItem,
+} from '../types';
 import { dbExecute, dbSelect, id, Tables } from './client';
 
-import { MagicTalentCharge, MagicTalentRestoration, PathKind, PathKinds } from './enums';
-import { getInfoTables, getOptionBlocks } from './tables-and-options';
+import {
+  MagicTalentCharge,
+  MagicTalentRestoration,
+  PathKind,
+  PathKinds,
+} from './enums';
+import {
+  getActivations,
+  getInfoTables,
+  getOptionBlocks,
+} from './tables-and-options';
 
 /* INSERT queries */
 
@@ -60,7 +75,7 @@ INSERT INTO ${Tables.TALENTS} (
       [
         record.talent_name,
         record.description,
-        true,
+        1, // all magical talents are, in fact, magical
         record.charges,
         record.restore,
         traditionId,
@@ -111,7 +126,7 @@ INSERT INTO ${Tables.SPELLS} (
         record.duration,
         record.target,
         record.condition,
-        record.ritual,
+        record.ritual ? 1 : 0,
         traditionId,
         infoTableId,
         optionBlockId,
@@ -131,7 +146,7 @@ interface SpellRow {
   duration: string;
   target: string;
   condition: string | null;
-  ritual: boolean;
+  ritual: 1 | 0;
   infoTableId: number | null;
   optionBlockId: number | null;
 }
@@ -160,12 +175,14 @@ interface TalentRow {
   id: number;
   name: string;
   description: string;
-  magical: boolean;
+  magical: 1 | 0;
   charges: MagicTalentCharge;
   restore: MagicTalentRestoration;
   infoTableId: number | null;
   optionBlockId: number | null;
 }
+
+const sortByName = sortBy(prop('name'));
 
 const getTalentsByTradition = async (traditionId: number) =>
   dbSelect<TalentRow>(
@@ -182,9 +199,11 @@ const getTalentsByTradition = async (traditionId: number) =>
     [traditionId],
   );
 
-export const getTraditions = () =>
-  dbSelect<TraditionIndexItem>(
-    `SELECT id, name, blurb, description FROM ${Tables.TRADITIONS}`,
+export const getTraditions = async () =>
+  sortByName(
+    await dbSelect<TraditionIndexItem>(
+      `SELECT id, name, blurb, description FROM ${Tables.TRADITIONS}`,
+    ),
   );
 
 interface TraditionRow {
@@ -196,7 +215,7 @@ interface TraditionRow {
   infoTableId: number | null;
 }
 
-export const getTradition = async (
+export const getFullTradition = async (
   id: number,
 ): Promise<FullTradition | null> => {
   const [traditionInfo] = await dbSelect<TraditionRow>(
@@ -212,7 +231,7 @@ export const getTradition = async (
   );
   if (!traditionInfo) {
     return null;
-  };
+  }
 
   const [spellRows, talentRows] = await Promise.all([
     getSpellsByTradition(id),
@@ -221,6 +240,7 @@ export const getTradition = async (
 
   const optionBlockIds: number[] = [];
   const infoTableIds: number[] = [];
+  const talentIds: number[] = [];
 
   if (traditionInfo.infoTableId) {
     infoTableIds.push(traditionInfo.infoTableId);
@@ -242,56 +262,74 @@ export const getTradition = async (
     if (talent.infoTableId) {
       infoTableIds.push(talent.infoTableId);
     }
+    talentIds.push(talent.id);
   }
 
-  const [optionBlockMap, infoTableMap] = await Promise.all([
+  const [optionBlockMap, infoTableMap, activationMap] = await Promise.all([
     getOptionBlocks(optionBlockIds),
     getInfoTables(infoTableIds),
+    getActivations(talentIds),
   ]);
 
-  const talents = talentRows.map((row: TalentRow): TalentItem => ({
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    magical: row.magical,
-    charges: row.charges,
-    restore: row.restore,
-    infoTable: (row.infoTableId && infoTableMap.get(row.infoTableId)) || null,
-    optionBlock: (row.optionBlockId && optionBlockMap.get(row.optionBlockId)) || null,
-  }));
+  const talents = sortByName(
+    talentRows.map(
+      (row: TalentRow): TalentItem => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        magical: row.magical === 1,
+        charges: row.charges,
+        restore: row.restore,
+        activations: activationMap.get(row.id) || [],
+        infoTable:
+          (row.infoTableId && infoTableMap.get(row.infoTableId)) || null,
+        optionBlock:
+          (row.optionBlockId && optionBlockMap.get(row.optionBlockId)) || null,
+      }),
+    ),
+  );
 
-  const spells = spellRows.map((row: SpellRow): SpellItem => ({
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    pathKind: row.pathKind,
-    castings: row.castings,
-    duration: row.duration,
-    target: row.target,
-    condition: row.condition,
-    ritual: row.ritual,
-    infoTable: (row.infoTableId && infoTableMap.get(row.infoTableId)) || null,
-    optionBlock: (row.optionBlockId && optionBlockMap.get(row.optionBlockId)) || null,
-  }));
+  const spells = sortByName(
+    spellRows.map(
+      (row: SpellRow): SpellItem => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        pathKind: row.pathKind,
+        castings: row.castings,
+        duration: row.duration,
+        target: row.target,
+        condition: row.condition,
+        ritual: row.ritual === 1,
+        infoTable:
+          (row.infoTableId && infoTableMap.get(row.infoTableId)) || null,
+        optionBlock:
+          (row.optionBlockId && optionBlockMap.get(row.optionBlockId)) || null,
+      }),
+    ),
+  );
 
-  const groupedSpells = spells.reduce((acc, spell) => {
-    switch (spell.pathKind) {
-      case PathKinds.NOVICE:
-        acc.Novice.push(spell);
-        break;
-      case PathKinds.EXPERT:
-        acc.Expert.push(spell);
-        break;
-      case PathKinds.MASTER:
-        acc.Master.push(spell);
-        break;
-    }
-    return acc;
-  }, {
-    [PathKinds.NOVICE]: [],
-    [PathKinds.EXPERT]: [],
-    [PathKinds.MASTER]: [],
-  } as Record<PathKind, SpellItem[]>);
+  const groupedSpells = spells.reduce(
+    (acc, spell) => {
+      switch (spell.pathKind) {
+        case PathKinds.NOVICE:
+          acc.Novice.push(spell);
+          break;
+        case PathKinds.EXPERT:
+          acc.Expert.push(spell);
+          break;
+        case PathKinds.MASTER:
+          acc.Master.push(spell);
+          break;
+      }
+      return acc;
+    },
+    {
+      [PathKinds.NOVICE]: [],
+      [PathKinds.EXPERT]: [],
+      [PathKinds.MASTER]: [],
+    } as Record<PathKind, SpellItem[]>,
+  );
 
   return {
     id: traditionInfo.id,

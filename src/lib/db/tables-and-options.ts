@@ -79,7 +79,7 @@ export const getInfoTables = async (ids: number[]) => {
       itr.value
     FROM info_tables it
     JOIN info_table_rows itr ON it.id=itr.info_table_id
-    WHERE it.id IN ${paramPairs(ids.length, 1)}`,
+    WHERE it.id IN ${paramPairs(ids.length)}`,
     ids,
   );
 
@@ -114,7 +114,7 @@ export const getOptionBlocks = async (ids: number[]) => {
     `SELECT ob.id, ob.name, obr.value
     FROM option_blocks ob
     JOIN option_block_rows obr ON ob.id=obr.option_block_id
-    WHERE ob.id IN ${paramPairs(ids.length, 1)}`,
+    WHERE ob.id IN ${paramPairs(ids.length)}`,
     ids,
   );
 
@@ -133,4 +133,24 @@ export const getOptionBlocks = async (ids: number[]) => {
   }
 
   return optionMap;
+};
+
+export const getActivations = async (talentIds: number[]) => {
+  const activationRows = await dbSelect<{ talent_id: number, name: string }>(
+    `SELECT mta.talent_id, at.name
+    FROM ${Tables.ACTIVATE_TAGS} at
+    JOIN ${Tables.MAGIC_TALENT_ACTIVATIONS} mta ON mta.activate_tag_id=at.id
+    WHERE mta.talent_id IN ${paramPairs(talentIds.length)}`,
+    talentIds,
+  );
+  const activationMap = new Map<number, string[]>();
+  for (const row of activationRows) {
+    const activations = activationMap.get(row.talent_id);
+    if (activations) {
+      activations.push(row.name);
+    } else {
+      activationMap.set(row.talent_id, [row.name]);
+    }
+  }
+  return activationMap;
 };
