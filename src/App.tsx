@@ -7,10 +7,7 @@ import { TraditionPage } from './components/pages/tome/tradition-page';
 
 const App = () => (
   <Routes>
-    <Route
-      path="/"
-      Component={Home}
-    />
+    <Route path="/" Component={Home} />
     <Route path="/tome">
       <Route index Component={Tome} />
       <Route path=":traditionId" Component={TraditionPage} />

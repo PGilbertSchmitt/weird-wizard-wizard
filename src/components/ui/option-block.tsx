@@ -1,4 +1,4 @@
-import { OptionBlock as OptionBlockType } from "@/lib/types"
+import { OptionBlock as OptionBlockType } from '@/lib/types';
 
 interface OptionBlockProps {
   block: OptionBlockType;

@@ -17,13 +17,7 @@ export const ThemeSelector = () => {
   return (
     <div className="fixed top-0 right-0 m-4 z-100">
       <DropdownMenu>
-        <DropdownMenuTrigger
-          className={cn(
-            cardStyle,
-            pressStyle,
-            'p-2',
-          )}
-        >
+        <DropdownMenuTrigger className={cn(cardStyle, pressStyle, 'p-2')}>
           <Palette strokeWidth="1px" />
         </DropdownMenuTrigger>
         <DropdownMenuContent className={cn('m-4')}>

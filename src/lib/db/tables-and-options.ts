@@ -136,7 +136,7 @@ export const getOptionBlocks = async (ids: number[]) => {
 };
 
 export const getActivations = async (talentIds: number[]) => {
-  const activationRows = await dbSelect<{ talent_id: number, name: string }>(
+  const activationRows = await dbSelect<{ talent_id: number; name: string }>(
     `SELECT mta.talent_id, at.name
     FROM ${Tables.ACTIVATE_TAGS} at
     JOIN ${Tables.MAGIC_TALENT_ACTIVATIONS} mta ON mta.activate_tag_id=at.id

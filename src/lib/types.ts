@@ -1,4 +1,9 @@
-import { MagicTalentCharge, MagicTalentRestoration, PathKind, TableType } from "./db/enums";
+import {
+  MagicTalentCharge,
+  MagicTalentRestoration,
+  PathKind,
+  TableType,
+} from './db/enums';
 
 // Maybe one day, this will be a built-in type
 export type ValueOf<T> = T[keyof T];
@@ -11,7 +16,6 @@ export interface TraditionIndexItem {
   blurb: string;
   description: string;
 }
-
 
 export interface FullTradition {
   id: number;
@@ -32,8 +36,8 @@ export interface InfoTable {
   kind: TableType;
   keyLabel: string;
   valueLabel: string;
-  rows: Array<{ key: string; value: string; }>
-};
+  rows: Array<{ key: string; value: string }>;
+}
 
 export interface OptionBlock {
   id: number;
@@ -53,7 +57,7 @@ export interface SpellItem {
   ritual: boolean;
   infoTable: InfoTable | null;
   optionBlock: OptionBlock | null;
-};
+}
 
 export interface TalentItem {
   id: number;

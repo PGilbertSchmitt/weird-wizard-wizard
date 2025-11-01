@@ -10,13 +10,11 @@ interface CardProps {
 
 export const StaticCard = ({ children, className, onClick }: CardProps) => (
   <div
-    className={cn(
-      cardStyle,
-      onClick && pressStyle,
-      className
-    )}
+    className={cn(cardStyle, onClick && pressStyle, className)}
     onClick={onClick}
-  >{children}</div>
+  >
+    {children}
+  </div>
 );
 
 interface NavCardProps {
@@ -26,10 +24,7 @@ interface NavCardProps {
 }
 
 export const NavCard = ({ children, href, className }: NavCardProps) => (
-  <Link
-    to={href}
-    className={cn(cardStyle, pressStyle, className)}
-  >
+  <Link to={href} className={cn(cardStyle, pressStyle, className)}>
     {children}
   </Link>
 );

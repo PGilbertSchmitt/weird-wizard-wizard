@@ -1,14 +1,19 @@
-import { AttributeTable, AttributeRows } from "@/components/ui/attribute-table";
-import { StaticCard } from "@/components/ui/card";
-import { Paragraph } from "@/components/ui/paragraph";
-import { Separator } from "@/components/ui/separator";
-import { MagicTalentCharge, MagicTalentCharges, MagicTalentRestoration, MagicTalentRestorations } from "@/lib/db/enums";
-import { TalentItem } from "@/lib/types";
-import { useMemo } from "react";
-import { Sparkles, Waypoints } from "lucide-react";
-import { OptionBlock } from "@/components/ui/option-block";
-import { InfoTable } from "@/components/ui/info-table";
-import { Badge } from "@/components/ui/badge";
+import { AttributeTable, AttributeRows } from '@/components/ui/attribute-table';
+import { StaticCard } from '@/components/ui/card';
+import { Paragraph } from '@/components/ui/paragraph';
+import { Separator } from '@/components/ui/separator';
+import {
+  MagicTalentCharge,
+  MagicTalentCharges,
+  MagicTalentRestoration,
+  MagicTalentRestorations,
+} from '@/lib/db/enums';
+import { TalentItem } from '@/lib/types';
+import { useMemo } from 'react';
+import { Sparkles, Waypoints } from 'lucide-react';
+import { OptionBlock } from '@/components/ui/option-block';
+import { InfoTable } from '@/components/ui/info-table';
+import { Badge } from '@/components/ui/badge';
 
 interface TalentCardProps {
   talent: TalentItem;
@@ -18,7 +23,7 @@ interface TalentCardProps {
 export const TalentCard = ({ talent, onClick }: TalentCardProps) => {
   const attributeRows = useMemo(() => {
     const staticAttributes: AttributeRows = [
-      { label: 'ACTIVATION', value: talent.activations.join(', ')},
+      { label: 'ACTIVATION', value: talent.activations.join(', ') },
     ];
     const chargesStr = charges(talent.charges);
     if (chargesStr) {
@@ -36,13 +41,13 @@ export const TalentCard = ({ talent, onClick }: TalentCardProps) => {
   return (
     <div className="brick p-2">
       <StaticCard className="min-w-100" onClick={onClick}>
-        <div className='flex justify-center gap-2 my-1'>
+        <div className="flex justify-center gap-2 my-1">
           <h2 className="text-lg w-fit pt-1">{talent.name}</h2>
-          <Badge label={<Sparkles size='14px' strokeWidth="1px" />}>
+          <Badge label={<Sparkles size="14px" strokeWidth="1px" />}>
             This talent is considered Magical
           </Badge>
           {talent.activations.includes('Ritual') && (
-            <Badge label={<Waypoints size='14px' strokeWidth="1px" />}>
+            <Badge label={<Waypoints size="14px" strokeWidth="1px" />}>
               Ritual (takes 10 minutes to cast)
             </Badge>
           )}
@@ -70,18 +75,26 @@ export const TalentCard = ({ talent, onClick }: TalentCardProps) => {
 
 const charges = (value: MagicTalentCharge) => {
   switch (value) {
-    case MagicTalentCharges.NONE: return null;
-    case MagicTalentCharges.ONE: return '1';
-    case MagicTalentCharges.ONE_TWO_THREE: return '1 at level 1, 2 at level 3, and 3 at level 7'
+    case MagicTalentCharges.NONE:
+      return null;
+    case MagicTalentCharges.ONE:
+      return '1';
+    case MagicTalentCharges.ONE_TWO_THREE:
+      return '1 at level 1, 2 at level 3, and 3 at level 7';
   }
 };
 
 const restore = (value: MagicTalentRestoration) => {
   switch (value) {
-    case MagicTalentRestorations.NONE: return null;
-    case MagicTalentRestorations.DAY: return '24 hours';
-    case MagicTalentRestorations.HOUR: return '1 hour';
-    case MagicTalentRestorations.MINUTE: return '1 minute';
-    default: return value;
+    case MagicTalentRestorations.NONE:
+      return null;
+    case MagicTalentRestorations.DAY:
+      return '24 hours';
+    case MagicTalentRestorations.HOUR:
+      return '1 hour';
+    case MagicTalentRestorations.MINUTE:
+      return '1 minute';
+    default:
+      return value;
   }
 };

@@ -36,10 +36,10 @@ export const SpellCard = ({ spell, onClick }: SpellCardProps) => {
   return (
     <div className="brick p-2">
       <StaticCard className="min-w-50 text-sm" onClick={onClick}>
-        <div className='flex justify-center gap-2  my-1'>
+        <div className="flex justify-center gap-2  my-1">
           <h2 className="text-lg w-fit pt-1">{spell.name}</h2>
           {spell.ritual && (
-            <Badge label={<Waypoints size='14px' strokeWidth="1px" />}>
+            <Badge label={<Waypoints size="14px" strokeWidth="1px" />}>
               Ritual (takes 10 minutes to cast)
             </Badge>
           )}

@@ -28,11 +28,10 @@ const links = [
   },
 ];
 
-export default function Nav() {
+export const Nav = () => {
   const { pathname } = useLocation();
-  const headlessPath = pathname.charAt(0) === '/'
-    ? pathname.slice(1)
-    : pathname;
+  const headlessPath =
+    pathname.charAt(0) === '/' ? pathname.slice(1) : pathname;
   const paths = headlessPath.split('/');
   const backTo = paths.length > 1 ? `/${init(paths).join('/')}` : null;
 
@@ -69,15 +68,11 @@ export default function Nav() {
       {backTo && (
         <Link
           to={backTo}
-          className={cn(
-            cardStyle,
-            pressStyle,
-            'absolute right-0 top-0 p-2',
-          )}
+          className={cn(cardStyle, pressStyle, 'absolute right-0 top-0 p-2')}
         >
           <ArrowBigLeft strokeWidth="1px" />
         </Link>
       )}
     </div>
   );
-}
+};

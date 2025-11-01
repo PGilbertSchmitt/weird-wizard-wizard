@@ -1,5 +1,5 @@
-import { InfoTable as InfoTableType } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { InfoTable as InfoTableType } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface InfoTableProps {
   table: InfoTableType;
@@ -11,10 +11,7 @@ export const InfoTable = ({ table }: InfoTableProps) => (
     <table>
       <thead>
         <tr>
-          <th
-            className={cn('p-0.5 pr-5 w-1 whitespace-nowrap')}
-            align="right"
-          >
+          <th className={cn('p-0.5 pr-5 w-1 whitespace-nowrap')} align="right">
             {table.keyLabel}
           </th>
           <th align="left">{table.valueLabel}</th>

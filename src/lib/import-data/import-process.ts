@@ -323,12 +323,11 @@ export const importProcess = async (
 
     await Promise.all(
       magicTalents.map(async (record) => {
-        const [traditionId, magicTableId, optionBlockId] =
-          magicReferenceGetter(
-            record.tradition,
-            record.table,
-            record.options,
-          );
+        const [traditionId, magicTableId, optionBlockId] = magicReferenceGetter(
+          record.tradition,
+          record.table,
+          record.options,
+        );
 
         const magicTalentId = await createMagicTalent(
           record,
