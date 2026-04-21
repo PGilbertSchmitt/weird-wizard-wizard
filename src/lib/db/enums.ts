@@ -44,6 +44,8 @@ export const MagicTalentRestorations = {
   MINUTE: 'Minute',
   START_OF_NEXT_TURN: 'Start Of Next Turn',
   END_OF_NEXT_TURN: 'End Of Next Turn',
+  START_OF_ROUND: 'Start of Round',
+  SPECIAL: 'Special',
 } as const;
 
 export type MagicTalentRestoration = ValueOf<typeof MagicTalentRestorations>;

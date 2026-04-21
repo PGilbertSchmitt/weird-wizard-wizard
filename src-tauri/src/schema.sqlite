@@ -109,11 +109,11 @@ CREATE TABLE levels (
 
 CREATE UNIQUE INDEX unique_levels ON levels (path, level);
 
--- CREATE TABLE level_talents (
---     level_id    INTEGER REFERENCES levels(id) NOT NULL,
---     talent_id   INTEGER REFERENCES talents(id) NOT NULL,
---     PRIMARY KEY (level_id, talent_id)
--- );
+CREATE TABLE level_talents (
+    level_id    INTEGER REFERENCES levels(id) NOT NULL,
+    talent_id   INTEGER REFERENCES talents(id) NOT NULL,
+    PRIMARY KEY (level_id, talent_id)
+);
 
 CREATE TABLE level_traditions (
     level_id     INTEGER REFERENCES levels(id) NOT NULL,
@@ -145,17 +145,20 @@ CREATE TABLE traditions (
 
 CREATE TABLE talents (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
     magical         INTEGER NOT NULL, -- bool
-    charges         TEXT CHECK (charges IN ('None', 'One', 'OneTwoThree')) NOT NULL,
-    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn')) NOT NULL,
+    charges         TEXT,
+    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn', 'Start of Round', 'Special')) NOT NULL,
     info_table_id   INTEGER REFERENCES info_tables(id),
     option_block_id INTEGER REFERENCES option_blocks(id)
 );
 
-CREATE UNIQUE INDEX unique_talents ON talents (tradition_id, name);
+CREATE TABLE tradition_talents (
+    tradition_id INTEGER REFERENCES traditions(id) NOT NULL,
+    talent_id    INTEGER REFERENCES talents(id) NOT NULL,
+    PRIMARY KEY  (tradition_id, talent_id)
+);
 
 CREATE TABLE spells (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
