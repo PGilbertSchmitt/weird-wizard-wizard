@@ -1,0 +1,281 @@
+-- START: READONLY SEEDABLE TABLES --
+
+CREATE TABLE IF NOT EXISTS languages (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    secret      INTEGER NOT NULL -- bool
+);
+
+CREATE TABLE IF NOT EXISTS speed_traits (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    unit        TEXT CHECK (unit IN ('inches', 'yards'))
+);
+
+CREATE TABLE IF NOT EXISTS senses (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    unit        TEXT CHECK (unit IN ('inches', 'yards'))
+);
+
+CREATE TABLE IF NOT EXISTS immunities (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS profession_categories (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL
+);
+
+-- I could relate professions to their categories, but it's not really necessary.
+CREATE TABLE IF NOT EXISTS professions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    category    TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ancestries (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    descriptor  TEXT,
+    size        TEXT CHECK (size IN ('sm', 'md', 'lg')) NOT NULL,
+    speed       INTEGER NOT NULL,
+    add_health  INTEGER NOT NULL,
+    add_nat_def INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ancestry_languages (
+    ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
+    language_id INTEGER REFERENCES languages(id) NOT NULL,
+    PRIMARY KEY (ancestry_id, language_id)
+);
+
+CREATE TABLE IF NOT EXISTS ancestry_speed_traits (
+    ancestry_id    INTEGER REFERENCES ancestries(id) NOT NULL,
+    speed_trait_id INTEGER REFERENCES speed_traits(id) NOT NULL,
+    amount         TEXT, -- Optional, needed for Squeeze and Teleport
+    PRIMARY KEY    (ancestry_id, speed_trait_id)
+);
+
+CREATE TABLE IF NOT EXISTS ancestry_senses (
+    ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
+    sense_id    INTEGER REFERENCES senses(id) NOT NULL,
+    amount      TEXT, -- Optional, needed for Awareness
+    PRIMARY KEY (ancestry_id, sense_id)
+);
+
+CREATE TABLE IF NOT EXISTS ancestry_immunities (
+    ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
+    immunity_id INTEGER REFERENCES immunities(id) NOT NULL,
+    PRIMARY KEY (ancestry_id, immunity_id)
+);
+
+-- CREATE TABLE IF NOT EXISTS ancestry_traits (
+--     ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
+--     trait_id    INTEGER REFERENCES traits(id) NOT NULL,
+--     PRIMARY KEY (ancestry_id, trait_id)
+-- );
+
+CREATE TABLE IF NOT EXISTS paths (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    kind        TEXT CHECK (kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
+    category    TEXT NOT NULL,
+    description TEXT NOT NULL,
+    req_str     INTEGER,
+    req_agl     INTEGER,
+    req_int     INTEGER,
+    req_will    INTEGER,
+    ancestry    INTEGER REFERENCES ancestries(id) -- A novice path with an Ancestry INTEGER REFERENCES locks the character to that specific Ancestry record
+);
+
+CREATE TABLE IF NOT EXISTS levels (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    path          INTEGER REFERENCES paths(id) NOT NULL,
+    level         INTEGER NOT NULL,
+    add_health    INTEGER NOT NULL,
+    add_nat_def   INTEGER DEFAULT 0,
+    add_arm_def   INTEGER DEFAULT 0,
+    add_bonus_dmg INTEGER DEFAULT 0,
+    add_speed     INTEGER DEFAULT 0,
+    size          TEXT CHECK (size IN ('sm', 'md', 'lg')) -- Only used officially for Pollywog level 5
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_levels ON levels (path, level);
+
+CREATE TABLE IF NOT EXISTS level_talents (
+    level_id    INTEGER REFERENCES levels(id) NOT NULL,
+    talent_id   INTEGER REFERENCES talents(id) NOT NULL,
+    PRIMARY KEY (level_id, talent_id)
+);
+
+CREATE TABLE IF NOT EXISTS level_traditions (
+    level_id     INTEGER REFERENCES levels(id) NOT NULL,
+    tradition_id INTEGER REFERENCES traditions(id) NOT NULL,
+    PRIMARY KEY  (level_id, tradition_id)
+);
+
+CREATE TABLE IF NOT EXISTS level_languages (
+    level_id    INTEGER REFERENCES levels(id) NOT NULL,
+    language_id INTEGER REFERENCES languages(id) NOT NULL,
+    PRIMARY KEY (level_id, language_id)
+);
+
+CREATE TABLE IF NOT EXISTS level_speed_traits (
+    level_id       INTEGER REFERENCES levels(id) NOT NULL,
+    speed_trait_id INTEGER REFERENCES speed_traits(id) NOT NULL,
+    amount         TEXT, -- Optional, needed for Squeeze and Teleport
+    PRIMARY KEY    (level_id, speed_trait_id)
+);
+
+CREATE TABLE IF NOT EXISTS traditions (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL UNIQUE,
+    blurb         TEXT NOT NULL,
+    description   TEXT NOT NULL,
+    special_info  TEXT,
+    info_table_id INTEGER REFERENCES info_tables(id)
+);
+
+CREATE TABLE IF NOT EXISTS talents (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL,
+    magical         INTEGER NOT NULL, -- bool
+    charges         TEXT,
+    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn', 'Start of Round', 'Special')) NOT NULL,
+    info_table_id   INTEGER REFERENCES info_tables(id),
+    option_block_id INTEGER REFERENCES option_blocks(id)
+);
+
+CREATE TABLE IF NOT EXISTS tradition_talents (
+    tradition_id INTEGER REFERENCES traditions(id) NOT NULL,
+    talent_id    INTEGER REFERENCES talents(id) NOT NULL,
+    PRIMARY KEY  (tradition_id, talent_id)
+);
+
+CREATE TABLE IF NOT EXISTS spells (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL,
+    path_kind       TEXT CHECK (path_kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
+    castings        INTEGER NOT NULL,
+    duration        TEXT NOT NULL,
+    target          TEXT NOT NULL,
+    condition       TEXT,
+    ritual          INTEGER NOT NULL, -- bool
+    info_table_id   INTEGER REFERENCES info_tables(id),
+    option_block_id INTEGER REFERENCES option_blocks(id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (tradition_id, name);
+
+CREATE TABLE IF NOT EXISTS info_tables (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    kind        TEXT CHECK (kind IN ('TABLE', 'BLOCK', 'ROLL')) NOT NULL,
+    key_label   TEXT NOT NULL,
+    value_label TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS info_table_rows (
+    info_table_id INTEGER REFERENCES info_tables(id) NOT NULL,
+    key           TEXT NOT NULL,
+    value         TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS option_blocks (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS option_block_rows (
+    option_block_id INTEGER REFERENCES option_blocks(id) NOT NULL,
+    value           TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS activate_tags (
+    id   INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS magic_talent_activations (
+    talent_id       INTEGER REFERENCES talents(id) NOT NULL,
+    activate_tag_id INTEGER REFERENCES activate_tags(id) NOT NULL,
+    PRIMARY KEY (talent_id, activate_tag_id)
+);
+
+-- END: SEEDABLE TABLES
+
+-- START: USER-GENERATED RECORD TABLES 
+
+CREATE TABLE IF NOT EXISTS characters (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    name           TEXT    NOT NULL,
+    level          INTEGER NOT NULL,
+    strength       INTEGER,
+    agility        INTEGER,
+    intellect      INTEGER,
+    will           INTEGER,
+    ancestry_id    INTEGER REFERENCES ancestries(id),
+    novice_path_id INTEGER REFERENCES paths(id), 
+    master_path_id INTEGER REFERENCES paths(id), 
+    expert_path_id INTEGER REFERENCES paths(id), 
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS validate_path_assoc BEFORE UPDATE ON characters
+BEGIN
+    SELECT
+        CASE
+        WHEN ('Novice' <> (SELECT kind FROM paths WHERE paths.id = NEW.novice_path_id))
+            THEN raise(ABORT, 'EXPECTED_NOVICE_PATH')
+        WHEN ('Expert' <> (SELECT kind FROM paths WHERE paths.id = NEW.expert_path_id))
+            THEN raise(ABORT, 'EXPECTED_EXPERT_PATH')
+        WHEN ('Master' <> (SELECT kind FROM paths WHERE paths.id = NEW.master_path_id))
+            THEN raise(ABORT, 'EXPECTED_MASTER_PATH')
+        END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS validate_ancestry_speed_trait_units BEFORE INSERT ON ancestry_speed_traits
+BEGIN
+    SELECT
+        CASE
+        WHEN NEW.amount IS NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NOT NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_REQUIRED')
+        WHEN NEW.amount IS NOT NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_FORBIDDEN')
+        END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS validate_ancestry_sense_units BEFORE INSERT ON ancestry_senses
+BEGIN
+    SELECT
+        CASE
+        WHEN NEW.amount IS NULL AND (SELECT unit FROM senses WHERE id = NEW.sense_id) IS NOT NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_REQUIRED')
+        WHEN NEW.amount IS NOT NULL AND (SELECT unit FROM senses WHERE id = NEW.sense_id) IS NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_FORBIDDEN')
+        END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS validate_level_speed_trait_units BEFORE INSERT ON level_speed_traits
+BEGIN
+    SELECT
+        CASE
+        WHEN NEW.amount IS NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NOT NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_REQUIRED')
+        WHEN NEW.amount IS NOT NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NULL
+            THEN raise(ABORT, 'UNIT_AMOUNT_FORBIDDEN')
+        END;
+END;
+
+-- END: USER-GENERATED RECORD TABLES 
