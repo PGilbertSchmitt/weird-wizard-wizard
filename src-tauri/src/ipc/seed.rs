@@ -1,34 +1,33 @@
-use std::{fs::File, sync::Mutex};
+use core::time;
+use std::{fs::File, sync::Mutex, thread::sleep};
 
-use crate::{WWError, store::WWAppData};
+use crate::{WWError, WWResult, ipc::{EmitChannel, emit}, store::WWAppData};
 
-use super::response::{IpcResponse, IpcResult};
-use tauri::{AppHandle, Manager, Wry, command};
+use tauri::{command, AppHandle, Manager, Wry};
 
+// This is potentially long running, so it communicates using events
 #[command]
-pub async fn init_seed(app: AppHandle<Wry>, filepath: String) -> IpcResult<()> {
-    let state: tauri::State<'_, Mutex<WWAppData>> = app.state();
-    let mut state = state.lock().unwrap();
-    // println!("Old filepath is {:?}, but we gotted a new one called '{filepath}'", state.foo);
-
-    // let file = open_file(&filepath).map_err(|e| IpcError::from(e))?;
-    let file = match File::open(filepath) {
-        Ok(f) => f,
-        Err(e) => return IpcResult::Err(WWError::Io(e).into()),
-
-    };
-    let tmp_dir_path = state.add_import_dir().unwrap();
-    
-    let mut zipfile = zip::ZipArchive::new(file).unwrap();
-    zipfile.extract(&tmp_dir_path).unwrap();
-    println!("Extracted contents to {:?}, not dropping.", tmp_dir_path);
-    // state.drop_import_dir();
-    IpcResult::Ok(IpcResponse { data: () })
+pub async fn init_seed(app: AppHandle<Wry>, filepath: String) {
+    if let WWResult::Err(e) = initialize_import_seed(&app, filepath).await {
+        emit(&app, EmitChannel::IMPORT, e.into()).unwrap()
+    }
 }
 
-// fn open_file(filepath: &str) -> WWResult<File> {
-//     match File::open(filepath) {
-//         Ok(f) => Ok(f),
-//         Err(e) => Err(e.into()),
-//     }
-// }
+async fn initialize_import_seed(app: &AppHandle<Wry>, filepath: String) -> WWResult<()> {
+    let file = File::open(filepath)?;
+    let state: tauri::State<'_, Mutex<WWAppData>> = app.state();
+    let mut state = state
+        .lock()
+        .map_err(|_| WWError::Generic("Poisoned Mutex error".to_owned()))?;
+    let tmp_dir_path = state.add_import_dir()?;
+    let mut zipfile = zip::ZipArchive::new(file)?;
+    zipfile.extract(&tmp_dir_path).unwrap();
+    println!("Extracted contents to {:?}", tmp_dir_path);
+
+    // TODO: process zipfile contents to send resource summary with READY signal
+    sleep(time::Duration::from_millis(1000));
+
+    emit(&app, EmitChannel::IMPORT, Ok("READY").into())?;
+
+    Ok(())
+}

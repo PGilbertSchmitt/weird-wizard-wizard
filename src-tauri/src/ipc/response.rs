@@ -2,7 +2,7 @@ use crate::{WWError, WWResult};
 use serde::Serialize;
 use ts_rs::TS;
 
-#[derive(Serialize, TS)]
+#[derive(Serialize, TS, Clone)]
 pub struct IpcError {
     message: String,
 }
@@ -15,7 +15,7 @@ impl From<WWError> for IpcError {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct IpcResponse<T>
 where
     T: Serialize,
@@ -23,7 +23,7 @@ where
     pub data: T,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub enum IpcResult<T>
 where
     T: Serialize,
@@ -43,5 +43,11 @@ where
                 message: err.to_string(),
             }),
         }
+    }
+}
+
+impl From<WWError> for IpcResult<()> {
+    fn from(err: WWError) -> Self {
+        IpcResult::Err(err.into())
     }
 }
