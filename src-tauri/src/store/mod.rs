@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use tempfile::TempDir;
-use crate::{WWResult, import::AncestryRow};
+
+use crate::{WWResult, ipc::ImportData};
 
 // For storing non-DB app state
 pub struct WWAppData {
@@ -27,8 +28,4 @@ impl WWAppData {
         self.import_dir = None;
         self.import_data = None;
     }
-}
-
-pub struct ImportData {
-    pub ancestries: Vec<AncestryRow>,
 }

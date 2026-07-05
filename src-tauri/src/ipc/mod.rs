@@ -1,7 +1,7 @@
 mod response;
-mod seed;
+mod init_seed;
 
-pub use seed::*;
+pub use init_seed::*;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
