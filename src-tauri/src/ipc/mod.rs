@@ -22,10 +22,10 @@ impl From<EmitChannel> for &'static str {
 pub fn emit<T>(
     app: &AppHandle,
     channel: EmitChannel,
-    payload: IpcResult<T>
+    payload: &IpcResult<T>
 ) -> WWResult<()>
 where
-    T: Serialize + Clone
+    T: Serialize
 {
-    Ok(app.emit(channel.into(), payload)?)
+    Ok(app.emit(channel.into(), &payload)?)
 }

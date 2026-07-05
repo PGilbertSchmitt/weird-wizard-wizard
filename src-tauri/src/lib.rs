@@ -2,6 +2,7 @@ use std::sync::Mutex;
 use tauri::{Manager, async_runtime::Mutex as AsyncMutex};
 
 mod db;
+mod import;
 mod ipc;
 mod result;
 mod store;
@@ -37,7 +38,7 @@ pub fn run() {
             match ev {
                 // The tmp import dir is deleted on drop, so this ensures this happens on app close.
                 tauri::RunEvent::Exit => {
-                    app.state::<Mutex<WWAppData>>().lock().unwrap().drop_import_dir();
+                    app.state::<Mutex<WWAppData>>().lock().unwrap().drop_import();
                 }
                 _ => {}
             }

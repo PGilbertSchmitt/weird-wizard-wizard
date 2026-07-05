@@ -18,24 +18,38 @@ import {
 import { IpcResult } from "@/types/ipc-result";
 import { unwrapIpcResult } from "@/api/request";
 import { Button } from "@/components/ui/neo/button";
+import { ImportEvent } from "@/types/import";
 
 export const ImportSeed = () => {
   const [importState, dispatch] = useReducer(
     (prev: ImportData, { type, data }: ImportAction) => {
       switch (type) {
         case ImportActionTypes.CANCEL:
+          if ('unlistener' in prev) {
+            prev.unlistener.then((unlisten) => unlisten());
+          }
           return DEFAULT_IMPORT_STATE;
 
         case ImportActionTypes.SEND_FILE:
           if (prev.status === ImportStatuses.IDLE) {
-            console.log("SEND-FILE signal");
             const unlistenPromise = listen(
               "IMPORT",
-              (event: Event<IpcResult<unknown>>) => {
+              (event: Event<IpcResult<ImportEvent>>) => {
                 try {
                   const payload = unwrapIpcResult(event.payload);
-                  if (payload === "READY") {
-                    dispatch(receiveReadyAction());
+                  switch (payload.type) {
+                    case 'Ready': {
+                      console.log(`${payload.data.ancestries} ancestries`);
+                      dispatch(receiveReadyAction());
+                      break;
+                    }
+                    case 'Progress': {
+                      console.log(`Progress update: ${payload.data[0]} out of ${payload.data[1]}`);
+                      break;
+                    }
+                    case 'Done': {
+                      console.log('Done (in theory)');
+                    }
                   }
                 } catch (err) {
                   console.error(err);

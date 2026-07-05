@@ -1,8 +1,11 @@
-use std::{fs, path::PathBuf};
-
-use anyhow::{Ok, Result};
+use crate::{WWError, WWResult};
+use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqlitePool};
+use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
+use ts_rs::TS;
+
+mod ancestries;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,
@@ -10,7 +13,7 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn new(app_handle: &AppHandle) -> Result<Self> {
+    pub async fn new(app_handle: &AppHandle) -> WWResult<Self> {
         let app_dir = app_handle
             .path()
             .app_data_dir()
@@ -44,4 +47,24 @@ impl Database {
 pub struct DatabaseState {
     pub pool: Pool<Sqlite>,
     pub path: PathBuf,
+}
+
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "etc.ts")]
+pub enum Size {
+    Sm,
+    Md,
+    Lg,
+}
+
+impl TryFrom<&str> for Size {
+    type Error = WWError;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "sm" => Ok(Self::Sm),
+            "md" => Ok(Self::Md),
+            "lg" => Ok(Self::Lg),
+            sz => Err(WWError::Generic(format!("{} is not a valid size", sz))),
+        }
+    }
 }

@@ -4,6 +4,7 @@ pub type WWResult<T> = core::result::Result<T, WWError>;
 pub enum WWError {
     Generic(String),
     Db(sqlx::Error),
+    Migrate(sqlx::migrate::MigrateError),
     Io(std::io::Error),
     Zip(zip::result::ZipError),
     Csv(csv::Error),
@@ -40,11 +41,18 @@ impl From<tauri::Error> for WWError {
     }
 }
 
+impl From<sqlx::migrate::MigrateError> for WWError {
+    fn from(value: sqlx::migrate::MigrateError) -> Self {
+        WWError::Migrate(value)
+    }
+}
+
 impl std::fmt::Display for WWError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Generic(s) => f.write_str(s),
             Self::Db(e) => write!(f, "DB: {}", e.to_string()),
+            Self::Migrate(e) => write!(f, "DB-Migrate: {}", e.to_string()),
             Self::Csv(e) => write!(f, "CSV: {}", e.to_string()),
             Self::Io(e) => write!(f, "IO: {}", e.to_string()),
             Self::Zip(e) => write!(f, "IO: {:?}", e),
