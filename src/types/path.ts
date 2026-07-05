@@ -2,11 +2,11 @@
 import type { Size } from './etc';
 
 export type Ancestry = {
-    id: number;
-    name: string;
-    descriptor: string | null;
-    size: Size;
-    speed: number;
-    add_health: number;
-    add_nat_def: number;
+  id: number;
+  name: string;
+  descriptor: string | null;
+  size: Size;
+  speed: number;
+  add_health: number;
+  add_nat_def: number;
 };

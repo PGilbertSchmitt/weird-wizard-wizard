@@ -39,7 +39,10 @@ export const ImportSeed = () => {
                   const payload = unwrapIpcResult(event.payload);
                   switch (payload.type) {
                     case 'Ready': {
-                      console.log('Records waiting to be seeded:', payload.data);
+                      console.log(
+                        'Records waiting to be seeded:',
+                        payload.data,
+                      );
                       dispatch(receiveReadyAction());
                       break;
                     }
