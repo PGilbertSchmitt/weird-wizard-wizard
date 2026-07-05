@@ -1,11 +1,11 @@
 export type ImportError = {
-  title: string;
-  continue?: boolean;
+    title: string;
+    continue?: boolean;
 } & (
-  | {
-      body: Record<string, string>;
-    }
-  | {
-      message: string | string[];
-    }
+    | {
+          body: Record<string, string>;
+      }
+    | {
+          message: string | string[];
+      }
 );

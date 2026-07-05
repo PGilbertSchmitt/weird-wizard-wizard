@@ -1,5 +1,5 @@
-import { IpcResult } from "@/types/ipc-result";
-import { invoke, InvokeArgs } from "@tauri-apps/api/core";
+import { IpcResult } from '@/types/ipc-result';
+import { invoke, InvokeArgs } from '@tauri-apps/api/core';
 
 export const unwrapIpcResult = <T = void>(res: IpcResult<T>) => {
     if ('Ok' in res) {
@@ -7,7 +7,7 @@ export const unwrapIpcResult = <T = void>(res: IpcResult<T>) => {
     } else {
         throw new Error(res.Err.message);
     }
-}
+};
 
 /**
  * Wrapper around Tauri's invoke function to unwrap my IpcResult type.

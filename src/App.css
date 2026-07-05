@@ -1,158 +1,158 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/inter';
 
 @custom-variant dark (&:is(.dark *));
 
 .logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+    filter: drop-shadow(0 0 2em #747bff);
 }
 
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafb);
+    filter: drop-shadow(0 0 2em #61dafb);
 }
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
+    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
 
-  color: #0f0f0f;
-  background-color: #f6f6f6;
+    color: #0f0f0f;
+    background-color: #f6f6f6;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
 
-  --background: oklch(93.3% 0.0339 17.77);
-  --secondary-background: oklch(100% 0 0);
-  --foreground: oklch(0% 0 0);
-  --main-foreground: oklch(0% 0 0);
-  --main: oklch(67.28% 0.2147 24.22);
-  --border: oklch(0% 0 0);
-  --ring: oklch(0% 0 0);
-  --overlay: oklch(0% 0 0 / 0.8);
-  --shadow: 4px 4px 0px 0px var(--border);
-  --chart-1: #ff4d50;
-  --chart-2: #5294ff;
-  --chart-3: #facc00;
-  --chart-4: #05e17a;
-  --chart-5: #7a83ff;
-  --chart-active-dot: #000;
+    --background: oklch(93.3% 0.0339 17.77);
+    --secondary-background: oklch(100% 0 0);
+    --foreground: oklch(0% 0 0);
+    --main-foreground: oklch(0% 0 0);
+    --main: oklch(67.28% 0.2147 24.22);
+    --border: oklch(0% 0 0);
+    --ring: oklch(0% 0 0);
+    --overlay: oklch(0% 0 0 / 0.8);
+    --shadow: 4px 4px 0px 0px var(--border);
+    --chart-1: #ff4d50;
+    --chart-2: #5294ff;
+    --chart-3: #facc00;
+    --chart-4: #05e17a;
+    --chart-5: #7a83ff;
+    --chart-active-dot: #000;
 }
 
 .light {
-  --secondary-background: oklch(100% 0 0);
-  --foreground: oklch(0% 0 0);
-  --main-foreground: oklch(0% 0 0);
-  --border: oklch(0% 0 0);
-  --ring: oklch(0% 0 0);
-  --overlay: oklch(0% 0 0 / 0.8);
-  --shadow: 4px 4px 0px 0px var(--border);
-  --chart-1: #ff4d50;
-  --chart-2: #5294ff;
-  --chart-3: #facc00;
-  --chart-4: #05e17a;
-  --chart-5: #7a83ff;
-  --chart-active-dot: #000;
+    --secondary-background: oklch(100% 0 0);
+    --foreground: oklch(0% 0 0);
+    --main-foreground: oklch(0% 0 0);
+    --border: oklch(0% 0 0);
+    --ring: oklch(0% 0 0);
+    --overlay: oklch(0% 0 0 / 0.8);
+    --shadow: 4px 4px 0px 0px var(--border);
+    --chart-1: #ff4d50;
+    --chart-2: #5294ff;
+    --chart-3: #facc00;
+    --chart-4: #05e17a;
+    --chart-5: #7a83ff;
+    --chart-active-dot: #000;
 }
 
 .light.red {
-  --background: oklch(93.3% 0.0339 17.77);
-  --main: oklch(67.28% 0.2147 24.22);
+    --background: oklch(93.3% 0.0339 17.77);
+    --main: oklch(67.28% 0.2147 24.22);
 }
 
 .light.cyan {
-  --background: oklch(94.61% 0.043 211.12);
-  --main: oklch(76.89% 0.139164 219.13);
+    --background: oklch(94.61% 0.043 211.12);
+    --main: oklch(76.89% 0.139164 219.13);
 }
 
 .light.amber {
-  --background: oklch(96.22% 0.0569 95.61);
-  --main: oklch(84.08% 0.1725 84.2);
+    --background: oklch(96.22% 0.0569 95.61);
+    --main: oklch(84.08% 0.1725 84.2);
 }
 
 .dark {
-  --secondary-background: oklch(23.93% 0 0);
-  --foreground: oklch(92.49% 0 0);
-  --main-foreground: oklch(0% 0 0);
-  --border: oklch(0% 0 0);
-  --ring: oklch(100% 0 0);
-  --shadow: 4px 4px 0px 0px var(--border);
-  --chart-1: #ff6669;
-  --chart-2: #5294ff;
-  --chart-3: #e0b700;
-  --chart-4: #04c86d;
-  --chart-5: #7a83ff;
-  --chart-active-dot: #fff;
+    --secondary-background: oklch(23.93% 0 0);
+    --foreground: oklch(92.49% 0 0);
+    --main-foreground: oklch(0% 0 0);
+    --border: oklch(0% 0 0);
+    --ring: oklch(100% 0 0);
+    --shadow: 4px 4px 0px 0px var(--border);
+    --chart-1: #ff6669;
+    --chart-2: #5294ff;
+    --chart-3: #e0b700;
+    --chart-4: #04c86d;
+    --chart-5: #7a83ff;
+    --chart-active-dot: #fff;
 }
 
 .dark.red {
-  --background: oklch(24.95% 0.0491 20.19);
-  --main: oklch(70.49% 0.1869 22.23);
+    --background: oklch(24.95% 0.0491 20.19);
+    --main: oklch(70.49% 0.1869 22.23);
 }
 
 .dark.cyan {
-  --background: oklch(27.11% 0.0303 225.38);
-  --main: oklch(64.37% 0.1162 218.75);
+    --background: oklch(27.11% 0.0303 225.38);
+    --main: oklch(64.37% 0.1162 218.75);
 }
 
 .dark.amber {
-  --background: oklch(28.91% 0.0359 90.09);
-  --main: oklch(77.7% 0.1593880864006951 84.38427202675717);
+    --background: oklch(28.91% 0.0359 90.09);
+    --main: oklch(77.7% 0.1593880864006951 84.38427202675717);
 }
 
 @theme inline {
-  --color-main: var(--main);
-  --color-background: var(--background);
-  --color-secondary-background: var(--secondary-background);
-  --color-foreground: var(--foreground);
-  --color-main-foreground: var(--main-foreground);
-  --color-border: var(--border);
-  --color-overlay: var(--overlay);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
+    --color-main: var(--main);
+    --color-background: var(--background);
+    --color-secondary-background: var(--secondary-background);
+    --color-foreground: var(--foreground);
+    --color-main-foreground: var(--main-foreground);
+    --color-border: var(--border);
+    --color-overlay: var(--overlay);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
 
-  --spacing-boxShadowX: 4px;
-  --spacing-boxShadowY: 2px;
-  --spacing-reverseBoxShadowX: -4px;
-  --spacing-reverseBoxShadowY: -2px;
-  --radius-base: 5px;
-  --shadow-shadow: var(--shadow);
-  --font-weight-base: 500;
-  --font-weight-heading: 900;
+    --spacing-boxShadowX: 4px;
+    --spacing-boxShadowY: 2px;
+    --spacing-reverseBoxShadowX: -4px;
+    --spacing-reverseBoxShadowY: -2px;
+    --radius-base: 5px;
+    --shadow-shadow: var(--shadow);
+    --font-weight-base: 500;
+    --font-weight-heading: 900;
 }
 
 .container {
-  margin: 0;
-  padding: 60px 200px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-  min-width: 500px;
+    margin: 0;
+    padding: 60px 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    min-width: 500px;
 }
 
 .row {
-  display: flex;
-  justify-content: center;
+    display: flex;
+    justify-content: center;
 }
 
 a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+    font-weight: 500;
+    color: #646cff;
+    text-decoration: inherit;
 }
 
 a:hover {
-  color: #535bf2;
+    color: #535bf2;
 }
 
 /* 
@@ -161,98 +161,98 @@ to make the default Link unstyled and add an explicit "default" class for
 external anchors.
 */
 a.default {
-  font-weight: 700;
-  text-decoration: underline;
+    font-weight: 700;
+    text-decoration: underline;
 }
 
 a.default:hover {
-  color: var(--color-chart-2);
+    color: var(--color-chart-2);
 }
 
 h1 {
-  text-align: center;
+    text-align: center;
 }
 
 input,
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    color: #0f0f0f;
+    background-color: #ffffff;
+    transition: border-color 0.25s;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
 }
 
 button {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 button:hover {
-  border-color: #396cd8;
+    border-color: #396cd8;
 }
 button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
+    border-color: #396cd8;
+    background-color: #e8e8e8;
 }
 
 input,
 button {
-  outline: none;
+    outline: none;
 }
 
 .masonry {
-  column-count: 2;
-  column-gap: 0.5rem;
+    column-count: 2;
+    column-gap: 0.5rem;
 }
 
 .masonry .brick {
-  break-inside: avoid;
+    break-inside: avoid;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
+    :root {
+        color: #f6f6f6;
+        background-color: #2f2f2f;
+    }
 
-  a:hover {
-    color: #24c8db;
-  }
+    a:hover {
+        color: #24c8db;
+    }
 
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
-  }
+    input,
+    button {
+        color: #ffffff;
+        background-color: #0f0f0f98;
+    }
+    button:active {
+        background-color: #0f0f0f69;
+    }
 }
 
 @layer base {
-  body {
-    @apply text-foreground font-base bg-background;
-  }
+    body {
+        @apply text-foreground font-base bg-background;
+    }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-heading;
-  }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-heading;
+    }
 
-  * {
-    @apply border-border outline-ring/50;
-  }
+    * {
+        @apply border-border outline-ring/50;
+    }
 
-  h1 {
-    font-size: xx-large;
-    margin-bottom: 16px;
-  }
+    h1 {
+        font-size: xx-large;
+        margin-bottom: 16px;
+    }
 }

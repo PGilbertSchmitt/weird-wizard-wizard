@@ -7,16 +7,16 @@ import { ImportSeed } from './components/pages/import-seed';
 // import { SeedDropzone } from "./dropzone";
 
 const App = () => (
-  <Routes>
-    {/* <Route path="/" Component={Home} />
+    <Routes>
+        {/* <Route path="/" Component={Home} />
     <Route path="/tome">
       <Route index Component={Tome} />
       <Route path=":traditionId" Component={TraditionPage} />
     </Route>
     <Route path="/paths" element={<p>paths</p>} />
     <Route path="/seed" Component={ImportSeed} /> */}
-    <Route path="/" Component={ImportSeed} />
-  </Routes>
+        <Route path="/" Component={ImportSeed} />
+    </Routes>
 );
 
 export default App;

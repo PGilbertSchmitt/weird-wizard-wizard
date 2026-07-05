@@ -1,10 +1,10 @@
-import { UnlistenFn } from "@tauri-apps/api/event";
+import { UnlistenFn } from '@tauri-apps/api/event';
 
 export const ImportStatuses = {
-  IDLE: "IDLE",
-  UNWRAPPING: "UNWRAPPING",
-  READY: "READY",
-  IMPORTING: "IMPORTING",
+    IDLE: 'IDLE',
+    UNWRAPPING: 'UNWRAPPING',
+    READY: 'READY',
+    IMPORTING: 'IMPORTING',
 } as const;
 
 interface IdleState {
@@ -31,21 +31,18 @@ interface ImportingState extends Omit<ReadyState, 'status'> {
 export const DEFAULT_IMPORT_STATE: IdleState = {
     status: ImportStatuses.IDLE,
     filename: null,
-}
+};
 
 export type ImportData =
-    | IdleState
-    | UnwrappingState
-    | ReadyState
-    | ImportingState;
+    IdleState | UnwrappingState | ReadyState | ImportingState;
 
 export const ImportActionTypes = {
-  SEND_FILE: "SEND_FILE",
-  RECEIVE_READY: "RECEIVE_READY",
-  SEND_START: "SEND_START",
-  RECEIVE_PROGRESS: "RECEIVE_PROGRESS",
-  RECEIVE_DONE: "RECEIVE_DONE",
-  CANCEL: "CANCEL",
+    SEND_FILE: 'SEND_FILE',
+    RECEIVE_READY: 'RECEIVE_READY',
+    SEND_START: 'SEND_START',
+    RECEIVE_PROGRESS: 'RECEIVE_PROGRESS',
+    RECEIVE_DONE: 'RECEIVE_DONE',
+    CANCEL: 'CANCEL',
 } as const;
 
 export const sendFileAction = (filepath: string) => ({
