@@ -1,5 +1,5 @@
 use crate::{WWError, WWResult};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sqlx::{Pool, Sqlite, SqlitePool};
 use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
@@ -46,6 +46,10 @@ impl Database {
 pub struct DatabaseState {
     pub pool: Pool<Sqlite>,
     pub path: PathBuf,
+}
+
+pub trait StoreModel: Sized + DeserializeOwned + Serialize {
+    const TABLE_NAME: &'static str;
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]

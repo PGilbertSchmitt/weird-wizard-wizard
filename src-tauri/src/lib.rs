@@ -1,5 +1,4 @@
-use std::sync::Mutex;
-use tauri::{Manager, async_runtime::Mutex as AsyncMutex};
+use tauri::{Manager, async_runtime::Mutex};
 
 mod db;
 mod import;
@@ -24,23 +23,28 @@ pub fn run() {
                     .await
                     .expect("Failed to open database");
 
-                app.manage(AsyncMutex::new(db::DatabaseState {
+                app.manage(Mutex::new(db::DatabaseState {
                     pool: database.pool,
                     path: database.path,
                 }));
             });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![ipc::init_seed])
+        .invoke_handler(tauri::generate_handler![
+            ipc::init_seed,
+            ipc::run_seed,
+        ])
         .build(tauri::generate_context!())
         .expect("Unexpected error while running tauri application")
-        .run_return(|app, ev| {
-            match ev {
-                // The tmp import dir is deleted on drop, so this ensures this happens on app close.
-                tauri::RunEvent::Exit => {
-                    app.state::<Mutex<WWAppData>>().lock().unwrap().drop_import();
-                }
-                _ => {}
-            }
+        .run_return(|_app, _ev| {
+            // match ev {
+            //     // The tmp import dir is deleted on drop, so this ensures this happens on app close.
+            //     tauri::RunEvent::Exit => {
+            //         if let Ok(data) = get_app_data_state(&app) {
+            //             data.lock().await.drop_import();
+            //         }
+            //     }
+            //     _ => {}
+            // }
         });
 }

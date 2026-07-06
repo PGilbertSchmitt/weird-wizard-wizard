@@ -12,8 +12,10 @@ import {
   ImportActionTypes,
   ImportData,
   ImportStatuses,
+  receiveDoneAction,
   receiveReadyAction,
   sendFileAction,
+  sendStartAction,
 } from './import-state';
 import { IpcResult } from '@/types/ipc-result';
 import { unwrapIpcResult } from '@/api/request';
@@ -53,7 +55,11 @@ export const ImportSeed = () => {
                       break;
                     }
                     case 'Done': {
-                      console.log('Done (in theory)');
+                      dispatch(receiveDoneAction());
+                      break;
+                    }
+                    default: {
+                      console.log('Unknown:', payload);
                     }
                   }
                 } catch (err) {
@@ -86,9 +92,15 @@ export const ImportSeed = () => {
             : prev;
 
         case ImportActionTypes.SEND_START:
-          return prev.status === ImportStatuses.READY
-            ? { ...prev, status: ImportStatuses.IMPORTING }
-            : prev;
+          if (prev.status === ImportStatuses.READY) {
+            invoke('run_seed').catch((err) => {
+              console.error(err);
+              dispatch(cancelAction());
+            });
+            return { ...prev, status: ImportStatuses.IMPORTING }
+          } else {
+            return prev;
+          }
 
         case ImportActionTypes.RECEIVE_PROGRESS:
           return prev.status === ImportStatuses.IMPORTING
@@ -102,6 +114,7 @@ export const ImportSeed = () => {
             // after the `DONE` signal is returned, and even if it did, the reducer is setup such
             // that the sendFile action is the only one that can move out of the IDLE state.
             prev.unlistener.then((unlisten) => unlisten());
+            alert('yey!');
             return DEFAULT_IMPORT_STATE;
           } else {
             return prev;
@@ -160,6 +173,10 @@ export const ImportSeed = () => {
 
         {importState.status !== ImportStatuses.IDLE && (
           <Button onClick={() => dispatch(cancelAction())}>Cancel</Button>
+        )}
+
+        {importState.status === ImportStatuses.READY && (
+          <Button onClick={() => dispatch(sendStartAction())}>Do it!</Button>
         )}
       </div>
     </>
