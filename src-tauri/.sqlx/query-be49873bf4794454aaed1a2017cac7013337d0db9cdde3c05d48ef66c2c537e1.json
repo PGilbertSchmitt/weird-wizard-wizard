@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO ancestry_immunities (\n                        ancestry_id,\n                        immunity_id\n                    ) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "be49873bf4794454aaed1a2017cac7013337d0db9cdde3c05d48ef66c2c537e1"
+}

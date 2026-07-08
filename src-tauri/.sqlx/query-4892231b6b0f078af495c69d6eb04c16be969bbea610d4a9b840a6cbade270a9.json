@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO speed_traits (name, description, unit) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "4892231b6b0f078af495c69d6eb04c16be969bbea610d4a9b840a6cbade270a9"
+}

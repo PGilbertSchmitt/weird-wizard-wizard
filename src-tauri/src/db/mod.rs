@@ -1,11 +1,20 @@
-use crate::{WWError, WWResult};
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use crate::WWResult;
 use sqlx::{Pool, Sqlite, SqlitePool};
 use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
-use ts_rs::TS;
 
 mod ancestries;
+mod etc;
+mod languages;
+mod speed_traits;
+mod senses;
+mod immunities;
+
+pub use languages::Language;
+pub use speed_traits::SpeedTrait;
+pub use senses::Sense;
+pub use immunities::Immunity;
+pub use ancestries::Ancestry;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,
@@ -46,28 +55,4 @@ impl Database {
 pub struct DatabaseState {
     pub pool: Pool<Sqlite>,
     pub path: PathBuf,
-}
-
-pub trait StoreModel: Sized + DeserializeOwned + Serialize {
-    const TABLE_NAME: &'static str;
-}
-
-#[derive(TS, Debug, Serialize, Deserialize)]
-#[ts(export, export_to = "etc.ts")]
-pub enum Size {
-    Sm,
-    Md,
-    Lg,
-}
-
-impl TryFrom<&str> for Size {
-    type Error = WWError;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value.to_lowercase().as_str() {
-            "sm" => Ok(Self::Sm),
-            "md" => Ok(Self::Md),
-            "lg" => Ok(Self::Lg),
-            sz => Err(WWError::Generic(format!("{} is not a valid size", sz))),
-        }
-    }
 }

@@ -62,3 +62,10 @@ impl std::fmt::Display for WWError {
 }
 
 impl std::error::Error for WWError {}
+
+pub fn opt_to_wwresult<T>(opt: Option<T>, reason: String) -> WWResult<T> {
+    match opt {
+        Some(t) => Ok(t),
+        None => Err(WWError::Generic(reason)),
+    }
+}

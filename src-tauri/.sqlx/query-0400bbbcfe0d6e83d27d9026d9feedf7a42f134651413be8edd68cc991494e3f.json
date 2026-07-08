@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO ancestry_senses (\n                            ancestry_id,\n                            sense_id,\n                            amount\n                        ) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "0400bbbcfe0d6e83d27d9026d9feedf7a42f134651413be8edd68cc991494e3f"
+}

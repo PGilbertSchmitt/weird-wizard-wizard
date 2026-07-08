@@ -1,8 +1,15 @@
 use csv::Reader;
-use serde::{de::DeserializeOwned, Deserialize};
-use std::path::PathBuf;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use ts_rs::TS;
+use std::{collections::HashMap, path::PathBuf};
 
 use crate::{WWError, WWResult};
+
+mod init_seed;
+mod run_seed;
+
+pub use init_seed::initialize_seed_import;
+pub use run_seed::run_seed_import;
 
 pub(super) fn extract_rows<T>(filepath: PathBuf) -> WWResult<Vec<T>>
 where
@@ -22,28 +29,121 @@ where
     Ok(output)
 }
 
-pub fn pipe_separate(column: Option<String>) -> Vec<String> {
+pub fn pipe_separate(column: &Option<String>) -> Vec<String> {
     match column {
         Some(s) => s.split("|").map(|part| part.trim().to_owned()).collect(),
         None => Vec::new(),
     }
 }
 
+pub type NameToId = HashMap<String, i64>;
+
+const AFFIRMATIVE_STRINGS: [&'static str; 3] = ["Y", "YES", "TRUE"];
+
+pub fn is_affirmative(value: Option<&str>) -> bool {
+    value.map_or(false, |s| {
+        let s = s.to_ascii_uppercase();
+        AFFIRMATIVE_STRINGS.iter().any(|v| v == &s)
+    })
+}
+
+#[derive(TS, Serialize)]
+#[ts(export, export_to = "import.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
+pub enum ImportEvent {
+    Ready(ImportSummary),
+    Progress(ProgressPayload),
+    Done, // An empty payload makes the TS type easier to work with
+}
+
+#[derive(TS, Serialize)]
+#[ts(export, export_to = "import.ts")]
+struct ProgressPayload(u32, u32);
+
+pub struct ImportData {
+    pub ancestries: Vec<AncestryRow>,
+    pub languages: Vec<LanguageRow>,
+    pub speed_traits: Vec<SpeedTraitRow>,
+    pub senses: Vec<SenseRow>,
+    pub profession_categories: Vec<ProfessionCategoryRow>,
+    pub professions: Vec<ProfessionRow>,
+    pub traditions: Vec<TraditionRow>,
+    pub magic_talents: Vec<MagicTalentRow>,
+    pub magic_spells: Vec<MagicSpellRow>,
+    pub novice_paths: Vec<NovicePathRow>,
+    pub novice_levels: Vec<NoviceLevelRow>,
+    pub expert_paths: Vec<ExpertPathRow>,
+    pub expert_levels: Vec<ExpertLevelRow>,
+    pub master_paths: Vec<MasterPathRow>,
+    pub master_levels: Vec<MasterLevelRow>,
+    pub path_talents: Vec<PathTalentRow>,
+    pub options: Vec<OptionRow>,
+    pub tables: Vec<TableRow>,
+}
+
+impl ImportData {
+    pub fn summary(&self) -> ImportSummary {
+        ImportSummary {
+            ancestries: self.ancestries.len(),
+            languages: self.languages.len(),
+            speed_traits: self.speed_traits.len(),
+            senses: self.senses.len(),
+            profession_categories: self.profession_categories.len(),
+            professions: self.professions.len(),
+            traditions: self.traditions.len(),
+            magic_talents: self.magic_talents.len(),
+            magic_spells: self.magic_spells.len(),
+            novice_paths: self.novice_paths.len(),
+            novice_levels: self.novice_levels.len(),
+            expert_paths: self.expert_paths.len(),
+            expert_levels: self.expert_levels.len(),
+            master_paths: self.master_paths.len(),
+            master_levels: self.master_levels.len(),
+            path_talents: self.path_talents.len(),
+            options: self.options.len(),
+            tables: self.tables.len(),
+        }
+    }
+}
+
+#[derive(TS, Serialize)]
+#[ts(export, export_to = "import.ts")]
+pub struct ImportSummary {
+    ancestries: usize,
+    languages: usize,
+    speed_traits: usize,
+    senses: usize,
+    profession_categories: usize,
+    professions: usize,
+    traditions: usize,
+    magic_talents: usize,
+    magic_spells: usize,
+    novice_paths: usize,
+    novice_levels: usize,
+    expert_paths: usize,
+    expert_levels: usize,
+    master_paths: usize,
+    master_levels: usize,
+    path_talents: usize,
+    options: usize,
+    tables: usize,
+}
+
 /* CSV Records */
 
 #[derive(Deserialize, Debug)]
 pub(super) struct AncestryRow {
-    ancestry: String,
-    base_size: String,
-    base_speed: u32,
-    base_health: Option<u32>,
-    base_nat_def: Option<u32>,
-    languages: Option<String>,
-    speed_traits: Option<String>,
-    senses: Option<String>,
-    immunities: Option<String>,
-    descriptor: Option<String>,
-    traits: Option<String>,
+    pub ancestry: String,
+    pub base_size: String,
+    pub base_speed: u32,
+    pub add_health: Option<u32>,
+    pub add_nat_def: Option<u32>,
+    pub languages: Option<String>,
+    pub speed_traits: Option<String>,
+    pub senses: Option<String>,
+    pub immunities: Option<String>,
+    pub descriptor: Option<String>,
+    pub traits: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -56,13 +156,14 @@ pub(super) struct LanguageRow {
 #[derive(Deserialize, Debug)]
 pub(super) struct SpeedTraitRow {
     pub name: String,
-    pub units: Option<String>,
+    pub unit: Option<String>,
     pub description: String,
 }
 
 #[derive(Deserialize, Debug)]
 pub(super) struct SenseRow {
     pub name: String,
+    pub unit: Option<String>,
     pub description: String,
 }
 

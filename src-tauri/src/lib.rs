@@ -37,6 +37,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("Unexpected error while running tauri application")
         .run_return(|_app, _ev| {
+            // TODO: The WWAppData struct is stored via async mutex, so I can't safely acquire a lock
+            // in this synchronous callback. I'll need to put the import_dir in a separately stored
+            // sync mutex in order to safely drop it.
             // match ev {
             //     // The tmp import dir is deleted on drop, so this ensures this happens on app close.
             //     tauri::RunEvent::Exit => {

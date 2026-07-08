@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO senses (name, description, unit) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "5bc8984b0b93372896a5a8dc1937ca17f3ebf9bfb46e48c5f03568122719615d"
+}

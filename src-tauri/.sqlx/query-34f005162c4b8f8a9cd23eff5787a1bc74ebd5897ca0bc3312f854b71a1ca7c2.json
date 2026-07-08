@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO languages (name, description, secret) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "34f005162c4b8f8a9cd23eff5787a1bc74ebd5897ca0bc3312f854b71a1ca7c2"
+}

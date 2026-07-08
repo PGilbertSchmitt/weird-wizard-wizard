@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS languages (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
-    secret      INTEGER NOT NULL -- bool
+    secret      BOOLEAN NOT NULL -- bool
 );
 
 CREATE TABLE IF NOT EXISTS speed_traits (
@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS ancestries (
     descriptor  TEXT,
     size        TEXT CHECK (size IN ('sm', 'md', 'lg')) NOT NULL,
     speed       INTEGER NOT NULL,
-    add_health  INTEGER NOT NULL,
-    add_nat_def INTEGER NOT NULL
+    add_health  INTEGER,
+    add_nat_def INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS ancestry_languages (
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS talents (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
-    magical         INTEGER NOT NULL, -- bool
+    magical         BOOLEAN NOT NULL, -- bool
     charges         TEXT,
     restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn', 'Start of Round', 'Special')) NOT NULL,
     info_table_id   INTEGER REFERENCES info_tables(id),
@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS spells (
     duration        TEXT NOT NULL,
     target          TEXT NOT NULL,
     condition       TEXT,
-    ritual          INTEGER NOT NULL, -- bool
+    ritual          BOOLEAN NOT NULL, -- bool
     info_table_id   INTEGER REFERENCES info_tables(id),
     option_block_id INTEGER REFERENCES option_blocks(id)
 );

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO ancestries (\n                    name,\n                    descriptor,\n                    size,\n                    speed,\n                    add_health,\n                    add_nat_def\n                ) VALUES (?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "3e9d05f6cc5f553d2586c40d06e351b6efb85d541a3c0bc0d502e63579d18fda"
+}

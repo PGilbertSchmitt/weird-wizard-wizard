@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO ancestry_languages (\n                        ancestry_id,\n                        language_id\n                    ) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "e65e3060c00e2204c06275dc11f0207e303d8d2edcee6fcf6c9e58101cadd55a"
+}
