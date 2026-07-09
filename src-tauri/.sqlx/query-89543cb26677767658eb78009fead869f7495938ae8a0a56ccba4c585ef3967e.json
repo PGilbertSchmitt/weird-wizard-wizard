@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT l.*, a_st.amount FROM speed_traits as l\n                JOIN ancestry_speed_traits a_st ON a_st.speed_trait_id = l.id\n                JOIN ancestries a ON a.id = a_st.ancestry_id\n                WHERE a.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "description",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "unit",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "amount",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "89543cb26677767658eb78009fead869f7495938ae8a0a56ccba4c585ef3967e"
+}

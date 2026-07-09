@@ -1,7 +1,7 @@
 use csv::Reader;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use ts_rs::TS;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
+use ts_rs::TS;
 
 use crate::{WWError, WWResult};
 
@@ -53,12 +53,12 @@ pub fn is_affirmative(value: Option<&str>) -> bool {
 pub enum ImportEvent {
     Ready(ImportSummary),
     Progress(ProgressPayload),
-    Done, // An empty payload makes the TS type easier to work with
+    Done,
 }
 
 #[derive(TS, Serialize)]
 #[ts(export, export_to = "import.ts")]
-struct ProgressPayload(u32, u32);
+pub struct ProgressPayload(usize, usize);
 
 pub struct ImportData {
     pub ancestries: Vec<AncestryRow>,
@@ -127,6 +127,29 @@ pub struct ImportSummary {
     path_talents: usize,
     options: usize,
     tables: usize,
+}
+
+impl ImportSummary {
+    pub fn total_records(&self) -> usize {
+        self.ancestries
+            + self.languages
+            + self.speed_traits
+            + self.senses
+            + self.profession_categories
+            + self.professions
+            + self.traditions
+            + self.magic_talents
+            + self.magic_spells
+            + self.novice_paths
+            + self.novice_levels
+            + self.expert_paths
+            + self.expert_levels
+            + self.master_paths
+            + self.master_levels
+            + self.path_talents
+            + self.options
+            + self.tables
+    }
 }
 
 /* CSV Records */

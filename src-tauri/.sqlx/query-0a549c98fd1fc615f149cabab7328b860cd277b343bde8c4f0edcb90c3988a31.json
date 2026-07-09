@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO option_blocks (label, value) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "0a549c98fd1fc615f149cabab7328b860cd277b343bde8c4f0edcb90c3988a31"
+}

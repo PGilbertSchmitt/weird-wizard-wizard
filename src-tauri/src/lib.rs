@@ -1,4 +1,4 @@
-use tauri::{Manager, async_runtime::Mutex};
+use tauri::{async_runtime::Mutex, Manager};
 
 mod db;
 mod import;
@@ -33,6 +33,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             ipc::init_seed,
             ipc::run_seed,
+            ipc::get_ancestry,
+            ipc::get_full_ancestry,
+            ipc::get_table,
         ])
         .build(tauri::generate_context!())
         .expect("Unexpected error while running tauri application")

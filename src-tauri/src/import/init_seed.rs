@@ -1,7 +1,10 @@
 use std::{fs::File, path::PathBuf};
 
 use crate::{
-    WWResult, import::ImportData, ipc::{EmitChannel, emit}, store::get_app_data_state,
+    import::ImportData,
+    ipc::{emit, EmitChannel},
+    store::get_app_data_state,
+    WWResult,
 };
 
 use super::{

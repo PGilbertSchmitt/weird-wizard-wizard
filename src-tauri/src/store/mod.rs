@@ -1,8 +1,8 @@
 use std::path::PathBuf;
-use tauri::{AppHandle, Wry, Manager, async_runtime::Mutex};
+use tauri::{async_runtime::Mutex, AppHandle, Manager, Wry};
 use tempfile::TempDir;
 
-use crate::{WWResult, db, import::ImportData};
+use crate::{db, import::ImportData, WWResult};
 
 // For storing non-DB app state
 pub struct WWAppData {
@@ -24,7 +24,7 @@ impl WWAppData {
         self.import_dir = Some(tmp_dir);
         Ok(path)
     }
-    
+
     #[allow(unused)]
     pub fn drop_import(&mut self) {
         self.import_dir = None;

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT l.* FROM immunities as l\n                JOIN ancestry_immunities a_i ON a_i.immunity_id = l.id\n                JOIN ancestries a ON a.id = a_i.ancestry_id\n                WHERE a.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "6e0da7d7af5b81c1f9a529bbc68874e4026888c4de0f3c770a91b92f9872b052"
+}

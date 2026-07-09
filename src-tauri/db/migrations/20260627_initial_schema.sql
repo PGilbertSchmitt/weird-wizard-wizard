@@ -144,14 +144,14 @@ CREATE TABLE IF NOT EXISTS traditions (
 );
 
 CREATE TABLE IF NOT EXISTS talents (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    name            TEXT NOT NULL,
-    description     TEXT NOT NULL,
-    magical         BOOLEAN NOT NULL, -- bool
-    charges         TEXT,
-    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn', 'Start of Round', 'Special')) NOT NULL,
-    info_table_id   INTEGER REFERENCES info_tables(id),
-    option_block_id INTEGER REFERENCES option_blocks(id)
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL,
+    description   TEXT NOT NULL,
+    magical       BOOLEAN NOT NULL, -- bool
+    charges       TEXT,
+    restore       TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn', 'Start of Round', 'Special')) NOT NULL,
+    info_table_id INTEGER REFERENCES info_tables(id),
+    option_block  TEXT REFERENCES option_blocks(label)
 );
 
 CREATE TABLE IF NOT EXISTS tradition_talents (
@@ -161,18 +161,18 @@ CREATE TABLE IF NOT EXISTS tradition_talents (
 );
 
 CREATE TABLE IF NOT EXISTS spells (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
-    name            TEXT NOT NULL,
-    description     TEXT NOT NULL,
-    path_kind       TEXT CHECK (path_kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
-    castings        INTEGER NOT NULL,
-    duration        TEXT NOT NULL,
-    target          TEXT NOT NULL,
-    condition       TEXT,
-    ritual          BOOLEAN NOT NULL, -- bool
-    info_table_id   INTEGER REFERENCES info_tables(id),
-    option_block_id INTEGER REFERENCES option_blocks(id)
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    tradition_id  INTEGER REFERENCES traditions(id) NOT NULL,
+    name          TEXT NOT NULL,
+    description   TEXT NOT NULL,
+    path_kind     TEXT CHECK (path_kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
+    castings      INTEGER NOT NULL,
+    duration      TEXT NOT NULL,
+    target        TEXT NOT NULL,
+    condition     TEXT,
+    ritual        BOOLEAN NOT NULL, -- bool
+    info_table_id INTEGER REFERENCES info_tables(id),
+    option_block  TEXT REFERENCES option_blocks(label)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (tradition_id, name);
@@ -192,13 +192,8 @@ CREATE TABLE IF NOT EXISTS info_table_rows (
 );
 
 CREATE TABLE IF NOT EXISTS option_blocks (
-    id   INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS option_block_rows (
-    option_block_id INTEGER REFERENCES option_blocks(id) NOT NULL,
-    value           TEXT NOT NULL
+    label  TEXT NOT NULL,
+    value  TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS activate_tags (

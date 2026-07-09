@@ -1,11 +1,16 @@
-mod response;
+mod ancestries;
 mod import;
+mod info_tables;
+mod response;
 
+pub use ancestries::*;
 pub use import::*;
+pub use info_tables::*;
+
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
-use crate::{WWResult, ipc::response::IpcResult};
+use crate::{ipc::response::IpcResult, WWResult};
 
 pub enum EmitChannel {
     IMPORT,
@@ -19,13 +24,9 @@ impl From<EmitChannel> for &'static str {
     }
 }
 
-pub fn emit<T>(
-    app: &AppHandle,
-    channel: EmitChannel,
-    payload: &IpcResult<T>
-) -> WWResult<()>
+pub fn emit<T>(app: &AppHandle, channel: EmitChannel, payload: &IpcResult<T>) -> WWResult<()>
 where
-    T: Serialize
+    T: Serialize,
 {
     Ok(app.emit(channel.into(), &payload)?)
 }

@@ -10,7 +10,7 @@ pub struct IpcError {
 impl From<WWError> for IpcError {
     fn from(value: WWError) -> Self {
         Self {
-            message: value.to_string()
+            message: value.to_string(),
         }
     }
 }

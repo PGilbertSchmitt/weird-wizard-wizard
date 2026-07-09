@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
-import { request } from './request';
+import { invoke } from '@tauri-apps/api/core';
 
 export const useInitSeed = (filepath: string) =>
   useMutation({
-    mutationFn: () => request('init_seed', { filepath }),
+    mutationFn: () => invoke('init_seed', { filepath }),
   });

@@ -1,0 +1,56 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT * FROM ancestries WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "descriptor",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "size",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "speed",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "add_health",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "add_nat_def",
+        "ordinal": 6,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "ba3fecfbb682a8a760534910ddfa878510ed82546b9aca57889f3ebec9711556"
+}

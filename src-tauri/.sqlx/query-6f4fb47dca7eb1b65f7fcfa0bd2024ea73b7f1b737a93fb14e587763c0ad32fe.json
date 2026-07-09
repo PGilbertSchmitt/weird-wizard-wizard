@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT l.* FROM languages as l\n                JOIN ancestry_languages a_l ON a_l.language_id = l.id\n                JOIN ancestries a ON a.id = a_l.ancestry_id\n                WHERE a.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "description",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "secret",
+        "ordinal": 3,
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6f4fb47dca7eb1b65f7fcfa0bd2024ea73b7f1b737a93fb14e587763c0ad32fe"
+}

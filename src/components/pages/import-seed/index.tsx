@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import { Paragraph } from '@/components/ui/paragraph';
 import { ExtLink } from '@/components/ui/external-link';
 import { Dropzone } from './dropzone';
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Event, listen } from '@tauri-apps/api/event';
 import {
@@ -127,6 +127,8 @@ export const ImportSeed = () => {
     DEFAULT_IMPORT_STATE,
   );
 
+  const [id, setId] = useState("");
+
   useEffect(() => {
     return () => {
       if ('unlistener' in importState) {
@@ -178,6 +180,17 @@ export const ImportSeed = () => {
         {importState.status === ImportStatuses.READY && (
           <Button onClick={() => dispatch(sendStartAction())}>Do it!</Button>
         )}
+
+        <input
+          value={id}
+          onChange={e => setId(e.target.value)}
+        />
+
+        <Button disabled={Number.isNaN(parseInt(id))} onClick={() => {
+          invoke('get_table', { id: parseInt(id) }).then(data => {
+            console.log('une data', data);
+          })
+        }}>CLOCK</Button>
       </div>
     </>
   );

@@ -3,18 +3,15 @@ use sqlx::{Pool, Sqlite, SqlitePool};
 use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
 
-mod ancestries;
-mod etc;
-mod languages;
-mod speed_traits;
-mod senses;
-mod immunities;
-
-pub use languages::Language;
-pub use speed_traits::SpeedTrait;
-pub use senses::Sense;
-pub use immunities::Immunity;
-pub use ancestries::Ancestry;
+pub mod ancestries;
+pub mod etc;
+pub mod immunities;
+pub mod info_tables;
+pub mod languages;
+pub mod option_blocks;
+pub mod professions;
+pub mod senses;
+pub mod speed_traits;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,

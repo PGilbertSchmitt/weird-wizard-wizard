@@ -2,10 +2,13 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqliteConnection;
 use ts_rs::TS;
 
-use crate::{WWResult, import::{NameToId, SenseRow}};
+use crate::{
+    import::{NameToId, SenseRow},
+    WWResult,
+};
 
 #[derive(TS, Debug, Serialize, Deserialize)]
-#[ts(export, export_to="other_info.ts")]
+#[ts(export, export_to = "other_info.ts")]
 pub struct Sense {
     pub id: i64,
     pub name: String,
@@ -25,12 +28,12 @@ impl Sense {
                 row.description,
                 row.unit,
             )
-                .execute(&mut *tx)
-                .await?;
+            .execute(&mut *tx)
+            .await?;
 
             name_to_id.insert(label, record.last_insert_rowid());
         }
-        
+
         Ok(name_to_id)
     }
 }

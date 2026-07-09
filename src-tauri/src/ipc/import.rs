@@ -1,6 +1,10 @@
 use tauri::{command, AppHandle, Wry};
 
-use crate::{WWResult, import::{initialize_seed_import, run_seed_import}, ipc::{EmitChannel, emit}};
+use crate::{
+    import::{initialize_seed_import, run_seed_import},
+    ipc::{emit, EmitChannel},
+    WWResult,
+};
 
 // This is potentially long running, so it communicates using events
 #[command]

@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 pub type WWResult<T> = core::result::Result<T, WWError>;
 
 #[derive(Debug)]
@@ -62,6 +64,15 @@ impl std::fmt::Display for WWError {
 }
 
 impl std::error::Error for WWError {}
+
+impl Serialize for WWError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
 
 pub fn opt_to_wwresult<T>(opt: Option<T>, reason: String) -> WWResult<T> {
     match opt {

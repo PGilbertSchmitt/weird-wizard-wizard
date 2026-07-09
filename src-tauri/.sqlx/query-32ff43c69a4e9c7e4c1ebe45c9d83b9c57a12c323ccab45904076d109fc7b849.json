@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO professions (name, description, category) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "32ff43c69a4e9c7e4c1ebe45c9d83b9c57a12c323ccab45904076d109fc7b849"
+}
