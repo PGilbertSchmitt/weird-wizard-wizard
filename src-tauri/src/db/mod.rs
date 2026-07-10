@@ -8,10 +8,16 @@ pub mod etc;
 pub mod immunities;
 pub mod info_tables;
 pub mod languages;
+pub mod levels;
+pub mod magic_talents;
 pub mod option_blocks;
+pub mod paths;
 pub mod professions;
 pub mod senses;
 pub mod speed_traits;
+pub mod spells;
+pub mod traditions;
+// pub mod path_talents;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,

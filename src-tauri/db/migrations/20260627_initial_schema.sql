@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS languages (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
-    secret      BOOLEAN NOT NULL -- bool
+    secret      BOOLEAN NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS speed_traits (
@@ -76,22 +76,22 @@ CREATE TABLE IF NOT EXISTS ancestry_immunities (
     PRIMARY KEY (ancestry_id, immunity_id)
 );
 
--- CREATE TABLE IF NOT EXISTS ancestry_traits (
+-- CREATE TABLE IF NOT EXISTS ancestry_talents (
 --     ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
---     trait_id    INTEGER REFERENCES traits(id) NOT NULL,
---     PRIMARY KEY (ancestry_id, trait_id)
+--     path_talent_id    INTEGER REFERENCES path_talents(id) NOT NULL,
+--     PRIMARY KEY (ancestry_id, path_talent_id)
 -- );
 
 CREATE TABLE IF NOT EXISTS paths (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL UNIQUE,
-    kind        TEXT CHECK (kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
+    path_kind   TEXT CHECK (path_kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
     category    TEXT NOT NULL,
     description TEXT NOT NULL,
-    req_str     INTEGER,
-    req_agl     INTEGER,
-    req_int     INTEGER,
-    req_will    INTEGER,
+    rec_str     INTEGER,
+    rec_agl     INTEGER,
+    rec_int     INTEGER,
+    rec_will    INTEGER,
     ancestry    INTEGER REFERENCES ancestries(id) -- A novice path with an Ancestry INTEGER REFERENCES locks the character to that specific Ancestry record
 );
 
@@ -104,16 +104,21 @@ CREATE TABLE IF NOT EXISTS levels (
     add_arm_def   INTEGER DEFAULT 0,
     add_bonus_dmg INTEGER DEFAULT 0,
     add_speed     INTEGER DEFAULT 0,
+    trad_choices  INTEGER DEFAULT 0,
+    lang_choices  INTEGER DEFAULT 0,
+    novice_spells INTEGER DEFAULT 0,
+    expert_spells INTEGER DEFAULT 0,
+    master_spells INTEGER DEFAULT 0,
     size          TEXT CHECK (size IN ('sm', 'md', 'lg')) -- Only used officially for Pollywog level 5
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_levels ON levels (path, level);
 
-CREATE TABLE IF NOT EXISTS level_talents (
-    level_id    INTEGER REFERENCES levels(id) NOT NULL,
-    talent_id   INTEGER REFERENCES talents(id) NOT NULL,
-    PRIMARY KEY (level_id, talent_id)
-);
+-- CREATE TABLE IF NOT EXISTS level_talents (
+--     level_id    INTEGER REFERENCES levels(id) NOT NULL,
+--     path_talent_id   INTEGER REFERENCES talents(id) NOT NULL,
+--     PRIMARY KEY (level_id, path_talent_id)
+-- );
 
 CREATE TABLE IF NOT EXISTS level_traditions (
     level_id     INTEGER REFERENCES levels(id) NOT NULL,
@@ -143,39 +148,34 @@ CREATE TABLE IF NOT EXISTS traditions (
     info_table_id INTEGER REFERENCES info_tables(id)
 );
 
-CREATE TABLE IF NOT EXISTS talents (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    name          TEXT NOT NULL,
-    description   TEXT NOT NULL,
-    magical       BOOLEAN NOT NULL, -- bool
-    charges       TEXT,
-    restore       TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start Of Next Turn', 'End Of Next Turn', 'Start of Round', 'Special')) NOT NULL,
-    info_table_id INTEGER REFERENCES info_tables(id),
-    option_block  TEXT REFERENCES option_blocks(label)
-);
-
-CREATE TABLE IF NOT EXISTS tradition_talents (
-    tradition_id INTEGER REFERENCES traditions(id) NOT NULL,
-    talent_id    INTEGER REFERENCES talents(id) NOT NULL,
-    PRIMARY KEY  (tradition_id, talent_id)
+CREATE TABLE IF NOT EXISTS magic_talents (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL,
+    charges         TEXT,
+    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start of Next Turn', 'End of Next Turn', 'Start of Round', 'Special')) NOT NULL,
+    activate        TEXT NOT NULL,
+    info_table_id   INTEGER REFERENCES info_tables(id),
+    option_block_id INTEGER REFERENCES option_blocks(id)
 );
 
 CREATE TABLE IF NOT EXISTS spells (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    tradition_id  INTEGER REFERENCES traditions(id) NOT NULL,
-    name          TEXT NOT NULL,
-    description   TEXT NOT NULL,
-    path_kind     TEXT CHECK (path_kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
-    castings      INTEGER NOT NULL,
-    duration      TEXT NOT NULL,
-    target        TEXT NOT NULL,
-    condition     TEXT,
-    ritual        BOOLEAN NOT NULL, -- bool
-    info_table_id INTEGER REFERENCES info_tables(id),
-    option_block  TEXT REFERENCES option_blocks(label)
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL,
+    path_kind       TEXT CHECK (path_kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
+    castings        INTEGER NOT NULL,
+    duration        TEXT NOT NULL,
+    target          TEXT NOT NULL,
+    condition       TEXT,
+    ritual          BOOLEAN NOT NULL,
+    info_table_id   INTEGER REFERENCES info_tables(id),
+    option_block_id INTEGER REFERENCES option_blocks(id)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (tradition_id, name);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (name, tradition_id);
 
 CREATE TABLE IF NOT EXISTS info_tables (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -192,19 +192,13 @@ CREATE TABLE IF NOT EXISTS info_table_rows (
 );
 
 CREATE TABLE IF NOT EXISTS option_blocks (
-    label  TEXT NOT NULL,
-    value  TEXT NOT NULL
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS activate_tags (
-    id   INTEGER PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS magic_talent_activations (
-    talent_id       INTEGER REFERENCES talents(id) NOT NULL,
-    activate_tag_id INTEGER REFERENCES activate_tags(id) NOT NULL,
-    PRIMARY KEY (talent_id, activate_tag_id)
+CREATE TABLE IF NOT EXISTS option_block_rows (
+    option_block_id INTEGER REFERENCES option_blocks(id),
+    value           TEXT NOT NULL
 );
 
 -- END: SEEDABLE TABLES
@@ -270,6 +264,15 @@ BEGIN
             THEN raise(ABORT, 'UNIT_AMOUNT_REQUIRED')
         WHEN NEW.amount IS NOT NULL AND (SELECT unit FROM speed_traits WHERE id = NEW.speed_trait_id) IS NULL
             THEN raise(ABORT, 'UNIT_AMOUNT_FORBIDDEN')
+        END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS validate_movice_path_init_scores BEFORE INSERT ON paths
+BEGIN
+    SELECT
+        CASE
+        WHEN NEW.path_kind = "Novice" AND (NEW.rec_str IS NULL OR NEW.rec_agl IS NULL OR NEW.rec_int IS NULL OR NEW.rec_will IS NULL)
+            THEN raise(ABORT, 'EXPECTED_NOVICE_SCORE_RECS')
         END;
 END;
 

@@ -36,7 +36,46 @@ pub fn pipe_separate(column: &Option<String>) -> Vec<String> {
     }
 }
 
-pub type NameToId = HashMap<String, i64>;
+pub struct NameToId {
+    map: HashMap<String, i64>,
+    label: String,
+}
+
+impl NameToId {
+    pub fn new(label: &str) -> Self {
+        Self {
+            map: HashMap::new(),
+            label: label.to_string(),
+        }
+    }
+
+    pub fn insert(&mut self, key: String, value: i64) {
+        self.map.insert(key, value);
+    }
+
+    pub fn has(&self, key: &str) -> bool {
+        self.map.contains_key(key)
+    }
+
+    pub fn get_id(&self, key: &str) -> WWResult<i64> {
+        self.map.get(key).map_or_else(
+            || {
+                Err(WWError::Generic(format!(
+                    "No such {} with name '{}'",
+                    &self.label, key
+                )))
+            },
+            |id| Ok(*id),
+        )
+    }
+
+    pub fn get_id_from_opt(&self, key: &Option<String>) -> WWResult<Option<i64>> {
+        match key {
+            None => Ok(None),
+            Some(k) => self.get_id(k).map(Some),
+        }
+    }
+}
 
 const AFFIRMATIVE_STRINGS: [&'static str; 3] = ["Y", "YES", "TRUE"];
 
@@ -71,11 +110,11 @@ pub struct ImportData {
     pub magic_talents: Vec<MagicTalentRow>,
     pub magic_spells: Vec<MagicSpellRow>,
     pub novice_paths: Vec<NovicePathRow>,
-    pub novice_levels: Vec<NoviceLevelRow>,
-    pub expert_paths: Vec<ExpertPathRow>,
-    pub expert_levels: Vec<ExpertLevelRow>,
-    pub master_paths: Vec<MasterPathRow>,
-    pub master_levels: Vec<MasterLevelRow>,
+    pub novice_levels: Vec<PathLevelRow>,
+    pub expert_paths: Vec<ExpertOrMasterPathRow>,
+    pub expert_levels: Vec<PathLevelRow>,
+    pub master_paths: Vec<ExpertOrMasterPathRow>,
+    pub master_levels: Vec<PathLevelRow>,
     pub path_talents: Vec<PathTalentRow>,
     pub options: Vec<OptionRow>,
     pub tables: Vec<TableRow>,
@@ -248,34 +287,14 @@ pub(super) struct NovicePathRow {
 }
 
 #[derive(Deserialize, Debug)]
-pub(super) struct NoviceLevelRow {
-    pub path: String,
-    pub level: u32,
-    pub health: u32,
-    pub nat_def: Option<u32>,
-    pub armed_def: Option<u32>,
-    pub speed: Option<u32>,
-    pub bonus_dmg: Option<u32>,
-    pub trad_choices: Option<u32>,
-    pub novice_spells: Option<u32>,
-    pub expert_spells: Option<u32>,
-    pub master_spells: Option<u32>,
-    pub lang_choices: Option<u32>,
-    pub languages: Option<String>,
-    pub speed_traits: Option<String>,
-    pub size: Option<String>,
-    pub talents: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub(super) struct ExpertPathRow {
+pub(super) struct ExpertOrMasterPathRow {
     pub name: String,
     pub sub_path: String,
     pub description: String,
 }
 
 #[derive(Deserialize, Debug)]
-pub(super) struct ExpertLevelRow {
+pub(super) struct PathLevelRow {
     pub path: String,
     pub level: u32,
     pub health: u32,
@@ -283,43 +302,16 @@ pub(super) struct ExpertLevelRow {
     pub armed_def: Option<u32>,
     pub speed: Option<u32>,
     pub bonus_dmg: Option<u32>,
+    pub size: Option<String>,
     pub trad_choices: Option<u32>,
+    pub lang_choices: Option<u32>,
     pub novice_spells: Option<u32>,
     pub expert_spells: Option<u32>,
     pub master_spells: Option<u32>,
-    pub lang_choices: Option<u32>,
-    pub languages: Option<String>,
-    pub speed_traits: Option<String>,
-    pub size: Option<String>,
-    pub talents: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub(super) struct MasterPathRow {
-    pub name: String,
-    pub sub_path: String,
-    pub description: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub(super) struct MasterLevelRow {
-    pub path: String,
-    pub level: u32,
-    pub health: u32,
-    pub nat_def: Option<u32>,
-    pub armed_def: Option<u32>,
-    pub speed: Option<u32>,
-    pub bonus_dmg: Option<u32>,
-    pub trad_choices: Option<u32>,
     pub traditions: Option<String>,
-    pub novice_spells: Option<u32>,
-    pub expert_spells: Option<u32>,
-    pub master_spells: Option<u32>,
-    pub lang_choices: Option<u32>,
     pub languages: Option<String>,
     pub speed_traits: Option<String>,
-    pub size: Option<String>,
-    pub talents: String,
+    // pub talents: String,
 }
 
 #[derive(Deserialize, Debug)]

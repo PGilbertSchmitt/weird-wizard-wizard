@@ -18,8 +18,8 @@ pub struct Sense {
 
 impl Sense {
     pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<SenseRow>) -> WWResult<NameToId> {
-        let mut name_to_id = NameToId::new();
-        // Linear execution is probably fine for now
+        let mut name_to_id = NameToId::new("sense");
+
         for row in rows {
             let label = row.name.clone();
             let record = sqlx::query!(

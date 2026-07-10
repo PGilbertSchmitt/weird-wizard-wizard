@@ -1,11 +1,13 @@
 mod ancestries;
 mod import;
-mod info_tables;
+mod magic;
 mod response;
+mod tables;
 
 pub use ancestries::*;
 pub use import::*;
-pub use info_tables::*;
+pub use magic::*;
+pub use tables::*;
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};

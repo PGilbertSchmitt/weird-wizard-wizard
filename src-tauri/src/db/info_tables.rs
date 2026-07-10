@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
-use crate::{import::TableRow, WWResult};
+use crate::{
+    import::{NameToId, TableRow},
+    WWResult,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InfoTable {
@@ -19,14 +20,13 @@ impl InfoTable {
     pub async fn insert_all(
         tx: &mut SqliteConnection,
         info_tables: &Vec<TableRow>,
-    ) -> WWResult<()> {
-        let mut seen = HashMap::<String, i64>::new();
+    ) -> WWResult<NameToId> {
+        let mut table_map = NameToId::new("info_table");
 
         for row in info_tables {
-            if !seen.contains_key(&row.table_id) {
+            if !table_map.has(&row.table_id) {
                 let table_id = row.table_id.clone();
                 // First line for a given table_id holds header labels and table type
-                println!("Giving {} kind {:?}", row.table_id, row.table_type);
                 let record = sqlx::query!(
                     "INSERT INTO info_tables (name, kind, key_label, value_label) VALUES (?, ?, ?, ?)",
                     row.table_id,
@@ -34,10 +34,10 @@ impl InfoTable {
                     row.key,
                     row.value,
                 ).execute(&mut *tx).await?;
-                seen.insert(table_id, record.last_insert_rowid());
+                table_map.insert(table_id, record.last_insert_rowid());
             } else {
                 // Remaining lines for a given table_id hold the table entries
-                let id = *seen.get(&row.table_id).unwrap();
+                let id = table_map.get_id(&row.table_id)?;
                 sqlx::query!(
                     "INSERT INTO info_table_rows (info_table_id, key, value) VALUES (?, ?, ?)",
                     id,
@@ -49,7 +49,7 @@ impl InfoTable {
             }
         }
 
-        Ok(())
+        Ok(table_map)
     }
 }
 
@@ -75,7 +75,7 @@ impl From<String> for TableKind {
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "info_tables.ts")]
-pub struct InfoTableRow {
+pub struct Entry {
     key: String,
     value: String,
 }
@@ -88,7 +88,7 @@ pub struct FullInfoTable {
     pub kind: TableKind,
     pub key_label: String,
     pub value_label: String,
-    pub rows: Vec<InfoTableRow>,
+    pub entries: Vec<Entry>,
 }
 
 impl FullInfoTable {
@@ -98,7 +98,7 @@ impl FullInfoTable {
             .await?;
 
         let info_table_rows = sqlx::query_as!(
-            InfoTableRow,
+            Entry,
             "SELECT key, value FROM info_table_rows WHERE info_table_id = ?",
             id,
         )
@@ -111,7 +111,15 @@ impl FullInfoTable {
             kind: info_table.kind,
             key_label: info_table.key_label,
             value_label: info_table.value_label,
-            rows: info_table_rows,
+            entries: info_table_rows,
+        })
+    }
+
+    pub async fn get_from_opt(db: &Pool<Sqlite>, id: Option<i64>) -> WWResult<Option<Self>> {
+        Ok(if let Some(id_unwrapped) = id {
+            Some(Self::get(db, id_unwrapped).await?)
+        } else {
+            None
         })
     }
 }

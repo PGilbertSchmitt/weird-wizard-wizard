@@ -97,7 +97,7 @@ export const ImportSeed = () => {
               console.error(err);
               dispatch(cancelAction());
             });
-            return { ...prev, status: ImportStatuses.IMPORTING }
+            return { ...prev, status: ImportStatuses.IMPORTING };
           } else {
             return prev;
           }
@@ -127,7 +127,7 @@ export const ImportSeed = () => {
     DEFAULT_IMPORT_STATE,
   );
 
-  const [id, setId] = useState("");
+  const [id, setId] = useState('');
 
   useEffect(() => {
     return () => {
@@ -181,16 +181,18 @@ export const ImportSeed = () => {
           <Button onClick={() => dispatch(sendStartAction())}>Do it!</Button>
         )}
 
-        <input
-          value={id}
-          onChange={e => setId(e.target.value)}
-        />
+        <input value={id} onChange={(e) => setId(e.target.value)} />
 
-        <Button disabled={Number.isNaN(parseInt(id))} onClick={() => {
-          invoke('get_table', { id: parseInt(id) }).then(data => {
-            console.log('une data', data);
-          })
-        }}>CLOCK</Button>
+        <Button
+          disabled={Number.isNaN(parseInt(id))}
+          onClick={() => {
+            invoke('get_magic_talent', { id: parseInt(id) }).then((data) => {
+              console.log('une data', data);
+            });
+          }}
+        >
+          CLOCK
+        </Button>
       </div>
     </>
   );

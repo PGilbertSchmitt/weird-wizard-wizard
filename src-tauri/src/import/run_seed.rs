@@ -47,13 +47,13 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             .collect();
         let immunity_map = db::immunities::Immunity::insert_all(&mut tx, &immunities).await?;
 
-        db::ancestries::Ancestry::insert_all(
+        let ancestry_map = db::ancestries::Ancestry::insert_all(
             &mut tx,
             &import_data.ancestries,
-            language_map,
-            speed_trait_map,
-            sense_map,
-            immunity_map,
+            &language_map,
+            &speed_trait_map,
+            &sense_map,
+            &immunity_map,
         )
         .await?;
         processed_records += summary.ancestries;
@@ -71,12 +71,102 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.profession_categories;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::option_blocks::OptionBlock::insert_all(&mut tx, &import_data.options).await?;
+        let options_map =
+            db::option_blocks::OptionBlock::insert_all(&mut tx, &import_data.options).await?;
         processed_records += summary.options;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::info_tables::InfoTable::insert_all(&mut tx, &import_data.tables).await?;
+        let table_map =
+            db::info_tables::InfoTable::insert_all(&mut tx, &import_data.tables).await?;
         processed_records += summary.tables;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        let trad_map =
+            db::traditions::Tradition::insert_all(&mut tx, &import_data.traditions, &table_map)
+                .await?;
+        processed_records += summary.traditions;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        db::spells::Spell::insert_all(
+            &mut tx,
+            &import_data.magic_spells,
+            &trad_map,
+            &table_map,
+            &options_map,
+        )
+        .await?;
+        processed_records += summary.magic_spells;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        db::magic_talents::MagicTalent::insert_all(
+            &mut tx,
+            &import_data.magic_talents,
+            &trad_map,
+            &table_map,
+            &options_map,
+        )
+        .await?;
+        processed_records += summary.magic_talents;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        let novice_path_map =
+            db::paths::Path::insert_all_novice(&mut tx, &import_data.novice_paths, &ancestry_map)
+                .await?;
+        processed_records += summary.novice_paths;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        let expert_path_map = db::paths::Path::insert_all_expert_or_master(
+            &mut tx,
+            &import_data.expert_paths,
+            db::etc::PathKind::Expert,
+        )
+        .await?;
+        processed_records += summary.expert_paths;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        let master_path_map = db::paths::Path::insert_all_expert_or_master(
+            &mut tx,
+            &import_data.master_paths,
+            db::etc::PathKind::Master,
+        )
+        .await?;
+        processed_records += summary.master_paths;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        db::levels::Level::insert_all(
+            &mut tx,
+            &import_data.novice_levels,
+            &novice_path_map,
+            &trad_map,
+            &language_map,
+            &speed_trait_map,
+        )
+        .await?;
+        processed_records += summary.novice_levels;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        db::levels::Level::insert_all(
+            &mut tx,
+            &import_data.expert_levels,
+            &expert_path_map,
+            &trad_map,
+            &language_map,
+            &speed_trait_map,
+        )
+        .await?;
+        processed_records += summary.expert_levels;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        db::levels::Level::insert_all(
+            &mut tx,
+            &import_data.master_levels,
+            &master_path_map,
+            &trad_map,
+            &language_map,
+            &speed_trait_map,
+        )
+        .await?;
+        processed_records += summary.master_levels;
         emit_progress(&app, processed_records, total_record_count)?;
 
         tx.commit().await?;

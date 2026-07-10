@@ -21,8 +21,8 @@ impl SpeedTrait {
         tx: &mut SqliteConnection,
         rows: &Vec<SpeedTraitRow>,
     ) -> WWResult<NameToId> {
-        let mut name_to_id = NameToId::new();
-        // Linear execution is probably fine for now
+        let mut name_to_id = NameToId::new("speed trait");
+
         for row in rows {
             let label = row.name.clone();
             let record = sqlx::query!(

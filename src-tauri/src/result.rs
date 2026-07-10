@@ -73,10 +73,3 @@ impl Serialize for WWError {
         serializer.serialize_str(&self.to_string())
     }
 }
-
-pub fn opt_to_wwresult<T>(opt: Option<T>, reason: String) -> WWResult<T> {
-    match opt {
-        Some(t) => Ok(t),
-        None => Err(WWError::Generic(reason)),
-    }
-}

@@ -36,6 +36,10 @@ pub fn run() {
             ipc::get_ancestry,
             ipc::get_full_ancestry,
             ipc::get_table,
+            ipc::get_option_block,
+            ipc::get_tradition,
+            ipc::get_spell,
+            ipc::get_magic_talent,
         ])
         .build(tauri::generate_context!())
         .expect("Unexpected error while running tauri application")

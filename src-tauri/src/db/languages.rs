@@ -21,8 +21,8 @@ impl Language {
         tx: &mut SqliteConnection,
         rows: &Vec<LanguageRow>,
     ) -> WWResult<NameToId> {
-        let mut name_to_id = NameToId::new();
-        // Linear execution is probably fine for now
+        let mut name_to_id = NameToId::new("language");
+
         for row in rows {
             let label = row.languages.clone();
             let secret = is_affirmative(row.secret.as_deref());

@@ -5,7 +5,6 @@ use ts_rs::TS;
 use crate::{
     db::{etc, immunities::Immunity, languages::Language},
     import::{pipe_separate, AncestryRow, NameToId},
-    result::opt_to_wwresult,
     WWResult,
 };
 
@@ -25,13 +24,15 @@ impl Ancestry {
     pub async fn insert_all(
         tx: &mut SqliteConnection,
         rows: &Vec<AncestryRow>,
-        language_map: NameToId,
-        speed_trait_map: NameToId,
-        sense_map: NameToId,
-        immunity_map: NameToId,
-    ) -> WWResult<()> {
-        // Linear execution is probably fine for now
+        language_map: &NameToId,
+        speed_trait_map: &NameToId,
+        sense_map: &NameToId,
+        immunity_map: &NameToId,
+    ) -> WWResult<NameToId> {
+        let mut ancestry_map = NameToId::new("ancestry");
+
         for row in rows {
+            let label = row.ancestry.clone();
             let record = sqlx::query!(
                 "INSERT INTO ancestries (
                     name,
@@ -52,17 +53,12 @@ impl Ancestry {
             .await?;
 
             let ancestry_id = record.last_insert_rowid();
+            ancestry_map.insert(label, ancestry_id);
 
             for language in pipe_separate(&row.languages) {
-                let language_id = opt_to_wwresult(
-                    language_map.get(&language),
-                    format!("Error while creating '{}' ancestry: language '{}' not found in source file", row.ancestry, &language)
-                )?;
+                let language_id = language_map.get_id(&language)?;
                 sqlx::query!(
-                    "INSERT INTO ancestry_languages (
-                        ancestry_id,
-                        language_id
-                    ) VALUES (?, ?)",
+                    "INSERT INTO ancestry_languages (ancestry_id, language_id) VALUES (?, ?)",
                     ancestry_id,
                     language_id
                 )
@@ -73,17 +69,10 @@ impl Ancestry {
             for speed_trait in pipe_separate(&row.speed_traits) {
                 let mut parts = speed_trait.split("=");
                 if let Some(speed_trait_name) = parts.next() {
-                    let speed_trait_id = opt_to_wwresult(
-                        speed_trait_map.get(speed_trait_name),
-                        format!("Error while creating '{}' ancestry: speed trait '{}' not found in source file", row.ancestry, speed_trait_name)
-                    )?;
+                    let speed_trait_id = speed_trait_map.get_id(speed_trait_name)?;
                     let distance = parts.next();
                     sqlx::query!(
-                        "INSERT INTO ancestry_speed_traits (
-                            ancestry_id,
-                            speed_trait_id,
-                            amount
-                        ) VALUES (?, ?, ?)",
+                        "INSERT INTO ancestry_speed_traits (ancestry_id, speed_trait_id, amount) VALUES (?, ?, ?)",
                         ancestry_id,
                         speed_trait_id,
                         distance
@@ -98,17 +87,10 @@ impl Ancestry {
                 // custom entries, no?
                 let mut parts = sense.split("=");
                 if let Some(sense_name) = parts.next() {
-                    let sense_id = opt_to_wwresult(
-                        sense_map.get(sense_name),
-                        format!("Error while creating '{}' ancestry: sense '{}' not found in source file", row.ancestry, sense_name)
-                    )?;
+                    let sense_id = sense_map.get_id(sense_name)?;
                     let distance = parts.next();
                     sqlx::query!(
-                        "INSERT INTO ancestry_senses (
-                            ancestry_id,
-                            sense_id,
-                            amount
-                        ) VALUES (?, ?, ?)",
+                        "INSERT INTO ancestry_senses (ancestry_id, sense_id, amount) VALUES (?, ?, ?)",
                         ancestry_id,
                         sense_id,
                         distance
@@ -119,15 +101,9 @@ impl Ancestry {
             }
 
             for immunity in pipe_separate(&row.immunities) {
-                let immunity_id = opt_to_wwresult(
-                    immunity_map.get(&immunity),
-                    format!("Error while creating '{}' ancestry: immunity '{}' not found in source file", row.ancestry, &immunity)
-                )?;
+                let immunity_id = immunity_map.get_id(&immunity)?;
                 sqlx::query!(
-                    "INSERT INTO ancestry_immunities (
-                        ancestry_id,
-                        immunity_id
-                    ) VALUES (?, ?)",
+                    "INSERT INTO ancestry_immunities (ancestry_id, immunity_id) VALUES (?, ?)",
                     ancestry_id,
                     immunity_id
                 )
@@ -136,15 +112,13 @@ impl Ancestry {
             }
         }
 
-        Ok(())
+        Ok(ancestry_map)
     }
 
     pub async fn get_ancestry(db: &Pool<Sqlite>, id: i64) -> WWResult<Ancestry> {
         let record = sqlx::query_as!(Ancestry, "SELECT * FROM ancestries WHERE id = ?", id)
             .fetch_one(db)
             .await?;
-
-        println!("Got an ancestry record for id {id}: {record:?}");
 
         Ok(record)
     }
