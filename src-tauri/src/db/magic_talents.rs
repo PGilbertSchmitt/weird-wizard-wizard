@@ -3,9 +3,7 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::{etc::TalentRestore, info_tables::FullInfoTable, option_blocks::FullOptionBlock},
-    import::{MagicTalentRow, NameToId},
-    WWResult,
+    WWError, WWResult, db::{etc::TalentRestore, info_tables::InfoTable, option_blocks::FullOptionBlock}, import::{MagicTalentRow, NameToId},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -55,7 +53,9 @@ impl MagicTalent {
                 options_id,
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding magic talent {}: {}", row.talent_name, e))
+            )?;
         }
 
         Ok(())
@@ -73,7 +73,7 @@ pub struct FullMagicTalent {
     charges: Option<String>,
     restore: TalentRestore,
     activate: String,
-    info_table_id: Option<FullInfoTable>,
+    info_table_id: Option<InfoTable>,
     option_block_id: Option<FullOptionBlock>,
 }
 
@@ -90,7 +90,7 @@ impl FullMagicTalent {
         .fetch_one(db)
         .await?;
 
-        let info_table = FullInfoTable::get_from_opt(db, talent.info_table_id).await?;
+        let info_table = InfoTable::get_from_opt(db, talent.info_table_id).await?;
         let option_block = FullOptionBlock::get_from_opt(db, talent.option_block_id).await?;
 
         Ok(FullMagicTalent {

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -37,6 +39,16 @@ impl From<String> for PathKind {
             "expert" => Self::Expert,
             "master" => Self::Master,
             _ => Self::Novice,
+        }
+    }
+}
+
+impl Display for PathKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Novice => f.write_str("novice"),
+            Self::Expert => f.write_str("expert"),
+            Self::Master => f.write_str("master"),
         }
     }
 }

@@ -3,7 +3,7 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::info_tables::FullInfoTable,
+    db::info_tables::InfoTable,
     import::{NameToId, TraditionRow},
     WWResult,
 };
@@ -55,7 +55,7 @@ pub struct FullTradition {
     blurb: String,
     description: String,
     special_info: Option<String>,
-    into_table: Option<FullInfoTable>,
+    into_table: Option<InfoTable>,
 }
 
 impl FullTradition {
@@ -64,7 +64,7 @@ impl FullTradition {
             .fetch_one(db)
             .await?;
 
-        let table = FullInfoTable::get_from_opt(db, tradition.info_table_id).await?;
+        let table = InfoTable::get_from_opt(db, tradition.info_table_id).await?;
 
         Ok(FullTradition {
             id,

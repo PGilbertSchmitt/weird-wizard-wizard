@@ -43,6 +43,7 @@ pub async fn initialize_seed_import(app: &AppHandle<Wry>, filepath: String) -> W
         path_talents: extract_rows(join(&tmp_dir_path, "path_talents.csv"))?,
         options: extract_rows(join(&tmp_dir_path, "options.csv"))?,
         tables: extract_rows(join(&tmp_dir_path, "tables.csv"))?,
+        choice_selections: extract_rows(join(&tmp_dir_path, "choice_selections.csv"))?,
     };
     let import_summary = import_data.summary();
     state.import_data = Some(import_data);

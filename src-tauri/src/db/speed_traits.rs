@@ -3,8 +3,7 @@ use sqlx::SqliteConnection;
 use ts_rs::TS;
 
 use crate::{
-    import::{NameToId, SpeedTraitRow},
-    WWResult,
+    WWError, WWResult, import::{NameToId, SpeedTraitRow},
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -32,7 +31,9 @@ impl SpeedTrait {
                 row.unit,
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding speed trait {}: {}", row.name, e))
+            )?;
 
             name_to_id.insert(label, record.last_insert_rowid());
         }

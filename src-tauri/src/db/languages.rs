@@ -3,8 +3,7 @@ use sqlx::SqliteConnection;
 use ts_rs::TS;
 
 use crate::{
-    import::{is_affirmative, LanguageRow, NameToId},
-    WWResult,
+    WWError, WWResult, import::{LanguageRow, NameToId, is_affirmative},
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -28,12 +27,14 @@ impl Language {
             let secret = is_affirmative(row.secret.as_deref());
             let record = sqlx::query!(
                 "INSERT INTO languages (name, description, secret) VALUES (?, ?, ?)",
-                row.languages,
+                label,
                 row.description,
                 secret,
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding language {}: {}", label, e))
+            )?;
 
             name_to_id.insert(label, record.last_insert_rowid());
         }

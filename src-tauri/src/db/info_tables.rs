@@ -3,12 +3,11 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    import::{NameToId, TableRow},
-    WWResult,
+    WWError, WWResult, import::{NameToId, TableRow},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct InfoTable {
+pub struct InfoTableBase {
     pub id: i64,
     pub name: String,
     pub kind: TableKind,
@@ -16,7 +15,7 @@ pub struct InfoTable {
     pub value_label: String,
 }
 
-impl InfoTable {
+impl InfoTableBase {
     pub async fn insert_all(
         tx: &mut SqliteConnection,
         info_tables: &Vec<TableRow>,
@@ -33,7 +32,9 @@ impl InfoTable {
                     row.table_type,
                     row.key,
                     row.value,
-                ).execute(&mut *tx).await?;
+                ).execute(&mut *tx).await.map_err(|e|
+                    WWError::Generic(format!("Encountered error while seeding info table {}: {}", row.table_id, e))
+                )?;
                 table_map.insert(table_id, record.last_insert_rowid());
             } else {
                 // Remaining lines for a given table_id hold the table entries
@@ -45,7 +46,9 @@ impl InfoTable {
                     row.value,
                 )
                 .execute(&mut *tx)
-                .await?;
+                .await.map_err(|e|
+                    WWError::Generic(format!("Encountered error while seeding info table row {}, key {}: {}", row.table_id, row.key, e))
+                )?;
             }
         }
 
@@ -82,7 +85,7 @@ pub struct Entry {
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "info_tables.ts")]
-pub struct FullInfoTable {
+pub struct InfoTable {
     pub id: i64,
     pub name: String,
     pub kind: TableKind,
@@ -91,9 +94,9 @@ pub struct FullInfoTable {
     pub entries: Vec<Entry>,
 }
 
-impl FullInfoTable {
+impl InfoTable {
     pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<Self> {
-        let info_table = sqlx::query_as!(InfoTable, "SELECT * FROM info_tables WHERE id = ?", id,)
+        let info_table = sqlx::query_as!(InfoTableBase, "SELECT * FROM info_tables WHERE id = ?", id,)
             .fetch_one(db)
             .await?;
 

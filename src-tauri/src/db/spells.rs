@@ -3,9 +3,7 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::{etc, info_tables::FullInfoTable, option_blocks::FullOptionBlock},
-    import::{MagicSpellRow, NameToId},
-    WWResult,
+    WWError, WWResult, db::{etc, info_tables::InfoTable, option_blocks::FullOptionBlock}, import::{MagicSpellRow, NameToId},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,7 +62,9 @@ impl Spell {
                 options_id
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding {} spell {}: {}", tradition_id, row.name, e))
+            )?;
         }
 
         Ok(())
@@ -85,7 +85,7 @@ pub struct FullSpell {
     target: String,
     condition: Option<String>,
     ritual: bool,
-    info_table: Option<FullInfoTable>,
+    info_table: Option<InfoTable>,
     option_block: Option<FullOptionBlock>,
 }
 
@@ -97,7 +97,7 @@ impl FullSpell {
             id
         ).fetch_one(db).await?;
 
-        let info_table = FullInfoTable::get_from_opt(db, spell.info_table_id).await?;
+        let info_table = InfoTable::get_from_opt(db, spell.info_table_id).await?;
         let option_block = FullOptionBlock::get_from_opt(db, spell.option_block_id).await?;
 
         Ok(FullSpell {

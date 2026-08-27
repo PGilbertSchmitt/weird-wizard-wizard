@@ -4,6 +4,7 @@ use std::{collections::HashMap, path::PathBuf};
 use ts_rs::TS;
 
 use crate::{WWError, WWResult};
+use crate::mod_dsl::validate_mod_str;
 
 mod init_seed;
 mod run_seed;
@@ -86,6 +87,39 @@ pub fn is_affirmative(value: Option<&str>) -> bool {
     })
 }
 
+pub fn validate_mod_strings(
+    magic_talents: &Vec<MagicTalentRow>,
+    magic_spells: &Vec<MagicSpellRow>,
+    path_talents: &Vec<PathTalentRow>,
+) -> WWResult<()> {
+    let mut all_errs = Vec::new();
+
+    for row in magic_talents {
+        if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
+            all_errs.push(format!("Magic talent '{}': {}\n  -> {}", &row.talent_name, &row.mod_str.as_ref().unwrap(), err));
+        }
+    }
+
+    for row in magic_spells {
+        if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
+            all_errs.push(format!("Magic spell '{}': {}\n  -> {}", &row.name, &row.mod_str.as_ref().unwrap(), err));
+        }
+    }
+
+    for row in path_talents {
+        if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
+            all_errs.push(format!("Path talent '{}': {}\n  -> {}", &row.name, &row.mod_str.as_ref().unwrap(), err));
+        }
+    }
+
+    if all_errs.is_empty() {
+        Ok(())
+    } else {
+        Err(WWError::Generic(format!("Invalid Mod Strings:\n{}", all_errs.join("\n"))))
+    }
+}
+
+
 #[derive(TS, Serialize)]
 #[ts(export, export_to = "import.ts", tag = "type", content = "data")]
 #[serde(tag = "type", content = "data")]
@@ -118,6 +152,7 @@ pub struct ImportData {
     pub path_talents: Vec<PathTalentRow>,
     pub options: Vec<OptionRow>,
     pub tables: Vec<TableRow>,
+    pub choice_selections: Vec<ChoiceSelectionRow>,
 }
 
 impl ImportData {
@@ -141,6 +176,7 @@ impl ImportData {
             path_talents: self.path_talents.len(),
             options: self.options.len(),
             tables: self.tables.len(),
+            choice_selections: self.choice_selections.len(),
         }
     }
 }
@@ -166,6 +202,7 @@ pub struct ImportSummary {
     path_talents: usize,
     options: usize,
     tables: usize,
+    choice_selections: usize,
 }
 
 impl ImportSummary {
@@ -188,6 +225,7 @@ impl ImportSummary {
             + self.path_talents
             + self.options
             + self.tables
+            + self.choice_selections
     }
 }
 
@@ -260,6 +298,7 @@ pub(super) struct MagicTalentRow {
     pub activate: String,
     pub table: Option<String>,
     pub options: Option<String>,
+    pub mod_str: Option<String>,
     pub description: String,
 }
 
@@ -275,6 +314,7 @@ pub(super) struct MagicSpellRow {
     pub ritual: String,
     pub table: Option<String>,
     pub options: Option<String>,
+    pub mod_str: Option<String>,
     pub description: String,
 }
 
@@ -325,6 +365,7 @@ pub(super) struct PathTalentRow {
     pub table: Option<String>,
     pub options: Option<String>,
     // Should not be optional, but my current file is spotty
+    pub mod_str: Option<String>,
     pub description: Option<String>,
 }
 
@@ -340,4 +381,12 @@ pub(super) struct TableRow {
     pub key: String,
     pub value: String,
     pub table_type: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub(super) struct ChoiceSelectionRow {
+    pub choice_name: String,
+    pub mod_str: String,
+    pub choice_header: String,
+    pub choice_text: String,
 }

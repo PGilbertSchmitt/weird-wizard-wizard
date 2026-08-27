@@ -76,11 +76,11 @@ CREATE TABLE IF NOT EXISTS ancestry_immunities (
     PRIMARY KEY (ancestry_id, immunity_id)
 );
 
--- CREATE TABLE IF NOT EXISTS ancestry_talents (
---     ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
---     path_talent_id    INTEGER REFERENCES path_talents(id) NOT NULL,
---     PRIMARY KEY (ancestry_id, path_talent_id)
--- );
+CREATE TABLE IF NOT EXISTS ancestry_talents (
+    ancestry_id    INTEGER REFERENCES ancestries(id) NOT NULL,
+    path_talent_id INTEGER REFERENCES path_talents(id) NOT NULL,
+    PRIMARY KEY (ancestry_id, path_talent_id)
+);
 
 CREATE TABLE IF NOT EXISTS paths (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,11 +114,11 @@ CREATE TABLE IF NOT EXISTS levels (
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_levels ON levels (path, level);
 
--- CREATE TABLE IF NOT EXISTS level_talents (
---     level_id    INTEGER REFERENCES levels(id) NOT NULL,
---     path_talent_id   INTEGER REFERENCES talents(id) NOT NULL,
---     PRIMARY KEY (level_id, path_talent_id)
--- );
+CREATE TABLE IF NOT EXISTS level_talents (
+    level_id       INTEGER REFERENCES levels(id) NOT NULL,
+    path_talent_id INTEGER REFERENCES path_talents(id) NOT NULL,
+    PRIMARY KEY (level_id, path_talent_id)
+);
 
 CREATE TABLE IF NOT EXISTS level_traditions (
     level_id     INTEGER REFERENCES levels(id) NOT NULL,
@@ -175,6 +175,20 @@ CREATE TABLE IF NOT EXISTS spells (
     option_block_id INTEGER REFERENCES option_blocks(id)
 );
 
+CREATE TABLE IF NOT EXISTS path_talents (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL,
+    magical         BOOLEAN NOT NULL,
+    charges         TEXT,
+    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start of Next Turn', 'End of Next Turn', 'Start of Round', 'Special')) NOT NULL,
+    activate        TEXT,
+    description     TEXT NOT NULL,
+    info_table_id   INTEGER REFERENCES info_tables(id),
+    option_block_id INTEGER REFERENCES option_blocks(id),
+    mod_str         TEXT,
+    cluster         TEXT
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (name, tradition_id);
 
 CREATE TABLE IF NOT EXISTS info_tables (
@@ -199,6 +213,18 @@ CREATE TABLE IF NOT EXISTS option_blocks (
 CREATE TABLE IF NOT EXISTS option_block_rows (
     option_block_id INTEGER REFERENCES option_blocks(id),
     value           TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS choice_tables (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS choice_selections (
+    choice_table_id INTEGER REFERENCES choice_tables(id),
+    label           TEXT,
+    description     TEXT NOT NULL,
+    mod_str         TEXT
 );
 
 -- END: SEEDABLE TABLES

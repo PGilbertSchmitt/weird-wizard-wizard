@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqliteConnection;
 use ts_rs::TS;
 
-use crate::{import::NameToId, WWResult};
+use crate::{WWError, WWResult, import::NameToId};
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "other_info.ts")]
@@ -24,7 +24,9 @@ impl Immunity {
             let label = immunity.clone();
             let record = sqlx::query!("INSERT INTO immunities (name) VALUES (?)", immunity,)
                 .execute(&mut *tx)
-                .await?;
+                .await.map_err(|e|
+                    WWError::Generic(format!("Encountered error while seeding immunity {}: {}", immunity, e))
+                )?;
 
             name_to_id.insert(label, record.last_insert_rowid());
         }

@@ -3,9 +3,7 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::{etc, immunities::Immunity, languages::Language},
-    import::{pipe_separate, AncestryRow, NameToId},
-    WWResult,
+    WWError, WWResult, db::{etc, immunities::Immunity, languages::Language}, import::{AncestryRow, NameToId, pipe_separate},
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -50,7 +48,9 @@ impl Ancestry {
                 row.add_nat_def
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding ancestry row {}: {}", row.ancestry, e))
+            )?;
 
             let ancestry_id = record.last_insert_rowid();
             ancestry_map.insert(label, ancestry_id);

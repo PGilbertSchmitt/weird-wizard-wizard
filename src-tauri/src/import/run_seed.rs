@@ -3,11 +3,7 @@ use std::collections::HashSet;
 use tauri::{AppHandle, Wry};
 
 use crate::{
-    db,
-    import::{pipe_separate, ProgressPayload},
-    ipc::{emit, EmitChannel},
-    store::{get_app_data_state, get_database},
-    WWError, WWResult,
+    WWError, WWResult, db, import::{ProgressPayload, pipe_separate, validate_mod_strings}, ipc::{EmitChannel, emit}, store::{get_app_data_state, get_database},
 };
 
 use super::ImportEvent;
@@ -25,6 +21,12 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         let mut processed_records = 0;
         let pool = &db_state.pool;
         let mut tx = pool.begin().await?;
+
+        validate_mod_strings(
+            &import_data.magic_talents,
+            &import_data.magic_spells,
+            &import_data.path_talents,
+        )?;
 
         let language_map =
             db::languages::Language::insert_all(&mut tx, &import_data.languages).await?;
@@ -77,7 +79,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         emit_progress(&app, processed_records, total_record_count)?;
 
         let table_map =
-            db::info_tables::InfoTable::insert_all(&mut tx, &import_data.tables).await?;
+            db::info_tables::InfoTableBase::insert_all(&mut tx, &import_data.tables).await?;
         processed_records += summary.tables;
         emit_progress(&app, processed_records, total_record_count)?;
 
@@ -167,6 +169,10 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         )
         .await?;
         processed_records += summary.master_levels;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        db::choice_selections::ChoiceTable::insert_all(&mut tx, &import_data.choice_selections).await?;
+        processed_records += summary.choice_selections;
         emit_progress(&app, processed_records, total_record_count)?;
 
         tx.commit().await?;

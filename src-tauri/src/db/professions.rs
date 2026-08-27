@@ -3,8 +3,7 @@ use sqlx::SqliteConnection;
 use ts_rs::TS;
 
 use crate::{
-    import::{ProfessionCategoryRow, ProfessionRow},
-    WWResult,
+    WWError, WWResult, import::{ProfessionCategoryRow, ProfessionRow},
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -26,7 +25,9 @@ impl Profession {
                 row.category
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding profession {}: {}", row.name, e))
+            )?;
         }
         Ok(())
     }
@@ -52,7 +53,9 @@ impl ProfessionCategory {
                 row.description
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding profession category {}: {}", row.name, e))
+            )?;
         }
         Ok(())
     }

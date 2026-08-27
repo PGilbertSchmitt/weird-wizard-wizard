@@ -17,7 +17,8 @@ pub mod senses;
 pub mod speed_traits;
 pub mod spells;
 pub mod traditions;
-// pub mod path_talents;
+pub mod path_talents;
+pub mod choice_selections;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,

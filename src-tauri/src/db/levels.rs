@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
 use sqlx::SqliteConnection;
-use ts_rs::TS;
 
 use crate::{
-    db::etc::{self, PathKind},
+    db::etc::self,
     import::{
-        is_affirmative, pipe_separate, ExpertOrMasterPathRow, NameToId, NovicePathRow, PathLevelRow,
+        pipe_separate, NameToId, PathLevelRow,
     },
     WWError, WWResult,
 };
@@ -70,7 +69,9 @@ impl Level {
                 row.size
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding {} level {}: {}", path_id, row.level, e))
+            )?;
             let level_id = record.last_insert_rowid();
 
             for tradition in pipe_separate(&row.traditions) {

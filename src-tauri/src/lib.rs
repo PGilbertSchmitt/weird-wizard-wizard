@@ -5,6 +5,7 @@ mod import;
 mod ipc;
 mod result;
 mod store;
+mod mod_dsl;
 
 pub use result::{WWError, WWResult};
 

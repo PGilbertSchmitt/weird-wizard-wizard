@@ -3,8 +3,7 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    import::{NameToId, OptionRow},
-    WWResult,
+    WWError, WWResult, import::{NameToId, OptionRow},
 };
 
 // #[ts(export, export_to = "option_blocks.ts")]
@@ -30,7 +29,9 @@ impl OptionBlock {
                         row.options_id,
                     )
                     .execute(&mut *tx)
-                    .await?;
+                    .await.map_err(|e|
+                        WWError::Generic(format!("Encountered error while seeding option block {}: {}", row.options_id, e))
+                    )?;
                     let id = record.last_insert_rowid();
                     option_map.insert(label, id);
                     id
@@ -44,7 +45,9 @@ impl OptionBlock {
                 row.description,
             )
             .execute(&mut *tx)
-            .await?;
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding option block row {option_id}, key {}: {}", row.description, e))
+            )?;
         }
 
         Ok(option_map)

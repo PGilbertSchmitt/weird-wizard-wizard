@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Sqlite, SqliteConnection};
-use ts_rs::TS;
+use sqlx::SqliteConnection;
 
 use crate::{
     db::etc::PathKind,
@@ -46,7 +45,9 @@ impl Path {
             path.ancestry,
         )
         .execute(&mut *tx)
-        .await?;
+        .await.map_err(|e|
+            WWError::Generic(format!("Encountered error while seeding {} path {}: {}", path.path_kind, path.name, e))
+        )?;
         Ok(record.last_insert_rowid())
     }
 
