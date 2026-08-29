@@ -63,26 +63,21 @@ pub enum TalentRestore {
     Day,
     Hour,
     Minute,
-    StartOfNextTurn,
-    EndOfNextTurn,
-    StartOfRound,
-    Special,
 }
 
-impl From<String> for TalentRestore {
-    fn from(value: String) -> Self {
-        match value.to_lowercase().as_str() {
-            "None" => Self::None,
-            "Luck Ends" => Self::LuckEnds,
-            "Rest" => Self::Rest,
-            "Day" => Self::Day,
-            "Hour" => Self::Hour,
-            "Minute" => Self::Minute,
-            "Start of Next Turn" => Self::StartOfNextTurn,
-            "End of Next Turn" => Self::EndOfNextTurn,
-            "Start of Round" => Self::StartOfRound,
-            "Special" => Self::Special,
-            _ => Self::None,
+impl From<Option<String>> for TalentRestore {
+    fn from(value: Option<String>) -> Self {
+        if let Some(value) = value {
+            match value.to_lowercase().as_str() {
+                "luck ends" => Self::LuckEnds,
+                "rest" => Self::Rest,
+                "day" => Self::Day,
+                "hour" => Self::Hour,
+                "minute" => Self::Minute,
+                _ => Self::None,
+            }
+        } else {
+            Self::None
         }
     }
 }

@@ -60,12 +60,13 @@ pub enum LoseTarget {
     MagicTalent(String, String),
 }
 
-// Override - Only Speed, Defense, and the unique StatBlock target
+// Override - Only Speed, Defense, the unique StatBlock target, and the unique MergeStatBlock target
 #[derive(Debug)]
 pub enum OverrideTarget {
     Speed(i32),
     Defense(i32),
     StatBlock(String),
+    MergeStatBlock(String, String),
 }
 
 // Choose - This MOD uses its own targets, which don't overlap with any of the others
@@ -83,6 +84,7 @@ pub enum ChooseTarget {
     Select(u32, String),
     SelectAgain(u32, String),
     Score(u32),
+    Slots(ChooseSlotTarget),
 }
 
 // Apply - Only Heal, Health, and Slots
@@ -90,7 +92,7 @@ pub enum ChooseTarget {
 pub enum ApplyTarget {
     Heal(HealAmount),
     Health(HealAmount),
-    Slots(SlotsTarget),
+    Slots(ApplySlotsTarget),
 }
 
 #[derive(Debug)]
@@ -102,7 +104,13 @@ pub enum HealAmount {
 }
 
 #[derive(Debug)]
-pub enum SlotsTarget {
+pub enum ChooseSlotTarget {
+    Plus(u32),
+    Times(u32),
+}
+
+#[derive(Debug)]
+pub enum ApplySlotsTarget {
     AnySpell(u32),
     NoviceSpell(u32),
     ExpertSpell(u32),

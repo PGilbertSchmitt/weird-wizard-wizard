@@ -42,6 +42,25 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.senses;
         emit_progress(&app, processed_records, total_record_count)?;
 
+        let options_map =
+            db::option_blocks::OptionBlock::insert_all(&mut tx, &import_data.options).await?;
+        processed_records += summary.options;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        let table_map =
+            db::info_tables::InfoTableBase::insert_all(&mut tx, &import_data.tables).await?;
+        processed_records += summary.tables;
+        emit_progress(&app, processed_records, total_record_count)?;
+
+        let path_talent_map = db::path_talents::PathTalent::insert_all(
+            &mut tx,
+            &import_data.path_talents,
+            &table_map,
+            &options_map,
+        ).await?;
+        processed_records += summary.path_talents;
+        emit_progress(&app, processed_records, total_record_count)?;
+
         let immunities: HashSet<String> = import_data
             .ancestries
             .iter()
@@ -56,6 +75,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             &speed_trait_map,
             &sense_map,
             &immunity_map,
+            &path_talent_map,
         )
         .await?;
         processed_records += summary.ancestries;
@@ -71,16 +91,6 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         )
         .await?;
         processed_records += summary.profession_categories;
-        emit_progress(&app, processed_records, total_record_count)?;
-
-        let options_map =
-            db::option_blocks::OptionBlock::insert_all(&mut tx, &import_data.options).await?;
-        processed_records += summary.options;
-        emit_progress(&app, processed_records, total_record_count)?;
-
-        let table_map =
-            db::info_tables::InfoTableBase::insert_all(&mut tx, &import_data.tables).await?;
-        processed_records += summary.tables;
         emit_progress(&app, processed_records, total_record_count)?;
 
         let trad_map =
@@ -142,6 +152,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             &trad_map,
             &language_map,
             &speed_trait_map,
+            &path_talent_map,
         )
         .await?;
         processed_records += summary.novice_levels;
@@ -154,6 +165,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             &trad_map,
             &language_map,
             &speed_trait_map,
+            &path_talent_map,
         )
         .await?;
         processed_records += summary.expert_levels;
@@ -166,6 +178,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             &trad_map,
             &language_map,
             &speed_trait_map,
+            &path_talent_map,
         )
         .await?;
         processed_records += summary.master_levels;

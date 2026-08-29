@@ -1,7 +1,9 @@
+use crate::mod_dsl::ast::ChooseSlotTarget;
+
 use super::{
     ast::{
         ApplyTarget, ChooseTarget, Condition, Dice, ExprOp, ExprValue, GrantTarget, HasCategory,
-        HealAmount, LoseTarget, Modifier, OverrideTarget, SimpleExpr, SlotsTarget, Target,
+        HealAmount, LoseTarget, Modifier, OverrideTarget, SimpleExpr, ApplySlotsTarget, Target,
         WhenDuration, WhenMod,
     },
     lexer::Token,
@@ -245,6 +247,13 @@ fn parse_override_target(tokens: &mut Tokens) -> Result<OverrideTarget, String> 
             eat_dot(tokens)?;
             Ok(OverrideTarget::StatBlock(parse_ident(tokens)?))
         }
+        Token::Merge => {
+            eat_dot(tokens)?;
+            let original = parse_ident(tokens)?;
+            eat_dot(tokens)?;
+            let merge = parse_ident(tokens)?;
+            Ok(OverrideTarget::MergeStatBlock(original, merge))
+        }
 
         other_token => Err(format!(
             "Expected an OVERRIDE target, instead found '{other_token:?}'"
@@ -285,6 +294,23 @@ fn parse_choose_target(tokens: &mut Tokens) -> Result<ChooseTarget, String> {
         }
 
         Token::Score => Ok(ChooseTarget::Score(multiplier)),
+
+        Token::Slot => {
+            eat_dot(tokens)?;
+            let math = ut(tokens.next())?;
+            let target = match math {
+                Token::Plus => {
+                    ChooseSlotTarget::Plus(parse_number(tokens)?.try_into().unwrap())
+                }
+                Token::Times => {
+                    ChooseSlotTarget::Times(parse_number(tokens)?.try_into().unwrap())
+                }
+                other_token => return Err(format!(
+                    "Expected + or *, instead found '{other_token:?}'"
+                ))
+            };
+            Ok(ChooseTarget::Slots(target))
+        }
 
         other_token => Err(format!(
             "Expected a CHOOSE target, instead found '{other_token:?}'"
@@ -597,17 +623,17 @@ fn parse_simple_expression(tokens: &mut Tokens) -> Result<SimpleExpr, String> {
     tmp_expr.to_expr()
 }
 
-fn parse_slot_target(tokens: &mut Tokens) -> Result<SlotsTarget, String> {
+fn parse_slot_target(tokens: &mut Tokens) -> Result<ApplySlotsTarget, String> {
     eat_dot(tokens)?;
     let target_token = ut(tokens.next())?;
     let multiplier: u32 = parse_multiplier(tokens)?.try_into().unwrap();
     match target_token {
-        Token::NoviceSpell => Ok(SlotsTarget::NoviceSpell(multiplier)),
-        Token::ExpertSpell => Ok(SlotsTarget::ExpertSpell(multiplier)),
-        Token::MasterSpell => Ok(SlotsTarget::MasterSpell(multiplier)),
+        Token::NoviceSpell => Ok(ApplySlotsTarget::NoviceSpell(multiplier)),
+        Token::ExpertSpell => Ok(ApplySlotsTarget::ExpertSpell(multiplier)),
+        Token::MasterSpell => Ok(ApplySlotsTarget::MasterSpell(multiplier)),
         Token::Identifier(tradition_ident) => {
             if tradition_ident.to_uppercase() == "ANY" {
-                return Ok(SlotsTarget::AnySpell(multiplier));
+                return Ok(ApplySlotsTarget::AnySpell(multiplier));
             }
 
             // If it's not the string "ANY", then it's a tradition (as long as there's no tradition
@@ -617,13 +643,13 @@ fn parse_slot_target(tokens: &mut Tokens) -> Result<SlotsTarget, String> {
                 eat_dot(tokens)?;
 
                 let spell_ident = parse_ident(tokens)?;
-                Ok(SlotsTarget::SpecificSpell(
+                Ok(ApplySlotsTarget::SpecificSpell(
                     multiplier,
                     tradition_ident,
                     spell_ident,
                 ))
             } else {
-                Ok(SlotsTarget::Tradition(multiplier, tradition_ident))
+                Ok(ApplySlotsTarget::Tradition(multiplier, tradition_ident))
             }
         }
 

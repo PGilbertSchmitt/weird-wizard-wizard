@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS magic_talents (
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
     charges         TEXT,
-    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start of Next Turn', 'End of Next Turn', 'Start of Round', 'Special')) NOT NULL,
+    restore         TEXT CHECK (restore IN ('Luck Ends', 'Rest', 'Day', 'Hour', 'Minute')),
     activate        TEXT NOT NULL,
     info_table_id   INTEGER REFERENCES info_tables(id),
     option_block_id INTEGER REFERENCES option_blocks(id)
@@ -175,12 +175,15 @@ CREATE TABLE IF NOT EXISTS spells (
     option_block_id INTEGER REFERENCES option_blocks(id)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (name, tradition_id);
+
 CREATE TABLE IF NOT EXISTS path_talents (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     name            TEXT NOT NULL,
+    source          TEXT NOT NULL,
     magical         BOOLEAN NOT NULL,
     charges         TEXT,
-    restore         TEXT CHECK (restore IN ('None', 'Luck Ends', 'Rest', 'Day', 'Hour', 'Minute', 'Start of Next Turn', 'End of Next Turn', 'Start of Round', 'Special')) NOT NULL,
+    restore         TEXT CHECK (restore IN ('Luck Ends', 'Rest', 'Day', 'Hour', 'Minute')),
     activate        TEXT,
     description     TEXT NOT NULL,
     info_table_id   INTEGER REFERENCES info_tables(id),
@@ -188,8 +191,7 @@ CREATE TABLE IF NOT EXISTS path_talents (
     mod_str         TEXT,
     cluster         TEXT
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (name, tradition_id);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_path_talents ON path_talents (name, source);
 
 CREATE TABLE IF NOT EXISTS info_tables (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,

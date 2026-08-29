@@ -3,7 +3,7 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, db::{etc, immunities::Immunity, languages::Language}, import::{AncestryRow, NameToId, pipe_separate},
+    WWError, WWResult, db::{etc, immunities::Immunity, languages::Language}, import::{AncestryRow, NamePairToId, NameToId, pipe_separate},
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -26,6 +26,7 @@ impl Ancestry {
         speed_trait_map: &NameToId,
         sense_map: &NameToId,
         immunity_map: &NameToId,
+        path_talent_map: &NamePairToId,
     ) -> WWResult<NameToId> {
         let mut ancestry_map = NameToId::new("ancestry");
 
@@ -53,7 +54,7 @@ impl Ancestry {
             )?;
 
             let ancestry_id = record.last_insert_rowid();
-            ancestry_map.insert(label, ancestry_id);
+            ancestry_map.insert(label.clone(), ancestry_id);
 
             for language in pipe_separate(&row.languages) {
                 let language_id = language_map.get_id(&language)?;
@@ -69,7 +70,7 @@ impl Ancestry {
             for speed_trait in pipe_separate(&row.speed_traits) {
                 let mut parts = speed_trait.split("=");
                 if let Some(speed_trait_name) = parts.next() {
-                    let speed_trait_id = speed_trait_map.get_id(speed_trait_name)?;
+                    let speed_trait_id = speed_trait_map.get_id(&speed_trait_name.to_string())?;
                     let distance = parts.next();
                     sqlx::query!(
                         "INSERT INTO ancestry_speed_traits (ancestry_id, speed_trait_id, amount) VALUES (?, ?, ?)",
@@ -87,7 +88,7 @@ impl Ancestry {
                 // custom entries, no?
                 let mut parts = sense.split("=");
                 if let Some(sense_name) = parts.next() {
-                    let sense_id = sense_map.get_id(sense_name)?;
+                    let sense_id = sense_map.get_id(&sense_name.to_string())?;
                     let distance = parts.next();
                     sqlx::query!(
                         "INSERT INTO ancestry_senses (ancestry_id, sense_id, amount) VALUES (?, ?, ?)",
@@ -108,6 +109,16 @@ impl Ancestry {
                     immunity_id
                 )
                 .execute(&mut *tx)
+                .await?;
+            }
+
+            for talent in pipe_separate(&row.traits) {
+                let path_talent_id = path_talent_map.get_id(&(talent, label.clone()))?;
+                sqlx::query!(
+                    "INSERT INTO ancestry_talents (ancestry_id, path_talent_id) VALUES (?, ?)",
+                    ancestry_id,
+                    path_talent_id,
+                ).execute(&mut *tx)
                 .await?;
             }
         }
@@ -220,4 +231,11 @@ pub struct AncestrySense {
     pub description: String,
     pub unit: Option<String>,
     pub amount: Option<String>,
+}
+
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "path.ts")]
+pub struct AncestryTalent {
+    pub ancestry_id: i64,
+    pub path_talent_id: i64,
 }

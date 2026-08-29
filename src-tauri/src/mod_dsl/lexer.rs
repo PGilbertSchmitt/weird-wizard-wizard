@@ -118,13 +118,16 @@ pub enum Token {
     #[token("StatBlock")]
     StatBlock,
 
+    #[token("Merge")]
+    Merge,
+
     #[token("Talent")]
     Talent,
 
     #[token("Tradition")]
     Tradition,
 
-    #[token("HEAL")]
+    #[token("Heal")]
     Heal,
 
     #[token("SELECT")]
@@ -133,13 +136,13 @@ pub enum Token {
     #[token("SELECT_AGAIN")]
     SelectAgain,
 
-    #[token("SLOT")]
+    #[token("Slot")]
     Slot,
 
-    #[token("CALC")]
+    #[token("Calc")]
     Calc,
 
-    #[token("ASK")]
+    #[token("Ask")]
     Ask,
 
     #[regex("[0-9]+[dD][0-9]+", |lex| lex.slice().to_lowercase().to_string(), priority = 5)]
@@ -151,7 +154,7 @@ pub enum Token {
     #[token("/")]
     Slash,
 
-    #[regex("[a-zA-Z0-9-+_']+", |lex| lex.slice().to_string())]
+    #[regex("[a-zA-Z0-9-_']+", |lex| lex.slice().to_string())]
     Identifier(String),
 
     #[token("@")]
@@ -194,6 +197,12 @@ pub enum Token {
 
     #[token("<=")]
     LtEq,
+
+    #[token("+")]
+    Plus,
+
+    #[token("*")]
+    Times,
 }
 
 fn extract_quote_string(lexer: &mut Lexer<Token>) -> String {

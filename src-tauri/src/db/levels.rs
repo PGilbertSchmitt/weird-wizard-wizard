@@ -2,10 +2,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqliteConnection;
 
 use crate::{
-    db::etc::self,
-    import::{
-        pipe_separate, NameToId, PathLevelRow,
-    },
+    db::etc,
+    import::{pipe_separate, NamePairToId, NameToId, PathLevelRow},
     WWError, WWResult,
 };
 
@@ -35,6 +33,7 @@ impl Level {
         trad_map: &NameToId,
         language_map: &NameToId,
         speed_trait_map: &NameToId,
+        path_talent_map: &NamePairToId,
     ) -> WWResult<()> {
         for row in levels {
             let path_id = path_map.get_id(&row.path)?;
@@ -69,9 +68,13 @@ impl Level {
                 row.size
             )
             .execute(&mut *tx)
-            .await.map_err(|e|
-                WWError::Generic(format!("Encountered error while seeding {} level {}: {}", path_id, row.level, e))
-            )?;
+            .await
+            .map_err(|e| {
+                WWError::Generic(format!(
+                    "Encountered error while seeding {} level {}: {}",
+                    path_id, row.level, e
+                ))
+            })?;
             let level_id = record.last_insert_rowid();
 
             for tradition in pipe_separate(&row.traditions) {
@@ -102,6 +105,17 @@ impl Level {
                     "INSERT INTO level_speed_traits (level_id, speed_trait_id) VALUES (?, ?)",
                     level_id,
                     speed_trait_id,
+                )
+                .execute(&mut *tx)
+                .await?;
+            }
+
+            for talent in pipe_separate(&row.talents) {
+                let path_talent_id = path_talent_map.get_id(&(talent, row.path.clone()))?;
+                sqlx::query!(
+                    "INSERT INTO level_talents (level_id, path_talent_id) VALUES (?, ?)",
+                    level_id,
+                    path_talent_id,
                 )
                 .execute(&mut *tx)
                 .await?;

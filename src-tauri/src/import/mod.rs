@@ -1,5 +1,7 @@
 use csv::Reader;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::fmt::Debug;
+use std::hash::Hash;
 use std::{collections::HashMap, path::PathBuf};
 use ts_rs::TS;
 
@@ -37,12 +39,15 @@ pub fn pipe_separate(column: &Option<String>) -> Vec<String> {
     }
 }
 
-pub struct NameToId {
-    map: HashMap<String, i64>,
+pub struct IdMap<K: Eq + Hash + Debug> {
+    map: HashMap<K, i64>,
     label: String,
 }
 
-impl NameToId {
+pub type NameToId = IdMap<String>;
+pub type NamePairToId = IdMap<(String, String)>;
+
+impl<K: Eq + Hash + Debug> IdMap<K> {
     pub fn new(label: &str) -> Self {
         Self {
             map: HashMap::new(),
@@ -50,19 +55,19 @@ impl NameToId {
         }
     }
 
-    pub fn insert(&mut self, key: String, value: i64) {
+    pub fn insert(&mut self, key: K, value: i64) {
         self.map.insert(key, value);
     }
 
-    pub fn has(&self, key: &str) -> bool {
+    pub fn has(&self, key: &K) -> bool {
         self.map.contains_key(key)
     }
 
-    pub fn get_id(&self, key: &str) -> WWResult<i64> {
+    pub fn get_id(&self, key: &K) -> WWResult<i64> {
         self.map.get(key).map_or_else(
             || {
                 Err(WWError::Generic(format!(
-                    "No such {} with name '{}'",
+                    "No such {} with name '{:?}'",
                     &self.label, key
                 )))
             },
@@ -70,7 +75,7 @@ impl NameToId {
         )
     }
 
-    pub fn get_id_from_opt(&self, key: &Option<String>) -> WWResult<Option<i64>> {
+    pub fn get_id_from_opt(&self, key: &Option<K>) -> WWResult<Option<i64>> {
         match key {
             None => Ok(None),
             Some(k) => self.get_id(k).map(Some),
@@ -294,7 +299,7 @@ pub(super) struct MagicTalentRow {
     pub tradition: String,
     pub talent_name: String,
     pub charges: Option<String>,
-    pub restore: String,
+    pub restore: Option<String>,
     pub activate: String,
     pub table: Option<String>,
     pub options: Option<String>,
@@ -351,7 +356,7 @@ pub(super) struct PathLevelRow {
     pub traditions: Option<String>,
     pub languages: Option<String>,
     pub speed_traits: Option<String>,
-    // pub talents: String,
+    pub talents: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -360,13 +365,13 @@ pub(super) struct PathTalentRow {
     pub source: String,
     pub magical: Option<String>,
     pub charges: Option<String>,
-    pub restore: String,
+    pub restore: Option<String>,
     pub activate: String,
     pub table: Option<String>,
     pub options: Option<String>,
-    // Should not be optional, but my current file is spotty
     pub mod_str: Option<String>,
-    pub description: Option<String>,
+    pub cluster: Option<String>,
+    pub description: String,
 }
 
 #[derive(Deserialize, Debug)]
