@@ -1,21 +1,19 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    db::{info_tables::InfoTable, option_blocks::FullOptionBlock},
-    store::get_database,
-    WWResult,
+    WWResult, db::{info_tables::{self, InfoTable}, option_blocks::{self, FullOptionBlock}}, store::get_database,
 };
 
 #[command]
 pub async fn get_table(app: AppHandle<Wry>, id: i64) -> WWResult<InfoTable> {
     let db_state = get_database(&app)?;
     let db_state = db_state.lock().await;
-    Ok(InfoTable::get(&db_state.pool, id).await?)
+    Ok(info_tables::get(&db_state.pool, id).await?)
 }
 
 #[command]
 pub async fn get_option_block(app: AppHandle<Wry>, id: i64) -> WWResult<FullOptionBlock> {
     let db_state = get_database(&app)?;
     let db_state = db_state.lock().await;
-    Ok(FullOptionBlock::get(&db_state.pool, id).await?)
+    Ok(option_blocks::get(&db_state.pool, id).await?)
 }

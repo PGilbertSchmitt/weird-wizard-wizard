@@ -3,7 +3,7 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, db::{etc, info_tables::InfoTable, option_blocks::FullOptionBlock}, import::{MagicSpellRow, NameToId},
+    WWError, WWResult, db::{etc, info_tables::{self, InfoTable}, option_blocks::{self, FullOptionBlock}}, import::{MagicSpellRow, NameToId},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,55 +20,6 @@ pub struct Spell {
     ritual: bool,
     info_table_id: Option<i64>,
     option_block_id: Option<i64>,
-}
-
-impl Spell {
-    pub async fn insert_all(
-        tx: &mut SqliteConnection,
-        magic_spells: &Vec<MagicSpellRow>,
-        trad_map: &NameToId,
-        table_map: &NameToId,
-        option_map: &NameToId,
-    ) -> WWResult<()> {
-        for row in magic_spells {
-            let tradition_id = trad_map.get_id(&row.tradition)?;
-            let table_id = table_map.get_id_from_opt(&row.table)?;
-            let options_id = option_map.get_id_from_opt(&row.options)?;
-
-            sqlx::query!(
-                "INSERT INTO spells (
-                    tradition_id,
-                    name,
-                    description,
-                    path_kind,
-                    castings,
-                    duration,
-                    target,
-                    condition,
-                    ritual,
-                    info_table_id,
-                    option_block_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                tradition_id,
-                row.name,
-                row.description,
-                row.path_type,
-                row.castings,
-                row.duration,
-                row.target,
-                row.condition,
-                row.ritual,
-                table_id,
-                options_id
-            )
-            .execute(&mut *tx)
-            .await.map_err(|e|
-                WWError::Generic(format!("Encountered error while seeding {} spell {}: {}", tradition_id, row.name, e))
-            )?;
-        }
-
-        Ok(())
-    }
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -89,35 +40,6 @@ pub struct FullSpell {
     option_block: Option<FullOptionBlock>,
 }
 
-impl FullSpell {
-    pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullSpell> {
-        let spell = sqlx::query_as!(
-            SpellWithTradName,
-            "SELECT s.*, t.name as tradition_name FROM spells s JOIN traditions t ON t.id = s.tradition_id WHERE s.id = ?",
-            id
-        ).fetch_one(db).await?;
-
-        let info_table = InfoTable::get_from_opt(db, spell.info_table_id).await?;
-        let option_block = FullOptionBlock::get_from_opt(db, spell.option_block_id).await?;
-
-        Ok(FullSpell {
-            id,
-            tradition_id: spell.tradition_id,
-            tradition_name: spell.tradition_name,
-            name: spell.name,
-            description: spell.description,
-            path_kind: spell.path_kind,
-            castings: spell.castings,
-            duration: spell.duration,
-            target: spell.target,
-            condition: spell.condition,
-            ritual: spell.ritual,
-            info_table,
-            option_block,
-        })
-    }
-}
-
 // An intermediary struct for one fewer query
 #[derive(Serialize, Deserialize)]
 struct SpellWithTradName {
@@ -134,4 +56,78 @@ struct SpellWithTradName {
     ritual: bool,
     info_table_id: Option<i64>,
     option_block_id: Option<i64>,
+}
+
+pub async fn insert_all(
+    tx: &mut SqliteConnection,
+    magic_spells: &Vec<MagicSpellRow>,
+    trad_map: &NameToId,
+    table_map: &NameToId,
+    option_map: &NameToId,
+) -> WWResult<()> {
+    for row in magic_spells {
+        let tradition_id = trad_map.get_id(&row.tradition)?;
+        let table_id = table_map.get_id_from_opt(&row.table)?;
+        let options_id = option_map.get_id_from_opt(&row.options)?;
+
+        sqlx::query!(
+            "INSERT INTO spells (
+                tradition_id,
+                name,
+                description,
+                path_kind,
+                castings,
+                duration,
+                target,
+                condition,
+                ritual,
+                info_table_id,
+                option_block_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            tradition_id,
+            row.name,
+            row.description,
+            row.path_type,
+            row.castings,
+            row.duration,
+            row.target,
+            row.condition,
+            row.ritual,
+            table_id,
+            options_id
+        )
+        .execute(&mut *tx)
+        .await.map_err(|e|
+            WWError::Generic(format!("Encountered error while seeding {} spell {}: {}", tradition_id, row.name, e))
+        )?;
+    }
+
+    Ok(())
+}
+
+pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullSpell> {
+    let spell = sqlx::query_as!(
+        SpellWithTradName,
+        "SELECT s.*, t.name as tradition_name FROM spells s JOIN traditions t ON t.id = s.tradition_id WHERE s.id = ?",
+        id
+    ).fetch_one(db).await?;
+
+    let info_table = info_tables::get_from_opt(db, spell.info_table_id).await?;
+    let option_block = option_blocks::get_from_opt(db, spell.option_block_id).await?;
+
+    Ok(FullSpell {
+        id,
+        tradition_id: spell.tradition_id,
+        tradition_name: spell.tradition_name,
+        name: spell.name,
+        description: spell.description,
+        path_kind: spell.path_kind,
+        castings: spell.castings,
+        duration: spell.duration,
+        target: spell.target,
+        condition: spell.condition,
+        ritual: spell.ritual,
+        info_table,
+        option_block,
+    })
 }

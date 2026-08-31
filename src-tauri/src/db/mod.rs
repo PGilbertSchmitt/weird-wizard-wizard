@@ -3,6 +3,7 @@ use sqlx::{Pool, Sqlite, SqlitePool};
 use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
 
+pub mod characters;
 pub mod ancestries;
 pub mod etc;
 pub mod immunities;
@@ -13,6 +14,7 @@ pub mod magic_talents;
 pub mod option_blocks;
 pub mod paths;
 pub mod professions;
+pub mod profession_categories;
 pub mod senses;
 pub mod speed_traits;
 pub mod spells;
@@ -47,7 +49,7 @@ impl Database {
 
         let pool = SqlitePool::connect_with(db).await?;
 
-        sqlx::migrate!("db/migrations").run(&pool).await?;
+        sqlx::migrate!("./migrations").run(&pool).await?;
 
         Ok(Self {
             pool,

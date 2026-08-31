@@ -15,26 +15,24 @@ pub struct Sense {
     pub unit: Option<String>,
 }
 
-impl Sense {
-    pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<SenseRow>) -> WWResult<NameToId> {
-        let mut name_to_id = NameToId::new("sense");
+pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<SenseRow>) -> WWResult<NameToId> {
+    let mut name_to_id = NameToId::new("sense");
 
-        for row in rows {
-            let label = row.name.clone();
-            let record = sqlx::query!(
-                "INSERT INTO senses (name, description, unit) VALUES (?, ?, ?)",
-                row.name,
-                row.description,
-                row.unit,
-            )
-            .execute(&mut *tx)
-            .await.map_err(|e|
-                WWError::Generic(format!("Encountered error while seeding sense {}: {}", row.name, e))
-            )?;
+    for row in rows {
+        let label = row.name.clone();
+        let record = sqlx::query!(
+            "INSERT INTO senses (name, description, unit) VALUES (?, ?, ?)",
+            row.name,
+            row.description,
+            row.unit,
+        )
+        .execute(&mut *tx)
+        .await.map_err(|e|
+            WWError::Generic(format!("Encountered error while seeding sense {}: {}", row.name, e))
+        )?;
 
-            name_to_id.insert(label, record.last_insert_rowid());
-        }
-
-        Ok(name_to_id)
+        name_to_id.insert(label, record.last_insert_rowid());
     }
+
+    Ok(name_to_id)
 }

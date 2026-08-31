@@ -13,24 +13,22 @@ pub struct Immunity {
     pub name: String,
 }
 
-impl Immunity {
-    pub async fn insert_all(
-        tx: &mut SqliteConnection,
-        immunities: &HashSet<String>,
-    ) -> WWResult<NameToId> {
-        let mut name_to_id = NameToId::new("immunity");
+pub async fn insert_all(
+    tx: &mut SqliteConnection,
+    immunities: &HashSet<String>,
+) -> WWResult<NameToId> {
+    let mut name_to_id = NameToId::new("immunity");
 
-        for immunity in immunities {
-            let label = immunity.clone();
-            let record = sqlx::query!("INSERT INTO immunities (name) VALUES (?)", immunity,)
-                .execute(&mut *tx)
-                .await.map_err(|e|
-                    WWError::Generic(format!("Encountered error while seeding immunity {}: {}", immunity, e))
-                )?;
+    for immunity in immunities {
+        let label = immunity.clone();
+        let record = sqlx::query!("INSERT INTO immunities (name) VALUES (?)", immunity,)
+            .execute(&mut *tx)
+            .await.map_err(|e|
+                WWError::Generic(format!("Encountered error while seeding immunity {}: {}", immunity, e))
+            )?;
 
-            name_to_id.insert(label, record.last_insert_rowid());
-        }
-
-        Ok(name_to_id)
+        name_to_id.insert(label, record.last_insert_rowid());
     }
+
+    Ok(name_to_id)
 }

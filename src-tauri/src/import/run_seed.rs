@@ -29,30 +29,30 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         )?;
 
         let language_map =
-            db::languages::Language::insert_all(&mut tx, &import_data.languages).await?;
+            db::languages::insert_all(&mut tx, &import_data.languages).await?;
         processed_records += summary.languages;
         emit_progress(&app, processed_records, total_record_count)?;
 
         let speed_trait_map =
-            db::speed_traits::SpeedTrait::insert_all(&mut tx, &import_data.speed_traits).await?;
+            db::speed_traits::insert_all(&mut tx, &import_data.speed_traits).await?;
         processed_records += summary.speed_traits;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        let sense_map = db::senses::Sense::insert_all(&mut tx, &import_data.senses).await?;
+        let sense_map = db::senses::insert_all(&mut tx, &import_data.senses).await?;
         processed_records += summary.senses;
         emit_progress(&app, processed_records, total_record_count)?;
 
         let options_map =
-            db::option_blocks::OptionBlock::insert_all(&mut tx, &import_data.options).await?;
+            db::option_blocks::insert_all(&mut tx, &import_data.options).await?;
         processed_records += summary.options;
         emit_progress(&app, processed_records, total_record_count)?;
 
         let table_map =
-            db::info_tables::InfoTableBase::insert_all(&mut tx, &import_data.tables).await?;
+            db::info_tables::insert_all(&mut tx, &import_data.tables).await?;
         processed_records += summary.tables;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        let path_talent_map = db::path_talents::PathTalent::insert_all(
+        let path_talent_map = db::path_talents::insert_all(
             &mut tx,
             &import_data.path_talents,
             &table_map,
@@ -66,9 +66,9 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             .iter()
             .flat_map(|anc| pipe_separate(&anc.immunities))
             .collect();
-        let immunity_map = db::immunities::Immunity::insert_all(&mut tx, &immunities).await?;
+        let immunity_map = db::immunities::insert_all(&mut tx, &immunities).await?;
 
-        let ancestry_map = db::ancestries::Ancestry::insert_all(
+        let ancestry_map = db::ancestries::insert_all(
             &mut tx,
             &import_data.ancestries,
             &language_map,
@@ -81,11 +81,11 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.ancestries;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::professions::Profession::insert_all(&mut tx, &import_data.professions).await?;
+        db::professions::insert_all(&mut tx, &import_data.professions).await?;
         processed_records += summary.professions;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::professions::ProfessionCategory::insert_all(
+        db::profession_categories::insert_all(
             &mut tx,
             &import_data.profession_categories,
         )
@@ -94,12 +94,12 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         emit_progress(&app, processed_records, total_record_count)?;
 
         let trad_map =
-            db::traditions::Tradition::insert_all(&mut tx, &import_data.traditions, &table_map)
+            db::traditions::insert_all(&mut tx, &import_data.traditions, &table_map)
                 .await?;
         processed_records += summary.traditions;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::spells::Spell::insert_all(
+        db::spells::insert_all(
             &mut tx,
             &import_data.magic_spells,
             &trad_map,
@@ -110,7 +110,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.magic_spells;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::magic_talents::MagicTalent::insert_all(
+        db::magic_talents::insert_all(
             &mut tx,
             &import_data.magic_talents,
             &trad_map,
@@ -122,12 +122,12 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         emit_progress(&app, processed_records, total_record_count)?;
 
         let novice_path_map =
-            db::paths::Path::insert_all_novice(&mut tx, &import_data.novice_paths, &ancestry_map)
+            db::paths::insert_all_novice(&mut tx, &import_data.novice_paths, &ancestry_map)
                 .await?;
         processed_records += summary.novice_paths;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        let expert_path_map = db::paths::Path::insert_all_expert_or_master(
+        let expert_path_map = db::paths::insert_all_expert_or_master(
             &mut tx,
             &import_data.expert_paths,
             db::etc::PathKind::Expert,
@@ -136,7 +136,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.expert_paths;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        let master_path_map = db::paths::Path::insert_all_expert_or_master(
+        let master_path_map = db::paths::insert_all_expert_or_master(
             &mut tx,
             &import_data.master_paths,
             db::etc::PathKind::Master,
@@ -145,7 +145,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.master_paths;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::levels::Level::insert_all(
+        db::levels::insert_all(
             &mut tx,
             &import_data.novice_levels,
             &novice_path_map,
@@ -158,7 +158,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.novice_levels;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::levels::Level::insert_all(
+        db::levels::insert_all(
             &mut tx,
             &import_data.expert_levels,
             &expert_path_map,
@@ -171,7 +171,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.expert_levels;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::levels::Level::insert_all(
+        db::levels::insert_all(
             &mut tx,
             &import_data.master_levels,
             &master_path_map,
@@ -184,7 +184,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.master_levels;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::choice_selections::ChoiceTable::insert_all(&mut tx, &import_data.choice_selections).await?;
+        db::choice_selections::insert_all(&mut tx, &import_data.choice_selections).await?;
         processed_records += summary.choice_selections;
         emit_progress(&app, processed_records, total_record_count)?;
 

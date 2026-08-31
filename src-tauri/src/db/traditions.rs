@@ -3,9 +3,7 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::info_tables::InfoTable,
-    import::{NameToId, TraditionRow},
-    WWResult,
+    WWResult, db::info_tables::{self, InfoTable}, import::{NameToId, TraditionRow},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -16,35 +14,6 @@ pub struct Tradition {
     description: String,
     special_info: Option<String>,
     info_table_id: Option<i64>,
-}
-
-impl Tradition {
-    pub async fn insert_all(
-        tx: &mut SqliteConnection,
-        traditions: &Vec<TraditionRow>,
-        table_map: &NameToId,
-    ) -> WWResult<NameToId> {
-        let mut trad_map = NameToId::new("tradition");
-
-        for row in traditions {
-            let name = row.name.clone();
-            let table_id = table_map.get_id_from_opt(&row.table)?;
-            let record = sqlx::query!(
-                "INSERT INTO traditions (name, blurb, description, special_info, info_table_id) VALUES (?, ?, ?, ?, ?)",
-                row.name,
-                row.blurb,
-                row.description,
-                row.special_info,
-                table_id,
-            )
-            .execute(&mut *tx)
-            .await?;
-
-            trad_map.insert(name, record.last_insert_rowid());
-        }
-
-        Ok(trad_map)
-    }
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -58,21 +27,46 @@ pub struct FullTradition {
     into_table: Option<InfoTable>,
 }
 
-impl FullTradition {
-    pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullTradition> {
-        let tradition = sqlx::query_as!(Tradition, "SELECT * FROM traditions WHERE id = ?", id)
-            .fetch_one(db)
-            .await?;
+pub async fn insert_all(
+    tx: &mut SqliteConnection,
+    traditions: &Vec<TraditionRow>,
+    table_map: &NameToId,
+) -> WWResult<NameToId> {
+    let mut trad_map = NameToId::new("tradition");
 
-        let table = InfoTable::get_from_opt(db, tradition.info_table_id).await?;
+    for row in traditions {
+        let name = row.name.clone();
+        let table_id = table_map.get_id_from_opt(&row.table)?;
+        let record = sqlx::query!(
+            "INSERT INTO traditions (name, blurb, description, special_info, info_table_id) VALUES (?, ?, ?, ?, ?)",
+            row.name,
+            row.blurb,
+            row.description,
+            row.special_info,
+            table_id,
+        )
+        .execute(&mut *tx)
+        .await?;
 
-        Ok(FullTradition {
-            id,
-            name: tradition.name,
-            blurb: tradition.blurb,
-            description: tradition.description,
-            special_info: tradition.special_info,
-            into_table: table,
-        })
+        trad_map.insert(name, record.last_insert_rowid());
     }
+
+    Ok(trad_map)
+}
+
+pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullTradition> {
+    let tradition = sqlx::query_as!(Tradition, "SELECT * FROM traditions WHERE id = ?", id)
+        .fetch_one(db)
+        .await?;
+
+    let table = info_tables::get_from_opt(db, tradition.info_table_id).await?;
+
+    Ok(FullTradition {
+        id,
+        name: tradition.name,
+        blurb: tradition.blurb,
+        description: tradition.description,
+        special_info: tradition.special_info,
+        into_table: table,
+    })
 }

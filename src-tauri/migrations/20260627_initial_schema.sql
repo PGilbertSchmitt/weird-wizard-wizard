@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = ON;
+
 -- START: READONLY SEEDABLE TABLES --
 
 CREATE TABLE IF NOT EXISTS languages (
@@ -213,7 +215,7 @@ CREATE TABLE IF NOT EXISTS option_blocks (
 );
 
 CREATE TABLE IF NOT EXISTS option_block_rows (
-    option_block_id INTEGER REFERENCES option_blocks(id),
+    option_block_id INTEGER REFERENCES option_blocks(id) NOT NULL,
     value           TEXT NOT NULL
 );
 
@@ -223,44 +225,11 @@ CREATE TABLE IF NOT EXISTS choice_tables (
 );
 
 CREATE TABLE IF NOT EXISTS choice_selections (
-    choice_table_id INTEGER REFERENCES choice_tables(id),
+    choice_table_id INTEGER REFERENCES choice_tables(id) NOT NULL,
     label           TEXT,
     description     TEXT NOT NULL,
     mod_str         TEXT
 );
-
--- END: SEEDABLE TABLES
-
--- START: USER-GENERATED RECORD TABLES 
-
-CREATE TABLE IF NOT EXISTS characters (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    name           TEXT    NOT NULL,
-    level          INTEGER NOT NULL,
-    strength       INTEGER,
-    agility        INTEGER,
-    intellect      INTEGER,
-    will           INTEGER,
-    ancestry_id    INTEGER REFERENCES ancestries(id),
-    novice_path_id INTEGER REFERENCES paths(id), 
-    master_path_id INTEGER REFERENCES paths(id), 
-    expert_path_id INTEGER REFERENCES paths(id), 
-
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TRIGGER IF NOT EXISTS validate_path_assoc BEFORE UPDATE ON characters
-BEGIN
-    SELECT
-        CASE
-        WHEN ('Novice' <> (SELECT kind FROM paths WHERE paths.id = NEW.novice_path_id))
-            THEN raise(ABORT, 'EXPECTED_NOVICE_PATH')
-        WHEN ('Expert' <> (SELECT kind FROM paths WHERE paths.id = NEW.expert_path_id))
-            THEN raise(ABORT, 'EXPECTED_EXPERT_PATH')
-        WHEN ('Master' <> (SELECT kind FROM paths WHERE paths.id = NEW.master_path_id))
-            THEN raise(ABORT, 'EXPECTED_MASTER_PATH')
-        END;
-END;
 
 CREATE TRIGGER IF NOT EXISTS validate_ancestry_speed_trait_units BEFORE INSERT ON ancestry_speed_traits
 BEGIN
@@ -303,5 +272,47 @@ BEGIN
             THEN raise(ABORT, 'EXPECTED_NOVICE_SCORE_RECS')
         END;
 END;
+
+-- END: SEEDABLE TABLES
+
+-- START: USER-GENERATED RECORD TABLES 
+
+CREATE TABLE IF NOT EXISTS characters (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    name           TEXT    NOT NULL,
+    level          INTEGER NOT NULL,
+    strength       INTEGER NOT NULL,
+    agility        INTEGER NOT NULL,
+    intellect      INTEGER NOT NULL,
+    will           INTEGER NOT NULL,
+    ancestry_id    INTEGER REFERENCES ancestries(id) NOT NULL,
+    novice_path_id INTEGER REFERENCES paths(id) NOT NULL, 
+    expert_path_id INTEGER REFERENCES paths(id), 
+    master_path_id INTEGER REFERENCES paths(id), 
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS validate_path_assoc BEFORE UPDATE ON characters
+BEGIN
+    SELECT
+        CASE
+        WHEN ('Novice' <> (SELECT kind FROM paths WHERE paths.id = NEW.novice_path_id))
+            THEN raise(ABORT, 'EXPECTED_NOVICE_PATH')
+        WHEN ('Expert' <> (SELECT kind FROM paths WHERE paths.id = NEW.expert_path_id))
+            THEN raise(ABORT, 'EXPECTED_EXPERT_PATH')
+        WHEN ('Master' <> (SELECT kind FROM paths WHERE paths.id = NEW.master_path_id))
+            THEN raise(ABORT, 'EXPECTED_MASTER_PATH')
+        END;
+END;
+
+CREATE TABLE IF NOT EXISTS character_choices (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE NOT NULL,
+    choice_key   TEXT NOT NULL,
+    selection    TEXT,
+    dismissable  BOOLEAN NOT NULL,
+    duration     TEXT CHECK (duration IN ('OneMinute', 'OneHour', 'FourHours', 'EightHours', 'OneDay', 'Rest'))
+);
 
 -- END: USER-GENERATED RECORD TABLES 

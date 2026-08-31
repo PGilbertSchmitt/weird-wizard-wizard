@@ -34,7 +34,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             ipc::init_seed,
             ipc::run_seed,
-            ipc::get_ancestry,
             ipc::get_full_ancestry,
             ipc::get_table,
             ipc::get_option_block,
