@@ -3,7 +3,13 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, db::{etc, info_tables::{self, InfoTable}, option_blocks::{self, FullOptionBlock}}, import::{MagicSpellRow, NameToId},
+    db::{
+        etc,
+        info_tables::{self, FullInfoTable},
+        option_blocks::{self, FullOptionBlock},
+    },
+    import::{MagicSpellRow, NameToId},
+    WWError, WWResult,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -36,7 +42,7 @@ pub struct FullSpell {
     target: String,
     condition: Option<String>,
     ritual: bool,
-    info_table: Option<InfoTable>,
+    info_table: Option<FullInfoTable>,
     option_block: Option<FullOptionBlock>,
 }
 
@@ -97,9 +103,13 @@ pub async fn insert_all(
             options_id
         )
         .execute(&mut *tx)
-        .await.map_err(|e|
-            WWError::Generic(format!("Encountered error while seeding {} spell {}: {}", tradition_id, row.name, e))
-        )?;
+        .await
+        .map_err(|e| {
+            WWError::Generic(format!(
+                "Encountered error while seeding {} spell {}: {}",
+                tradition_id, row.name, e
+            ))
+        })?;
     }
 
     Ok(())

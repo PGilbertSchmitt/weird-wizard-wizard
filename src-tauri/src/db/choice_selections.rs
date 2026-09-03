@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 
 use crate::{
-    WWError, WWResult, import::{ChoiceSelectionRow, NameToId},
+    import::{ChoiceSelectionRow, NameToId},
+    WWError, WWResult,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,10 +32,14 @@ pub async fn insert_all(
                 let name = row.choice_header.clone();
                 let record = sqlx::query!("INSERT INTO choice_tables (name) VALUES (?)", name)
                     .execute(&mut *tx)
-                    .await.map_err(|e|
-                        WWError::Generic(format!("Encountered error while seeding choice selection row {}: {}", row.choice_header, e))
-                    )?;
-            
+                    .await
+                    .map_err(|e| {
+                        WWError::Generic(format!(
+                            "Encountered error while seeding choice selection row {}: {}",
+                            row.choice_header, e
+                        ))
+                    })?;
+
                 let id = record.last_insert_rowid();
                 choice_map.insert(name, id);
                 id
@@ -51,22 +56,23 @@ pub async fn insert_all(
         ).execute(&mut *tx).await.map_err(|e|
             WWError::Generic(format!("Encountered error while seeding choice selection row {}, key {}: {}", row.choice_header, row.choice_name, e))
         )?;
-    };
+    }
 
     Ok(())
 }
 
 pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<ChoiceTable> {
-    let name = sqlx::query_scalar!(
-        "SELECT name FROM choice_tables WHERE id = ?",
-        id
-    ).fetch_one(db).await?;
-    
+    let name = sqlx::query_scalar!("SELECT name FROM choice_tables WHERE id = ?", id)
+        .fetch_one(db)
+        .await?;
+
     let choices = sqlx::query_as!(
         Choice,
         "SELECT label, description, mod_str FROM choice_selections WHERE choice_table_id = ?",
         id
-    ).fetch_all(db).await?;
+    )
+    .fetch_all(db)
+    .await?;
 
     Ok(ChoiceTable { id, name, choices })
 }

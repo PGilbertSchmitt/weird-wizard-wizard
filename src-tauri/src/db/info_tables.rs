@@ -3,7 +3,8 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, import::{NameToId, TableRow},
+    import::{NameToId, TableRow},
+    WWError, WWResult,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,9 +32,15 @@ pub async fn insert_all(
                 row.table_type,
                 row.key,
                 row.value,
-            ).execute(&mut *tx).await.map_err(|e|
-                WWError::Generic(format!("Encountered error while seeding info table {}: {}", row.table_id, e))
-            )?;
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                WWError::Generic(format!(
+                    "Encountered error while seeding info table {}: {}",
+                    row.table_id, e
+                ))
+            })?;
             table_map.insert(table_id, record.last_insert_rowid());
         } else {
             // Remaining lines for a given table_id hold the table entries
@@ -45,9 +52,13 @@ pub async fn insert_all(
                 row.value,
             )
             .execute(&mut *tx)
-            .await.map_err(|e|
-                WWError::Generic(format!("Encountered error while seeding info table row {}, key {}: {}", row.table_id, row.key, e))
-            )?;
+            .await
+            .map_err(|e| {
+                WWError::Generic(format!(
+                    "Encountered error while seeding info table row {}, key {}: {}",
+                    row.table_id, row.key, e
+                ))
+            })?;
         }
     }
 
@@ -83,7 +94,7 @@ pub struct Entry {
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "info_tables.ts")]
-pub struct InfoTable {
+pub struct FullInfoTable {
     pub id: i64,
     pub name: String,
     pub kind: TableKind,
@@ -92,7 +103,7 @@ pub struct InfoTable {
     pub entries: Vec<Entry>,
 }
 
-pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<InfoTable> {
+pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullInfoTable> {
     let info_table = sqlx::query_as!(RawInfoTable, "SELECT * FROM info_tables WHERE id = ?", id,)
         .fetch_one(db)
         .await?;
@@ -105,7 +116,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<InfoTable> {
     .fetch_all(db)
     .await?;
 
-    Ok(InfoTable {
+    Ok(FullInfoTable {
         id: info_table.id,
         name: info_table.name,
         kind: info_table.kind,
@@ -115,7 +126,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<InfoTable> {
     })
 }
 
-pub async fn get_from_opt(db: &Pool<Sqlite>, id: Option<i64>) -> WWResult<Option<InfoTable>> {
+pub async fn get_from_opt(db: &Pool<Sqlite>, id: Option<i64>) -> WWResult<Option<FullInfoTable>> {
     Ok(if let Some(id_unwrapped) = id {
         Some(get(db, id_unwrapped).await?)
     } else {

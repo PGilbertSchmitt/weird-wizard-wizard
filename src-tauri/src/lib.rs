@@ -3,9 +3,9 @@ use tauri::{async_runtime::Mutex, Manager};
 mod db;
 mod import;
 mod ipc;
+mod mod_dsl;
 mod result;
 mod store;
-mod mod_dsl;
 
 pub use result::{WWError, WWResult};
 
@@ -35,11 +35,16 @@ pub fn run() {
             ipc::init_seed,
             ipc::run_seed,
             ipc::get_full_ancestry,
+            ipc::get_all_ancestries,
+            ipc::get_full_talent,
+            ipc::get_ancestry_talents,
             ipc::get_table,
             ipc::get_option_block,
             ipc::get_tradition,
             ipc::get_spell,
             ipc::get_magic_talent,
+            ipc::get_novice_path,
+            ipc::get_full_path,
         ])
         .build(tauri::generate_context!())
         .expect("Unexpected error while running tauri application")

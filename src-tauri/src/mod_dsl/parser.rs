@@ -2,9 +2,9 @@ use crate::mod_dsl::ast::ChooseSlotTarget;
 
 use super::{
     ast::{
-        ApplyTarget, ChooseTarget, Condition, Dice, ExprOp, ExprValue, GrantTarget, HasCategory,
-        HealAmount, LoseTarget, Modifier, OverrideTarget, SimpleExpr, ApplySlotsTarget, Target,
-        WhenDuration, WhenMod,
+        ApplySlotsTarget, ApplyTarget, ChooseTarget, Condition, Dice, ExprOp, ExprValue,
+        GrantTarget, HasCategory, HealAmount, LoseTarget, Modifier, OverrideTarget, SimpleExpr,
+        Target, WhenDuration, WhenMod,
     },
     lexer::Token,
 };
@@ -299,15 +299,11 @@ fn parse_choose_target(tokens: &mut Tokens) -> Result<ChooseTarget, String> {
             eat_dot(tokens)?;
             let math = ut(tokens.next())?;
             let target = match math {
-                Token::Plus => {
-                    ChooseSlotTarget::Plus(parse_number(tokens)?.try_into().unwrap())
+                Token::Plus => ChooseSlotTarget::Plus(parse_number(tokens)?.try_into().unwrap()),
+                Token::Times => ChooseSlotTarget::Times(parse_number(tokens)?.try_into().unwrap()),
+                other_token => {
+                    return Err(format!("Expected + or *, instead found '{other_token:?}'"))
                 }
-                Token::Times => {
-                    ChooseSlotTarget::Times(parse_number(tokens)?.try_into().unwrap())
-                }
-                other_token => return Err(format!(
-                    "Expected + or *, instead found '{other_token:?}'"
-                ))
             };
             Ok(ChooseTarget::Slots(target))
         }

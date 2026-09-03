@@ -3,7 +3,8 @@ use sqlx::SqliteConnection;
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, import::{LanguageRow, NameToId, is_affirmative},
+    import::{is_affirmative, LanguageRow, NameToId},
+    WWError, WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -15,10 +16,7 @@ pub struct Language {
     pub secret: bool,
 }
 
-pub async fn insert_all(
-    tx: &mut SqliteConnection,
-    rows: &Vec<LanguageRow>,
-) -> WWResult<NameToId> {
+pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<LanguageRow>) -> WWResult<NameToId> {
     let mut name_to_id = NameToId::new("language");
 
     for row in rows {
@@ -31,9 +29,13 @@ pub async fn insert_all(
             secret,
         )
         .execute(&mut *tx)
-        .await.map_err(|e|
-            WWError::Generic(format!("Encountered error while seeding language {}: {}", label, e))
-        )?;
+        .await
+        .map_err(|e| {
+            WWError::Generic(format!(
+                "Encountered error while seeding language {}: {}",
+                label, e
+            ))
+        })?;
 
         name_to_id.insert(label, record.last_insert_rowid());
     }

@@ -1,7 +1,13 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    WWResult, db::{magic_talents::{self, FullMagicTalent}, spells::{self, FullSpell}, traditions::{self, FullTradition}}, store::get_database,
+    db::{
+        magic_talents::{self, FullMagicTalent},
+        spells::{self, FullSpell},
+        traditions::{self, FullTradition},
+    },
+    store::get_database,
+    WWResult,
 };
 
 #[command]

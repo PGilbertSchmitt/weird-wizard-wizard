@@ -23,6 +23,17 @@ impl From<String> for Size {
     }
 }
 
+impl Size {
+    pub fn from_opt(value: Option<String>) -> Option<Self> {
+        match value.as_deref() {
+            Some("sm") => Some(Self::Sm),
+            Some("md") => Some(Self::Md),
+            Some("lg") => Some(Self::Lg),
+            _ => None,
+        }
+    }
+}
+
 #[derive(TS, Debug, Serialize, Deserialize, sqlx::Type, Clone, Copy, PartialEq, Eq)]
 #[ts(export, export_to = "etc.ts")]
 #[sqlx(type_name = "TEXT")]

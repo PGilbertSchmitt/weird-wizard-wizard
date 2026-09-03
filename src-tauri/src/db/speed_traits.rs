@@ -3,16 +3,18 @@ use sqlx::SqliteConnection;
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, import::{NameToId, SpeedTraitRow},
+    import::{NameToId, SpeedTraitRow},
+    WWError, WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "other_info.ts")]
-pub struct SpeedTrait {
+pub struct FullSpeedTrait {
     pub id: i64,
     pub name: String,
     pub description: String,
     pub unit: Option<String>,
+    pub amount: Option<String>,
 }
 
 pub async fn insert_all(
@@ -30,9 +32,13 @@ pub async fn insert_all(
             row.unit,
         )
         .execute(&mut *tx)
-        .await.map_err(|e|
-            WWError::Generic(format!("Encountered error while seeding speed trait {}: {}", row.name, e))
-        )?;
+        .await
+        .map_err(|e| {
+            WWError::Generic(format!(
+                "Encountered error while seeding speed trait {}: {}",
+                row.name, e
+            ))
+        })?;
 
         name_to_id.insert(label, record.last_insert_rowid());
     }

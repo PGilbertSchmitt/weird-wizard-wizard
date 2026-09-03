@@ -3,8 +3,9 @@ use sqlx::{Pool, Sqlite, SqlitePool};
 use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
 
-pub mod characters;
 pub mod ancestries;
+pub mod characters;
+pub mod choice_selections;
 pub mod etc;
 pub mod immunities;
 pub mod info_tables;
@@ -12,15 +13,14 @@ pub mod languages;
 pub mod levels;
 pub mod magic_talents;
 pub mod option_blocks;
+pub mod path_talents;
 pub mod paths;
-pub mod professions;
 pub mod profession_categories;
+pub mod professions;
 pub mod senses;
 pub mod speed_traits;
 pub mod spells;
 pub mod traditions;
-pub mod path_talents;
-pub mod choice_selections;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,

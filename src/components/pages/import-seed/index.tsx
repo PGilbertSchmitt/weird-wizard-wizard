@@ -186,12 +186,27 @@ export const ImportSeed = () => {
         <Button
           disabled={Number.isNaN(parseInt(id))}
           onClick={() => {
-            invoke('get_magic_talent', { id: parseInt(id) }).then((data) => {
-              console.log('une data', data);
+            const start = performance.now();
+            invoke('get_novice_path', { id: parseInt(id) }).then((data) => {
+              const end = performance.now();
+              console.log(`une data [${end-start}ms]`, data);
             });
           }}
         >
-          CLOCK
+          Novice Path
+        </Button>
+
+        <Button
+          disabled={Number.isNaN(parseInt(id))}
+          onClick={() => {
+            const start = performance.now();
+            invoke('get_full_path', { id: parseInt(id) }).then((data) => {
+              const end = performance.now();
+              console.log(`une data [${end-start}ms]`, data);
+            });
+          }}
+        >
+          All Paths
         </Button>
       </div>
     </>

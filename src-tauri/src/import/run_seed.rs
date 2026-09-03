@@ -3,7 +3,11 @@ use std::collections::HashSet;
 use tauri::{AppHandle, Wry};
 
 use crate::{
-    WWError, WWResult, db, import::{ProgressPayload, pipe_separate, validate_mod_strings}, ipc::{EmitChannel, emit}, store::{get_app_data_state, get_database},
+    db,
+    import::{pipe_separate, validate_mod_strings, ProgressPayload},
+    ipc::{emit, EmitChannel},
+    store::{get_app_data_state, get_database},
+    WWError, WWResult,
 };
 
 use super::ImportEvent;
@@ -28,8 +32,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             &import_data.path_talents,
         )?;
 
-        let language_map =
-            db::languages::insert_all(&mut tx, &import_data.languages).await?;
+        let language_map = db::languages::insert_all(&mut tx, &import_data.languages).await?;
         processed_records += summary.languages;
         emit_progress(&app, processed_records, total_record_count)?;
 
@@ -42,13 +45,11 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.senses;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        let options_map =
-            db::option_blocks::insert_all(&mut tx, &import_data.options).await?;
+        let options_map = db::option_blocks::insert_all(&mut tx, &import_data.options).await?;
         processed_records += summary.options;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        let table_map =
-            db::info_tables::insert_all(&mut tx, &import_data.tables).await?;
+        let table_map = db::info_tables::insert_all(&mut tx, &import_data.tables).await?;
         processed_records += summary.tables;
         emit_progress(&app, processed_records, total_record_count)?;
 
@@ -57,7 +58,8 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             &import_data.path_talents,
             &table_map,
             &options_map,
-        ).await?;
+        )
+        .await?;
         processed_records += summary.path_talents;
         emit_progress(&app, processed_records, total_record_count)?;
 
@@ -85,17 +87,12 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.professions;
         emit_progress(&app, processed_records, total_record_count)?;
 
-        db::profession_categories::insert_all(
-            &mut tx,
-            &import_data.profession_categories,
-        )
-        .await?;
+        db::profession_categories::insert_all(&mut tx, &import_data.profession_categories).await?;
         processed_records += summary.profession_categories;
         emit_progress(&app, processed_records, total_record_count)?;
 
         let trad_map =
-            db::traditions::insert_all(&mut tx, &import_data.traditions, &table_map)
-                .await?;
+            db::traditions::insert_all(&mut tx, &import_data.traditions, &table_map).await?;
         processed_records += summary.traditions;
         emit_progress(&app, processed_records, total_record_count)?;
 
@@ -122,8 +119,7 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         emit_progress(&app, processed_records, total_record_count)?;
 
         let novice_path_map =
-            db::paths::insert_all_novice(&mut tx, &import_data.novice_paths, &ancestry_map)
-                .await?;
+            db::paths::insert_all_novice(&mut tx, &import_data.novice_paths, &ancestry_map).await?;
         processed_records += summary.novice_paths;
         emit_progress(&app, processed_records, total_record_count)?;
 

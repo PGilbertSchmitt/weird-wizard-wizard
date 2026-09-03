@@ -3,7 +3,9 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWResult, db::info_tables::{self, InfoTable}, import::{NameToId, TraditionRow},
+    db::info_tables::{self, FullInfoTable},
+    import::{NameToId, TraditionRow},
+    WWResult,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -24,7 +26,7 @@ pub struct FullTradition {
     blurb: String,
     description: String,
     special_info: Option<String>,
-    into_table: Option<InfoTable>,
+    into_table: Option<FullInfoTable>,
 }
 
 pub async fn insert_all(

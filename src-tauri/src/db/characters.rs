@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
-use crate::db::{ancestries::RawAncestry, paths::CharacterPath};
+
+use crate::db::{ancestries::FullAncestry, paths::FullPath};
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "character.ts")]
@@ -27,9 +28,9 @@ pub struct GetFullCharacter {
     agility: i64,
     intellect: i64,
     will: i64,
-    ancestry: RawAncestry,
-    novice_path: CharacterPath,
-    expert_path: Option<CharacterPath>,
-    master_path: Option<CharacterPath>,
+    ancestry: FullAncestry,
+    novice_path: FullPath,
+    expert_path: Option<FullPath>,
+    master_path: Option<FullPath>,
     choices: (),
 }

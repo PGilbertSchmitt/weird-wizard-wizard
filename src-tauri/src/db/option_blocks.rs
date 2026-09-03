@@ -3,7 +3,8 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, import::{NameToId, OptionRow},
+    import::{NameToId, OptionRow},
+    WWError, WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -14,10 +15,7 @@ pub struct FullOptionBlock {
     pub entries: Vec<String>,
 }
 
-pub async fn insert_all(
-    tx: &mut SqliteConnection,
-    options: &Vec<OptionRow>,
-) -> WWResult<NameToId> {
+pub async fn insert_all(tx: &mut SqliteConnection, options: &Vec<OptionRow>) -> WWResult<NameToId> {
     let mut option_map = NameToId::new("option_block");
 
     for row in options {
@@ -29,9 +27,13 @@ pub async fn insert_all(
                     row.options_id,
                 )
                 .execute(&mut *tx)
-                .await.map_err(|e|
-                    WWError::Generic(format!("Encountered error while seeding option block {}: {}", row.options_id, e))
-                )?;
+                .await
+                .map_err(|e| {
+                    WWError::Generic(format!(
+                        "Encountered error while seeding option block {}: {}",
+                        row.options_id, e
+                    ))
+                })?;
                 let id = record.last_insert_rowid();
                 option_map.insert(label, id);
                 id
@@ -45,9 +47,13 @@ pub async fn insert_all(
             row.description,
         )
         .execute(&mut *tx)
-        .await.map_err(|e|
-            WWError::Generic(format!("Encountered error while seeding option block row {option_id}, key {}: {}", row.description, e))
-        )?;
+        .await
+        .map_err(|e| {
+            WWError::Generic(format!(
+                "Encountered error while seeding option block row {option_id}, key {}: {}",
+                row.description, e
+            ))
+        })?;
     }
 
     Ok(option_map)

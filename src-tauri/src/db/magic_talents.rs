@@ -3,7 +3,13 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, db::{etc::TalentRestore, info_tables::{self, InfoTable}, option_blocks::{self, FullOptionBlock}}, import::{MagicTalentRow, NameToId},
+    db::{
+        etc::TalentRestore,
+        info_tables::{self, FullInfoTable},
+        option_blocks::{self, FullOptionBlock},
+    },
+    import::{MagicTalentRow, NameToId},
+    WWError, WWResult,
 };
 
 // An intermediary struct for one fewer query
@@ -32,7 +38,7 @@ pub struct FullMagicTalent {
     charges: Option<String>,
     restore: TalentRestore,
     activate: String,
-    info_table_id: Option<InfoTable>,
+    info_table_id: Option<FullInfoTable>,
     option_block_id: Option<FullOptionBlock>,
 }
 
@@ -69,9 +75,13 @@ pub async fn insert_all(
             options_id,
         )
         .execute(&mut *tx)
-        .await.map_err(|e|
-            WWError::Generic(format!("Encountered error while seeding magic talent {}: {}", row.talent_name, e))
-        )?;
+        .await
+        .map_err(|e| {
+            WWError::Generic(format!(
+                "Encountered error while seeding magic talent {}: {}",
+                row.talent_name, e
+            ))
+        })?;
     }
 
     Ok(())

@@ -3,7 +3,8 @@ use sqlx::SqliteConnection;
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, import::{NameToId, SenseRow},
+    import::{NameToId, SenseRow},
+    WWError, WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -27,9 +28,13 @@ pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<SenseRow>) -> WWRe
             row.unit,
         )
         .execute(&mut *tx)
-        .await.map_err(|e|
-            WWError::Generic(format!("Encountered error while seeding sense {}: {}", row.name, e))
-        )?;
+        .await
+        .map_err(|e| {
+            WWError::Generic(format!(
+                "Encountered error while seeding sense {}: {}",
+                row.name, e
+            ))
+        })?;
 
         name_to_id.insert(label, record.last_insert_rowid());
     }

@@ -1,14 +1,23 @@
+use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, db::{etc, immunities::Immunity, languages::Language}, import::{AncestryRow, NamePairToId, NameToId, pipe_separate},
+    db::{
+        etc,
+        immunities::Immunity,
+        languages::Language,
+        path_talents::{self, FullPathTalent},
+        speed_traits::FullSpeedTrait,
+    },
+    import::{pipe_separate, AncestryRow, NamePairToId, NameToId},
+    WWError, WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "path.ts")]
-pub struct RawAncestry {
+struct RawAncestry {
     pub id: i64,
     name: String,
     descriptor: Option<String>,
@@ -29,18 +38,9 @@ pub struct FullAncestry {
     add_nat_def: Option<i64>,
     languages: Vec<Language>,
     immunities: Vec<Immunity>,
-    speed_traits: Vec<AncestrySpeedTrait>,
+    speed_traits: Vec<FullSpeedTrait>,
     senses: Vec<AncestrySense>,
-}
-
-#[derive(TS, Debug, Serialize, Deserialize)]
-#[ts(export, export_to = "path.ts")]
-pub struct AncestrySpeedTrait {
-    pub id: i64,
-    pub name: String,
-    pub description: String,
-    pub unit: Option<String>,
-    pub amount: Option<String>,
+    talents: Vec<FullPathTalent>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -90,9 +90,13 @@ pub async fn insert_all(
             row.add_nat_def
         )
         .execute(&mut *tx)
-        .await.map_err(|e|
-            WWError::Generic(format!("Encountered error while seeding ancestry row {}: {}", row.ancestry, e))
-        )?;
+        .await
+        .map_err(|e| {
+            WWError::Generic(format!(
+                "Encountered error while seeding ancestry row {}: {}",
+                row.ancestry, e
+            ))
+        })?;
 
         let ancestry_id = record.last_insert_rowid();
         ancestry_map.insert(label.clone(), ancestry_id);
@@ -159,7 +163,8 @@ pub async fn insert_all(
                 "INSERT INTO ancestry_talents (ancestry_id, path_talent_id) VALUES (?, ?)",
                 ancestry_id,
                 path_talent_id,
-            ).execute(&mut *tx)
+            )
+            .execute(&mut *tx)
             .await?;
         }
     }
@@ -167,7 +172,7 @@ pub async fn insert_all(
     Ok(ancestry_map)
 }
 
-pub async fn get_ancestry(db: &Pool<Sqlite>, id: i64) -> WWResult<RawAncestry> {
+async fn get_raw_ancestry(db: &Pool<Sqlite>, id: i64) -> WWResult<RawAncestry> {
     let record = sqlx::query_as!(RawAncestry, "SELECT * FROM ancestries WHERE id = ?", id)
         .fetch_one(db)
         .await?;
@@ -175,25 +180,24 @@ pub async fn get_ancestry(db: &Pool<Sqlite>, id: i64) -> WWResult<RawAncestry> {
     Ok(record)
 }
 
-pub async fn get_full_ancestry(db: &Pool<Sqlite>, id: i64) -> WWResult<FullAncestry> {
-    let (ancestry, languages, speed_traits, senses, immunities) = futures::join!(
-        get_ancestry(db, id),
+pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullAncestry> {
+    let (ancestry, languages, speed_traits, senses, immunities, talents) = futures::join!(
+        get_raw_ancestry(db, id),
         // These could probably be better if I made a macro
         sqlx::query_as!(
             Language,
             "SELECT l.* FROM languages as l
             JOIN ancestry_languages a_l ON a_l.language_id = l.id
-            JOIN ancestries a ON a.id = a_l.ancestry_id
-            WHERE a.id = ?",
+            WHERE a_l.language_id = ?",
             id
         )
         .fetch_all(db),
         sqlx::query_as!(
-            AncestrySpeedTrait,
-            "SELECT st.*, a_st.amount FROM speed_traits as st
-            JOIN ancestry_speed_traits a_st ON a_st.speed_trait_id = st.id
-            JOIN ancestries a ON a.id = a_st.ancestry_id
-            WHERE a.id = ?",
+            FullSpeedTrait,
+            "SELECT st.*, ast.amount
+            FROM speed_traits as st
+            JOIN ancestry_speed_traits ast ON ast.speed_trait_id = st.id
+            WHERE ast.ancestry_id = ?",
             id
         )
         .fetch_all(db),
@@ -201,26 +205,26 @@ pub async fn get_full_ancestry(db: &Pool<Sqlite>, id: i64) -> WWResult<FullAnces
             AncestrySense,
             "SELECT s.*, a_s.amount FROM senses as s
             JOIN ancestry_senses a_s ON a_s.sense_id = s.id
-            JOIN ancestries a ON a.id = a_s.ancestry_id
-            WHERE a.id = ?",
+            WHERE a_s.ancestry_id = ?",
             id
         )
         .fetch_all(db),
         sqlx::query_as!(
             Immunity,
             "SELECT i.* FROM immunities as i
-            JOIN ancestry_immunities a_i ON a_i.immunity_id = i.id
-            JOIN ancestries a ON a.id = a_i.ancestry_id
-            WHERE a.id = ?",
+            JOIN ancestry_immunities ai ON ai.immunity_id = i.id
+            WHERE ai.ancestry_id = ?",
             id
         )
         .fetch_all(db),
+        path_talents::get_for_ancestry(db, id),
     );
     let ancestry = ancestry?;
     let languages = languages?;
     let speed_traits = speed_traits?;
     let senses = senses?;
     let immunities = immunities?;
+    let talents = talents?;
 
     Ok(FullAncestry {
         id,
@@ -234,5 +238,21 @@ pub async fn get_full_ancestry(db: &Pool<Sqlite>, id: i64) -> WWResult<FullAnces
         speed_traits,
         senses,
         immunities,
+        talents,
     })
+}
+
+// TODO: Target for optimization
+pub async fn get_all(db: &Pool<Sqlite>) -> WWResult<Vec<FullAncestry>> {
+    let ids: Vec<i64> = sqlx::query_scalar!("SELECT id FROM ancestries")
+        .fetch_all(db)
+        .await?;
+
+    let ancestries: Vec<FullAncestry> = futures::stream::iter(ids)
+        .map(|id| async move { get(db, id).await })
+        .buffered(10)
+        .try_collect()
+        .await?;
+
+    Ok(ancestries)
 }

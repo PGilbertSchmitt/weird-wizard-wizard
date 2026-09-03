@@ -3,47 +3,47 @@ PRAGMA foreign_keys = ON;
 -- START: READONLY SEEDABLE TABLES --
 
 CREATE TABLE IF NOT EXISTS languages (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
     secret      BOOLEAN NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS speed_traits (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
     unit        TEXT CHECK (unit IN ('inches', 'yards'))
 );
 
 CREATE TABLE IF NOT EXISTS senses (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
     unit        TEXT CHECK (unit IN ('inches', 'yards'))
 );
 
 CREATE TABLE IF NOT EXISTS immunities (
-    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    id   INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS profession_categories (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL
 );
 
 -- I could relate professions to their categories, but it's not really necessary.
 CREATE TABLE IF NOT EXISTS professions (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
     category    TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ancestries (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL,
     descriptor  TEXT,
     size        TEXT CHECK (size IN ('sm', 'md', 'lg')) NOT NULL,
@@ -56,36 +56,36 @@ CREATE TABLE IF NOT EXISTS ancestry_languages (
     ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
     language_id INTEGER REFERENCES languages(id) NOT NULL,
     PRIMARY KEY (ancestry_id, language_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS ancestry_speed_traits (
     ancestry_id    INTEGER REFERENCES ancestries(id) NOT NULL,
     speed_trait_id INTEGER REFERENCES speed_traits(id) NOT NULL,
     amount         TEXT, -- Optional, needed for Squeeze and Teleport
     PRIMARY KEY    (ancestry_id, speed_trait_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS ancestry_senses (
     ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
     sense_id    INTEGER REFERENCES senses(id) NOT NULL,
     amount      TEXT, -- Optional, needed for Awareness
     PRIMARY KEY (ancestry_id, sense_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS ancestry_immunities (
     ancestry_id INTEGER REFERENCES ancestries(id) NOT NULL,
     immunity_id INTEGER REFERENCES immunities(id) NOT NULL,
     PRIMARY KEY (ancestry_id, immunity_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS ancestry_talents (
     ancestry_id    INTEGER REFERENCES ancestries(id) NOT NULL,
     path_talent_id INTEGER REFERENCES path_talents(id) NOT NULL,
     PRIMARY KEY (ancestry_id, path_talent_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS paths (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     path_kind   TEXT CHECK (path_kind IN ('Novice', 'Expert', 'Master')) NOT NULL,
     category    TEXT NOT NULL,
@@ -94,12 +94,12 @@ CREATE TABLE IF NOT EXISTS paths (
     rec_agl     INTEGER,
     rec_int     INTEGER,
     rec_will    INTEGER,
-    ancestry    INTEGER REFERENCES ancestries(id) -- A novice path with an Ancestry INTEGER REFERENCES locks the character to that specific Ancestry record
+    ancestry_id INTEGER REFERENCES ancestries(id) -- A novice path with an Ancestry INTEGER REFERENCES locks the character to that specific Ancestry record
 );
 
 CREATE TABLE IF NOT EXISTS levels (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    path          INTEGER REFERENCES paths(id) NOT NULL,
+    id            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    path_id       INTEGER REFERENCES paths(id) NOT NULL,
     level         INTEGER NOT NULL,
     add_health    INTEGER NOT NULL,
     add_nat_def   INTEGER DEFAULT 0,
@@ -114,35 +114,35 @@ CREATE TABLE IF NOT EXISTS levels (
     size          TEXT CHECK (size IN ('sm', 'md', 'lg')) -- Only used officially for Pollywog level 5
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_levels ON levels (path, level);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_levels ON levels (path_id, level);
 
 CREATE TABLE IF NOT EXISTS level_talents (
     level_id       INTEGER REFERENCES levels(id) NOT NULL,
     path_talent_id INTEGER REFERENCES path_talents(id) NOT NULL,
     PRIMARY KEY (level_id, path_talent_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS level_traditions (
     level_id     INTEGER REFERENCES levels(id) NOT NULL,
     tradition_id INTEGER REFERENCES traditions(id) NOT NULL,
     PRIMARY KEY  (level_id, tradition_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS level_languages (
     level_id    INTEGER REFERENCES levels(id) NOT NULL,
     language_id INTEGER REFERENCES languages(id) NOT NULL,
     PRIMARY KEY (level_id, language_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS level_speed_traits (
     level_id       INTEGER REFERENCES levels(id) NOT NULL,
     speed_trait_id INTEGER REFERENCES speed_traits(id) NOT NULL,
     amount         TEXT, -- Optional, needed for Squeeze and Teleport
     PRIMARY KEY    (level_id, speed_trait_id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS traditions (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    id            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name          TEXT NOT NULL UNIQUE,
     blurb         TEXT NOT NULL,
     description   TEXT NOT NULL,
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS traditions (
 );
 
 CREATE TABLE IF NOT EXISTS magic_talents (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    id              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS magic_talents (
 );
 
 CREATE TABLE IF NOT EXISTS spells (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    id              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS spells (
 CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (name, tradition_id);
 
 CREATE TABLE IF NOT EXISTS path_talents (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    id              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name            TEXT NOT NULL,
     source          TEXT NOT NULL,
     magical         BOOLEAN NOT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS path_talents (
 CREATE UNIQUE INDEX IF NOT EXISTS unique_path_talents ON path_talents (name, source);
 
 CREATE TABLE IF NOT EXISTS info_tables (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     kind        TEXT CHECK (kind IN ('TABLE', 'BLOCK', 'ROLL')) NOT NULL,
     key_label   TEXT NOT NULL,
@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS info_table_rows (
 );
 
 CREATE TABLE IF NOT EXISTS option_blocks (
-    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    id   INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name TEXT NOT NULL
 );
 
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS option_block_rows (
 );
 
 CREATE TABLE IF NOT EXISTS choice_tables (
-    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    id   INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name TEXT NOT NULL
 );
 
@@ -278,7 +278,7 @@ END;
 -- START: USER-GENERATED RECORD TABLES 
 
 CREATE TABLE IF NOT EXISTS characters (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    id             INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name           TEXT    NOT NULL,
     level          INTEGER NOT NULL,
     strength       INTEGER NOT NULL,
@@ -307,7 +307,7 @@ BEGIN
 END;
 
 CREATE TABLE IF NOT EXISTS character_choices (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    id           INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE NOT NULL,
     choice_key   TEXT NOT NULL,
     selection    TEXT,

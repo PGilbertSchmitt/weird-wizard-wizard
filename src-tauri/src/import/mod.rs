@@ -5,8 +5,8 @@ use std::hash::Hash;
 use std::{collections::HashMap, path::PathBuf};
 use ts_rs::TS;
 
-use crate::{WWError, WWResult};
 use crate::mod_dsl::validate_mod_str;
+use crate::{WWError, WWResult};
 
 mod init_seed;
 mod run_seed;
@@ -101,29 +101,46 @@ pub fn validate_mod_strings(
 
     for row in magic_talents {
         if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
-            all_errs.push(format!("Magic talent '{}': {}\n  -> {}", &row.talent_name, &row.mod_str.as_ref().unwrap(), err));
+            all_errs.push(format!(
+                "Magic talent '{}': {}\n  -> {}",
+                &row.talent_name,
+                &row.mod_str.as_ref().unwrap(),
+                err
+            ));
         }
     }
 
     for row in magic_spells {
         if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
-            all_errs.push(format!("Magic spell '{}': {}\n  -> {}", &row.name, &row.mod_str.as_ref().unwrap(), err));
+            all_errs.push(format!(
+                "Magic spell '{}': {}\n  -> {}",
+                &row.name,
+                &row.mod_str.as_ref().unwrap(),
+                err
+            ));
         }
     }
 
     for row in path_talents {
         if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
-            all_errs.push(format!("Path talent '{}': {}\n  -> {}", &row.name, &row.mod_str.as_ref().unwrap(), err));
+            all_errs.push(format!(
+                "Path talent '{}': {}\n  -> {}",
+                &row.name,
+                &row.mod_str.as_ref().unwrap(),
+                err
+            ));
         }
     }
 
     if all_errs.is_empty() {
         Ok(())
     } else {
-        Err(WWError::Generic(format!("Invalid Mod Strings:\n{}", all_errs.join("\n"))))
+        Err(WWError::Generic(format!(
+            "Invalid Mod Strings:\n{}",
+            all_errs.join("\n")
+        )))
     }
 }
-
 
 #[derive(TS, Serialize)]
 #[ts(export, export_to = "import.ts", tag = "type", content = "data")]
