@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS languages (
     id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
-    secret      BOOLEAN NOT NULL
+    secret      TEXT -- Boolean
 );
 
 CREATE TABLE IF NOT EXISTS speed_traits (
@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS magic_talents (
     tradition_id    INTEGER REFERENCES traditions(id) NOT NULL,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL,
-    charges         TEXT,
+    charges         TEXT CHECK (charges IN ('123', '1')),
     restore         TEXT CHECK (restore IN ('Luck Ends', 'Rest', 'Day', 'Hour', 'Minute')),
     activate        TEXT NOT NULL,
     info_table_id   INTEGER REFERENCES info_tables(id),
@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS spells (
     duration        TEXT NOT NULL,
     target          TEXT NOT NULL,
     condition       TEXT,
-    ritual          BOOLEAN NOT NULL,
+    ritual          TEXT, -- Boolean
     info_table_id   INTEGER REFERENCES info_tables(id),
     option_block_id INTEGER REFERENCES option_blocks(id)
 );
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS path_talents (
     id              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name            TEXT NOT NULL,
     source          TEXT NOT NULL,
-    magical         BOOLEAN NOT NULL,
+    magical         TEXT, -- Boolean
     charges         TEXT,
     restore         TEXT CHECK (restore IN ('Luck Ends', 'Rest', 'Day', 'Hour', 'Minute')),
     activate        TEXT,
@@ -311,7 +311,7 @@ CREATE TABLE IF NOT EXISTS character_choices (
     character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE NOT NULL,
     choice_key   TEXT NOT NULL,
     selection    TEXT,
-    dismissable  BOOLEAN NOT NULL,
+    dismissable  TEXT, -- Boolean
     duration     TEXT CHECK (duration IN ('OneMinute', 'OneHour', 'FourHours', 'EightHours', 'OneDay', 'Rest'))
 );
 

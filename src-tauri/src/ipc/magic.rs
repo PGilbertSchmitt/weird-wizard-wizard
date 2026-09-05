@@ -1,13 +1,9 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    db::{
-        magic_talents::{self, FullMagicTalent},
-        spells::{self, FullSpell},
-        traditions::{self, FullTradition},
-    },
-    store::get_database,
-    WWResult,
+    WWResult, db::{
+        magic_talents::{self, FullMagicTalent}, spells::{self, FullSpell}, traditions::{self, FullTradition, TraditionIndexItem},
+    }, store::get_database,
 };
 
 #[command]
@@ -15,6 +11,13 @@ pub async fn get_tradition(app: AppHandle<Wry>, id: i64) -> WWResult<FullTraditi
     let db_state = get_database(&app)?;
     let db_state = db_state.lock().await;
     Ok(traditions::get(&db_state.pool, id).await?)
+}
+
+#[command]
+pub async fn get_tradition_index(app: AppHandle<Wry>) -> WWResult<Vec<TraditionIndexItem>> {
+    let db_state = get_database(&app)?;
+    let db_state = db_state.lock().await;
+    Ok(traditions::get_index(&db_state.pool).await?)
 }
 
 #[command]

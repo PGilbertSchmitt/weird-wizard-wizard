@@ -1,3 +1,4 @@
+use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
@@ -29,17 +30,25 @@ struct RawMagicTalent {
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "magic.ts")]
+pub enum MagicTalentCharges {
+    None,
+    One,
+    OneTwoThree,
+}
+
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "magic.ts")]
 pub struct FullMagicTalent {
     id: i64,
     tradition_id: i64,
     tradition_name: String,
     name: String,
     description: String,
-    charges: Option<String>,
+    charges: MagicTalentCharges,
     restore: TalentRestore,
     activate: String,
-    info_table_id: Option<FullInfoTable>,
-    option_block_id: Option<FullOptionBlock>,
+    info_table: Option<FullInfoTable>,
+    option_block: Option<FullOptionBlock>,
 }
 
 pub async fn insert_all(
@@ -102,16 +111,37 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullMagicTalent> {
     let info_table = info_tables::get_from_opt(db, talent.info_table_id).await?;
     let option_block = option_blocks::get_from_opt(db, talent.option_block_id).await?;
 
+    let charges = match talent.charges.as_deref() {
+        Some("1") => MagicTalentCharges::One,
+        Some("123") => MagicTalentCharges::OneTwoThree,
+        _ => MagicTalentCharges::None,
+    };
+
     Ok(FullMagicTalent {
         id,
         tradition_id: talent.tradition_id,
         tradition_name: talent.tradition_name,
         name: talent.name,
         description: talent.description,
-        charges: talent.charges,
+        charges: charges,
         restore: talent.restore,
         activate: talent.activate,
-        info_table_id: info_table,
-        option_block_id: option_block,
+        info_table: info_table,
+        option_block: option_block,
     })
+}
+
+pub async fn get_for_tradition(db: &Pool<Sqlite>, tradition_id: i64) -> WWResult<Vec<FullMagicTalent>> {
+    let talent_ids = sqlx::query_scalar!(
+        "SELECT id FROM magic_talents WHERE tradition_id = ?",
+        tradition_id,
+    ).fetch_all(db).await?;
+
+    let talents = futures::stream::iter(talent_ids)
+        .map(|id| async move { get(db, id).await })
+        .buffered(10)
+        .try_collect()
+        .await?;
+
+    Ok(talents)
 }

@@ -9,11 +9,11 @@ export type FullMagicTalent = {
   tradition_name: string;
   name: string;
   description: string;
-  charges: string | null;
+  charges: MagicTalentCharges;
   restore: TalentRestore;
   activate: string;
-  info_table_id: FullInfoTable | null;
-  option_block_id: FullOptionBlock | null;
+  info_table: FullInfoTable | null;
+  option_block: FullOptionBlock | null;
 };
 
 export type FullSpell = {
@@ -39,4 +39,12 @@ export type FullTradition = {
   description: string;
   special_info: string | null;
   into_table: FullInfoTable | null;
+  talents: Array<FullMagicTalent>;
+  novice_spells: Array<FullSpell>;
+  expert_spells: Array<FullSpell>;
+  master_spells: Array<FullSpell>;
 };
+
+export type MagicTalentCharges = 'None' | 'One' | 'OneTwoThree';
+
+export type TraditionIndexItem = { id: number; name: string; blurb: string };

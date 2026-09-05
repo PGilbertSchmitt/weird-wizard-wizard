@@ -4,15 +4,9 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::{
-        etc,
-        immunities::Immunity,
-        languages::Language,
-        path_talents::{self, FullPathTalent},
-        speed_traits::FullSpeedTrait,
-    },
-    import::{pipe_separate, AncestryRow, NamePairToId, NameToId},
-    WWError, WWResult,
+    WWError, WWResult, db::{
+        etc, immunities::Immunity, languages::{self, Language}, path_talents::{self, FullPathTalent}, speed_traits::FullSpeedTrait,
+    }, import::{AncestryRow, NamePairToId, NameToId, pipe_separate},
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -51,13 +45,6 @@ pub struct AncestrySense {
     pub description: String,
     pub unit: Option<String>,
     pub amount: Option<String>,
-}
-
-#[derive(TS, Debug, Serialize, Deserialize)]
-#[ts(export, export_to = "path.ts")]
-pub struct AncestryTalent {
-    pub ancestry_id: i64,
-    pub path_talent_id: i64,
 }
 
 pub async fn insert_all(
@@ -183,15 +170,7 @@ async fn get_raw_ancestry(db: &Pool<Sqlite>, id: i64) -> WWResult<RawAncestry> {
 pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullAncestry> {
     let (ancestry, languages, speed_traits, senses, immunities, talents) = futures::join!(
         get_raw_ancestry(db, id),
-        // These could probably be better if I made a macro
-        sqlx::query_as!(
-            Language,
-            "SELECT l.* FROM languages as l
-            JOIN ancestry_languages a_l ON a_l.language_id = l.id
-            WHERE a_l.language_id = ?",
-            id
-        )
-        .fetch_all(db),
+        languages::get_for_ancestry(db, id),
         sqlx::query_as!(
             FullSpeedTrait,
             "SELECT st.*, ast.amount

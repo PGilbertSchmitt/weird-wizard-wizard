@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Sqlite, SqliteConnection};
+use sqlx::{Pool, Sqlite};
 use ts_rs::TS;
 
 use crate::{WWResult, db::{ancestries::FullAncestry, paths::FullPath}};

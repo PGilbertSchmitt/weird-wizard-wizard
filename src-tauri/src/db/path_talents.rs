@@ -4,13 +4,11 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::{
+    WWError, WWResult, db::{
         etc::TalentRestore,
         info_tables::{self, FullInfoTable},
         option_blocks::{self, FullOptionBlock},
-    },
-    import::{is_affirmative, NamePairToId, NameToId, PathTalentRow},
-    WWError, WWResult,
+    }, import::{NamePairToId, NameToId, PathTalentRow, is_affirmative}, util::db_boolean,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -18,7 +16,7 @@ struct RawPathTalent {
     id: i64,
     name: String,
     source: String,
-    magical: bool,
+    magical: Option<String>,
     charges: Option<String>,
     restore: TalentRestore,
     activate: Option<String>,
@@ -118,7 +116,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullPathTalent> {
         id,
         name: raw_talent.name,
         source: raw_talent.source,
-        magical: raw_talent.magical,
+        magical: db_boolean(raw_talent.magical),
         charges: raw_talent.charges,
         restore: raw_talent.restore,
         activate: raw_talent.activate,

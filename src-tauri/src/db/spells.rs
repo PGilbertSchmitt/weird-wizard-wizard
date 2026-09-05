@@ -1,32 +1,31 @@
+use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::{
+    WWError, WWResult, db::{
         etc,
         info_tables::{self, FullInfoTable},
         option_blocks::{self, FullOptionBlock},
-    },
-    import::{MagicSpellRow, NameToId},
-    WWError, WWResult,
+    }, import::{MagicSpellRow, NameToId}, util::db_boolean,
 };
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Spell {
-    id: i64,
-    tradition_id: i64,
-    name: String,
-    description: String,
-    path_kind: etc::PathKind,
-    castings: i64,
-    duration: String,
-    target: String,
-    condition: Option<String>,
-    ritual: bool,
-    info_table_id: Option<i64>,
-    option_block_id: Option<i64>,
-}
+// #[derive(Debug, Serialize, Deserialize)]
+// struct RawSpell {
+//     id: i64,
+//     tradition_id: i64,
+//     name: String,
+//     description: String,
+//     path_kind: etc::PathKind,
+//     castings: i64,
+//     duration: String,
+//     target: String,
+//     condition: Option<String>,
+//     ritual: bool,
+//     info_table_id: Option<i64>,
+//     option_block_id: Option<i64>,
+// }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "magic.ts")]
@@ -36,7 +35,7 @@ pub struct FullSpell {
     tradition_name: String,
     name: String,
     description: String,
-    path_kind: etc::PathKind,
+    pub path_kind: etc::PathKind,
     castings: i64,
     duration: String,
     target: String,
@@ -59,7 +58,7 @@ struct SpellWithTradName {
     duration: String,
     target: String,
     condition: Option<String>,
-    ritual: bool,
+    ritual: Option<String>,
     info_table_id: Option<i64>,
     option_block_id: Option<i64>,
 }
@@ -136,8 +135,23 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullSpell> {
         duration: spell.duration,
         target: spell.target,
         condition: spell.condition,
-        ritual: spell.ritual,
+        ritual: db_boolean(spell.ritual),
         info_table,
         option_block,
     })
+}
+
+pub async fn get_for_tradition(db: &Pool<Sqlite>, tradition_id: i64) -> WWResult<Vec<FullSpell>> {
+    let spell_ids = sqlx::query_scalar!(
+        "SELECT id FROM spells WHERE tradition_id = ?",
+        tradition_id,
+    ).fetch_all(db).await?;
+
+    let spells = futures::stream::iter(spell_ids)
+        .map(|id| async move { get(db, id).await })
+        .buffered(10)
+        .try_collect()
+        .await?;
+
+    Ok(spells)
 }

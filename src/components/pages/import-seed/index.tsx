@@ -21,7 +21,7 @@ import {
 } from './import-state';
 import { IpcResult } from '@/types/ipc-result';
 import { unwrapIpcResult } from '@/api/request';
-import { Button } from '@/components/ui/neo/button';
+import { Button } from '@/components/ui/button';
 import { ImportEvent } from '@/types/import';
 import { IS_SEEDED_KEY, useInitSeed, useRunSeed } from '@/api/seed';
 import { useQueryClient } from '@tanstack/react-query';

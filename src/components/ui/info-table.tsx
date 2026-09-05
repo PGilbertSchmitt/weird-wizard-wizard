@@ -1,8 +1,8 @@
-import { InfoTable as InfoTableType } from '@/lib/types';
+import { FullInfoTable } from '@/types/info_tables';
 import { cn } from '@/lib/utils';
 
 interface InfoTableProps {
-  table: InfoTableType;
+  table: FullInfoTable;
 }
 
 export const InfoTable = ({ table }: InfoTableProps) => (
@@ -12,17 +12,17 @@ export const InfoTable = ({ table }: InfoTableProps) => (
       <thead>
         <tr>
           <th className={cn('p-0.5 pr-5 w-1 whitespace-nowrap')} align="right">
-            {table.keyLabel}
+            {table.key_label}
           </th>
-          <th align="left">{table.valueLabel}</th>
+          <th align="left">{table.value_label}</th>
         </tr>
       </thead>
       <tbody>
-        {table.rows.map((row) => (
+        {table.entries.map((row) => (
           <tr
             key={row.key}
             className={cn(
-              'align-top border-b-1 border-border last:border-none',
+              'align-top border-b border-border last:border-none',
             )}
           >
             <th

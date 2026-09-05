@@ -25,15 +25,3 @@ export type FullCharacter = {
   master_path: FullPath | null;
   choices: null;
 };
-
-export type RawCharacter = {
-  id: number;
-  name: string;
-  level: number;
-  strength: number;
-  agility: number;
-  intellect: number;
-  will: number;
-  ancestry_id: number;
-  novice_path_id: number;
-};
