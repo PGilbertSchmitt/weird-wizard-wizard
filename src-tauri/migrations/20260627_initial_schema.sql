@@ -297,11 +297,11 @@ CREATE TRIGGER IF NOT EXISTS validate_path_assoc BEFORE UPDATE ON characters
 BEGIN
     SELECT
         CASE
-        WHEN ('Novice' <> (SELECT kind FROM paths WHERE paths.id = NEW.novice_path_id))
+        WHEN ('Novice' <> (SELECT path_kind FROM paths WHERE paths.id = NEW.novice_path_id))
             THEN raise(ABORT, 'EXPECTED_NOVICE_PATH')
-        WHEN ('Expert' <> (SELECT kind FROM paths WHERE paths.id = NEW.expert_path_id))
+        WHEN ('Expert' <> (SELECT path_kind FROM paths WHERE paths.id = NEW.expert_path_id))
             THEN raise(ABORT, 'EXPECTED_EXPERT_PATH')
-        WHEN ('Master' <> (SELECT kind FROM paths WHERE paths.id = NEW.master_path_id))
+        WHEN ('Master' <> (SELECT path_kind FROM paths WHERE paths.id = NEW.master_path_id))
             THEN raise(ABORT, 'EXPECTED_MASTER_PATH')
         END;
 END;

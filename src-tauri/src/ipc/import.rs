@@ -1,9 +1,7 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    import::{initialize_seed_import, run_seed_import},
-    ipc::{emit, EmitChannel},
-    WWResult,
+    WWResult, db::seed_data, import::{initialize_seed_import, run_seed_import}, ipc::{EmitChannel, emit}, store::get_database,
 };
 
 // This is potentially long running, so it communicates using events
@@ -19,4 +17,11 @@ pub async fn run_seed(app: AppHandle<Wry>) {
     if let WWResult::Err(e) = run_seed_import(&app).await {
         emit(&app, EmitChannel::IMPORT, &e.into()).unwrap()
     }
+}
+
+#[command]
+pub async fn check_seed(app: AppHandle<Wry>) -> WWResult<bool> {
+    let db_state = get_database(&app)?;
+    let db_state = db_state.lock().await;
+    Ok(seed_data::is_seeded(&db_state.pool).await?)
 }

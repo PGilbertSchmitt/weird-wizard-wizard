@@ -1,3 +1,4 @@
+import { ImportSummary, ProgressPayload } from '@/types/import';
 import { UnlistenFn } from '@tauri-apps/api/event';
 
 export const ImportStatuses = {
@@ -5,6 +6,7 @@ export const ImportStatuses = {
   UNWRAPPING: 'UNWRAPPING',
   READY: 'READY',
   IMPORTING: 'IMPORTING',
+  ERROR: 'ERROR',
 } as const;
 
 interface IdleState {
@@ -20,12 +22,20 @@ interface UnwrappingState {
 
 interface ReadyState extends Omit<UnwrappingState, 'status'> {
   status: typeof ImportStatuses.READY;
-  // should also contain info about resources
+  summary: ImportSummary;
+  total: number;
 }
 
 interface ImportingState extends Omit<ReadyState, 'status'> {
   status: typeof ImportStatuses.IMPORTING;
-  // should also contain info about progress
+  current: number;
+  total: number;
+}
+
+interface ErrorState {
+  status: typeof ImportStatuses.ERROR;
+  filename: null;
+  error: string;
 }
 
 export const DEFAULT_IMPORT_STATE: IdleState = {
@@ -34,7 +44,7 @@ export const DEFAULT_IMPORT_STATE: IdleState = {
 };
 
 export type ImportData =
-  IdleState | UnwrappingState | ReadyState | ImportingState;
+  IdleState | UnwrappingState | ReadyState | ImportingState | ErrorState;
 
 export const ImportActionTypes = {
   SEND_FILE: 'SEND_FILE',
@@ -42,6 +52,7 @@ export const ImportActionTypes = {
   SEND_START: 'SEND_START',
   RECEIVE_PROGRESS: 'RECEIVE_PROGRESS',
   RECEIVE_DONE: 'RECEIVE_DONE',
+  ERROR: 'ERROR',
   CANCEL: 'CANCEL',
 } as const;
 
@@ -50,9 +61,9 @@ export const sendFileAction = (filepath: string) => ({
   data: filepath,
 });
 
-export const receiveReadyAction = () => ({
+export const receiveReadyAction = (data: ImportSummary) => ({
   type: ImportActionTypes.RECEIVE_READY,
-  data: true, // Summary of records
+  data,
 });
 
 export const sendStartAction = () => ({
@@ -60,9 +71,9 @@ export const sendStartAction = () => ({
   data: null,
 });
 
-export const receiveProgressAction = () => ({
+export const receiveProgressAction = (data: ProgressPayload) => ({
   type: ImportActionTypes.RECEIVE_PROGRESS,
-  data: null,
+  data,
 });
 
 export const receiveDoneAction = () => ({
@@ -75,10 +86,16 @@ export const cancelAction = () => ({
   data: null,
 });
 
+export const errorAction = (err: string) => ({
+  type: ImportActionTypes.ERROR,
+  data: err,
+});
+
 export type ImportAction =
   | ReturnType<typeof sendFileAction>
   | ReturnType<typeof receiveReadyAction>
   | ReturnType<typeof sendStartAction>
   | ReturnType<typeof receiveProgressAction>
   | ReturnType<typeof receiveDoneAction>
-  | ReturnType<typeof cancelAction>;
+  | ReturnType<typeof cancelAction>
+  | ReturnType<typeof errorAction>;

@@ -1,18 +1,20 @@
 import { cn } from '@/lib/utils';
+import { sum, values } from 'ramda';
 import { Paragraph } from '@/components/ui/paragraph';
 import { ExtLink } from '@/components/ui/external-link';
 import { Dropzone } from './dropzone';
-import { useEffect, useReducer, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { useEffect, useReducer } from 'react';
 import { Event, listen } from '@tauri-apps/api/event';
 import {
   cancelAction,
   DEFAULT_IMPORT_STATE,
+  errorAction,
   ImportAction,
   ImportActionTypes,
   ImportData,
   ImportStatuses,
   receiveDoneAction,
+  receiveProgressAction,
   receiveReadyAction,
   sendFileAction,
   sendStartAction,
@@ -21,8 +23,14 @@ import { IpcResult } from '@/types/ipc-result';
 import { unwrapIpcResult } from '@/api/request';
 import { Button } from '@/components/ui/neo/button';
 import { ImportEvent } from '@/types/import';
+import { IS_SEEDED_KEY, useInitSeed, useRunSeed } from '@/api/seed';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const ImportSeed = () => {
+  const { mutateAsync: initSeed } = useInitSeed();
+  const { mutateAsync: runSeed } = useRunSeed();
+  const queryClient = useQueryClient();
+
   const [importState, dispatch] = useReducer(
     (prev: ImportData, { type, data }: ImportAction) => {
       switch (type) {
@@ -45,13 +53,14 @@ export const ImportSeed = () => {
                         'Records waiting to be seeded:',
                         payload.data,
                       );
-                      dispatch(receiveReadyAction());
+                      dispatch(receiveReadyAction(payload.data));
                       break;
                     }
                     case 'Progress': {
-                      console.log(
-                        `Progress update: ${payload.data[0]} out of ${payload.data[1]}`,
-                      );
+                      // console.log(
+                      //   `Progress update: ${payload.data[0]} out of ${payload.data[1]}`,
+                      // );
+                      dispatch(receiveProgressAction(payload.data));
                       break;
                     }
                     case 'Done': {
@@ -64,14 +73,14 @@ export const ImportSeed = () => {
                   }
                 } catch (err) {
                   console.error(err);
-                  dispatch(cancelAction());
+                  dispatch(errorAction(err as string));
                 }
               },
             );
 
             unlistenPromise.then(() => {
               console.log(`Invoking "init_seed" signal with ${data}`);
-              invoke('init_seed', { filepath: data }).catch((err) => {
+              initSeed(data).catch((err) => {
                 console.error(err);
                 dispatch(cancelAction());
               });
@@ -88,23 +97,33 @@ export const ImportSeed = () => {
 
         case ImportActionTypes.RECEIVE_READY:
           return prev.status === ImportStatuses.UNWRAPPING
-            ? { ...prev, status: ImportStatuses.READY }
+            ? {
+                ...prev,
+                status: ImportStatuses.READY,
+                summary: data,
+                total: sum(values(data)),
+              }
             : prev;
 
         case ImportActionTypes.SEND_START:
           if (prev.status === ImportStatuses.READY) {
-            invoke('run_seed').catch((err) => {
+            runSeed().catch((err) => {
               console.error(err);
               dispatch(cancelAction());
             });
-            return { ...prev, status: ImportStatuses.IMPORTING };
+            return {
+              ...prev,
+              status: ImportStatuses.IMPORTING,
+              current: 0,
+              total: -1,
+            };
           } else {
             return prev;
           }
 
         case ImportActionTypes.RECEIVE_PROGRESS:
           return prev.status === ImportStatuses.IMPORTING
-            ? { ...prev /* update progress */ }
+            ? { ...prev, current: data[0], total: data[1] }
             : prev;
 
         case ImportActionTypes.RECEIVE_DONE:
@@ -114,6 +133,7 @@ export const ImportSeed = () => {
             // after the `DONE` signal is returned, and even if it did, the reducer is setup such
             // that the sendFile action is the only one that can move out of the IDLE state.
             prev.unlistener.then((unlisten) => unlisten());
+            queryClient.invalidateQueries({ queryKey: IS_SEEDED_KEY });
             alert('yey!');
             return DEFAULT_IMPORT_STATE;
           } else {
@@ -126,8 +146,6 @@ export const ImportSeed = () => {
     },
     DEFAULT_IMPORT_STATE,
   );
-
-  const [id, setId] = useState('');
 
   useEffect(() => {
     return () => {
@@ -180,34 +198,6 @@ export const ImportSeed = () => {
         {importState.status === ImportStatuses.READY && (
           <Button onClick={() => dispatch(sendStartAction())}>Do it!</Button>
         )}
-
-        <input value={id} onChange={(e) => setId(e.target.value)} />
-
-        <Button
-          disabled={Number.isNaN(parseInt(id))}
-          onClick={() => {
-            const start = performance.now();
-            invoke('get_novice_path', { id: parseInt(id) }).then((data) => {
-              const end = performance.now();
-              console.log(`une data [${end-start}ms]`, data);
-            });
-          }}
-        >
-          Novice Path
-        </Button>
-
-        <Button
-          disabled={Number.isNaN(parseInt(id))}
-          onClick={() => {
-            const start = performance.now();
-            invoke('get_full_path', { id: parseInt(id) }).then((data) => {
-              const end = performance.now();
-              console.log(`une data [${end-start}ms]`, data);
-            });
-          }}
-        >
-          All Paths
-        </Button>
       </div>
     </>
   );

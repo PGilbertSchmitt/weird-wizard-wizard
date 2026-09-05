@@ -24,6 +24,7 @@ export type ImportSummary = {
   path_talents: number;
   options: number;
   tables: number;
+  choice_selections: number;
 };
 
 export type ProgressPayload = [number, number];

@@ -21,6 +21,7 @@ pub mod senses;
 pub mod speed_traits;
 pub mod spells;
 pub mod traditions;
+pub mod seed_data;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,

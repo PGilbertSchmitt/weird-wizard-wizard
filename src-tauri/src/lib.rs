@@ -34,6 +34,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             ipc::init_seed,
             ipc::run_seed,
+            ipc::check_seed,
             ipc::get_full_ancestry,
             ipc::get_all_ancestries,
             ipc::get_full_talent,
@@ -45,6 +46,7 @@ pub fn run() {
             ipc::get_magic_talent,
             ipc::get_novice_path,
             ipc::get_full_path,
+            ipc::get_character_index,
         ])
         .build(tauri::generate_context!())
         .expect("Unexpected error while running tauri application")
