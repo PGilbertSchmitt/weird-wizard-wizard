@@ -4,11 +4,14 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, db::{
+    db::{
         etc::TalentRestore,
         info_tables::{self, FullInfoTable},
         option_blocks::{self, FullOptionBlock},
-    }, import::{NamePairToId, NameToId, PathTalentRow, is_affirmative}, util::db_boolean,
+    },
+    import::{is_affirmative, NamePairToId, NameToId, PathTalentRow},
+    util::db_boolean,
+    WWError, WWResult,
 };
 
 #[derive(Debug, Serialize, Deserialize)]

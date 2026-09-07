@@ -12,4 +12,4 @@ export const useAllAncestries = () =>
   useQuery({
     queryKey: ['ancestries'],
     queryFn: async () => invoke<FullAncestry[]>('get_all_ancestries'),
-  })
+  });

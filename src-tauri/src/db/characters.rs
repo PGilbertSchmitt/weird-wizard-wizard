@@ -2,7 +2,10 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite};
 use ts_rs::TS;
 
-use crate::{WWResult, db::{ancestries::FullAncestry, paths::FullPath}};
+use crate::{
+    db::{ancestries::FullAncestry, paths::FullPath},
+    WWResult,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RawCharacter {
@@ -62,7 +65,9 @@ pub async fn get_index(db: &Pool<Sqlite>) -> WWResult<Vec<CharacterIndexItem>> {
         JOIN paths np ON np.id = c.novice_path_id
         LEFT JOIN paths ep ON ep.id = c.expert_path_id
         LEFT JOIN paths mp ON mp.id = c.master_path_id"
-    ).fetch_all(db).await?;
+    )
+    .fetch_all(db)
+    .await?;
 
     Ok(rows)
 }

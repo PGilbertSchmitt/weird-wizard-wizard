@@ -47,7 +47,7 @@ export const MagicTalentCard = ({ talent }: MagicTalentCardProps) => {
   }, [talent.id]);
 
   return (
-    <StaticCard className='p-0'>
+    <StaticCard className="p-0">
       <div className={cn('p-2')}>
         <div className={cn('flex justify-between gap-2 my-1')}>
           <h2 className={cn('text-lg w-fit pt-1')}>{talent.name}</h2>
@@ -70,7 +70,7 @@ export const MagicTalentCard = ({ talent }: MagicTalentCardProps) => {
 
       <Separator />
 
-      <div className='bg-secondary-background text-foreground p-4'>
+      <div className="bg-secondary-background text-foreground p-4">
         <Paragraph size="sm">{talent.description}</Paragraph>
 
         {talent.option_block && (
@@ -87,7 +87,6 @@ export const MagicTalentCard = ({ talent }: MagicTalentCardProps) => {
           </>
         )}
       </div>
-
     </StaticCard>
   );
 };

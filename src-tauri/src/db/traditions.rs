@@ -3,7 +3,14 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWResult, db::{etc::PathKind, info_tables::{self, FullInfoTable}, magic_talents::{self, FullMagicTalent}, spells::{self, FullSpell}}, import::{NameToId, TraditionRow},
+    db::{
+        etc::PathKind,
+        info_tables::{self, FullInfoTable},
+        magic_talents::{self, FullMagicTalent},
+        spells::{self, FullSpell},
+    },
+    import::{NameToId, TraditionRow},
+    WWResult,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -104,10 +111,9 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullTradition> {
 }
 
 pub async fn get_index(db: &Pool<Sqlite>) -> WWResult<Vec<TraditionIndexItem>> {
-    Ok(sqlx::query_as!(
-        TraditionIndexItem,
-        "SELECT id, name, blurb FROM traditions"
+    Ok(
+        sqlx::query_as!(TraditionIndexItem, "SELECT id, name, blurb FROM traditions")
+            .fetch_all(db)
+            .await?,
     )
-    .fetch_all(db)
-    .await?)
 }

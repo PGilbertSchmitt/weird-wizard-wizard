@@ -274,12 +274,18 @@ pub async fn get_novice_path(db: &Pool<Sqlite>, id: i64) -> WWResult<NovicePath>
     })
 }
 
-pub async fn get_for_kind_and_category(db: &Pool<Sqlite>, kind: String, category: String) -> WWResult<Vec<FullPath>> {
+pub async fn get_for_kind_and_category(
+    db: &Pool<Sqlite>,
+    kind: String,
+    category: String,
+) -> WWResult<Vec<FullPath>> {
     let ids = sqlx::query_scalar!(
         "SELECT id FROM paths WHERE path_kind = ? AND category = ?",
         kind,
         category
-    ).fetch_all(db).await?;
+    )
+    .fetch_all(db)
+    .await?;
 
     let paths = futures::stream::iter(ids)
         .map(|id| async move { get(db, id).await })
@@ -294,7 +300,9 @@ pub async fn get_path_index(db: &Pool<Sqlite>) -> WWResult<Vec<PathIndexItem>> {
     let paths = sqlx::query_as!(
         PathIndexItem,
         "SELECT id, name, path_kind, category, description FROM paths",
-    ).fetch_all(db).await?;
+    )
+    .fetch_all(db)
+    .await?;
 
     Ok(paths)
 }

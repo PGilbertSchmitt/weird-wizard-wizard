@@ -17,11 +17,11 @@ pub mod path_talents;
 pub mod paths;
 pub mod profession_categories;
 pub mod professions;
+pub mod seed_data;
 pub mod senses;
 pub mod speed_traits;
 pub mod spells;
 pub mod traditions;
-pub mod seed_data;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,

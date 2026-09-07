@@ -1,7 +1,11 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    WWResult, db::seed_data, import::{initialize_seed_import, run_seed_import}, ipc::{EmitChannel, emit}, store::get_database,
+    db::seed_data,
+    import::{initialize_seed_import, run_seed_import},
+    ipc::{emit, EmitChannel},
+    store::get_database,
+    WWResult,
 };
 
 // This is potentially long running, so it communicates using events

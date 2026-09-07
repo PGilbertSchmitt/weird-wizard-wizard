@@ -4,11 +4,14 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, db::{
+    db::{
         etc,
         info_tables::{self, FullInfoTable},
         option_blocks::{self, FullOptionBlock},
-    }, import::{MagicSpellRow, NameToId}, util::db_boolean,
+    },
+    import::{MagicSpellRow, NameToId},
+    util::db_boolean,
+    WWError, WWResult,
 };
 
 // #[derive(Debug, Serialize, Deserialize)]
@@ -142,10 +145,10 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullSpell> {
 }
 
 pub async fn get_for_tradition(db: &Pool<Sqlite>, tradition_id: i64) -> WWResult<Vec<FullSpell>> {
-    let spell_ids = sqlx::query_scalar!(
-        "SELECT id FROM spells WHERE tradition_id = ?",
-        tradition_id,
-    ).fetch_all(db).await?;
+    let spell_ids =
+        sqlx::query_scalar!("SELECT id FROM spells WHERE tradition_id = ?", tradition_id,)
+            .fetch_all(db)
+            .await?;
 
     let spells = futures::stream::iter(spell_ids)
         .map(|id| async move { get(db, id).await })

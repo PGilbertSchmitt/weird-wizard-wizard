@@ -1,4 +1,4 @@
-import { FullOptionBlock } from "@/types/option_blocks";
+import { FullOptionBlock } from '@/types/option_blocks';
 
 interface OptionBlockProps {
   hideTitle?: boolean;

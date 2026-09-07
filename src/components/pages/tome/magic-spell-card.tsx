@@ -57,7 +57,7 @@ export const SpellCard = ({ spell }: SpellCardProps) => {
 
       <div className="bg-secondary-background text-foreground p-4">
         <Paragraph size="sm">{spell.description}</Paragraph>
-        
+
         {spell.option_block && (
           <>
             <Separator />

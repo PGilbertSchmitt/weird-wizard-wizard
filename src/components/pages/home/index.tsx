@@ -23,7 +23,7 @@ export const Home = () => {
         {moreCharacters?.map((character) => {
           // const paths = [character.novice_path, character.expert_path, character.master_path];
           const paths: Array<[string, string]> = [
-            [character.novice_path, 'Novice']
+            [character.novice_path, 'Novice'],
           ];
           if (character.expert_path) {
             paths.push([character.expert_path, 'Expert']);
@@ -32,16 +32,20 @@ export const Home = () => {
             paths.push([character.master_path, 'Master']);
           }
           return (
-            <Link className={cn(cardStyle, pressStyle, "my-2 w-full")} key={character.id} to={`/character/${character.id}`}>
-              <div className='flex flex-row justify-between'>
-                <div className='text-left'>
+            <Link
+              className={cn(cardStyle, pressStyle, 'my-2 w-full')}
+              key={character.id}
+              to={`/character/${character.id}`}
+            >
+              <div className="flex flex-row justify-between">
+                <div className="text-left">
                   <h2>{character.name}</h2>
                   <p>
                     level {character.level} {character.ancestry}
                   </p>
                 </div>
-                <div className='text-right'>
-                  {paths.map(path => (
+                <div className="text-right">
+                  {paths.map((path) => (
                     <p>
                       <b>{path[0]}</b>
                       <span>&nbsp;({path[1]})</span>
@@ -53,7 +57,7 @@ export const Home = () => {
           );
         })}
 
-        <Button className='my-2 w-fit'>Create Character</Button>
+        <Button className="my-2 w-fit">Create Character</Button>
       </div>
     </div>
   );

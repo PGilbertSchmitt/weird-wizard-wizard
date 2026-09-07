@@ -7,7 +7,13 @@ interface ParagraphProps {
 }
 
 export const Paragraph = ({ children, size, className }: ParagraphProps) => (
-  <p className={cn('text-justify indent-6 my-3', size && `text-${size}`, className)}>
+  <p
+    className={cn(
+      'text-justify indent-6 my-3',
+      size && `text-${size}`,
+      className,
+    )}
+  >
     {children}
   </p>
 );

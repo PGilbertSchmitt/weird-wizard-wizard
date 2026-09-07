@@ -1,7 +1,7 @@
-import { FullSpeedTrait } from "@/types/other_info";
-import { FullLevel } from "@/types/path";
-import { useMemo } from "react";
-import { TalentCard } from "./talent-card";
+import { FullSpeedTrait } from '@/types/other_info';
+import { FullLevel } from '@/types/path';
+import { useMemo } from 'react';
+import { TalentCard } from './talent-card';
 
 interface LevelSectionProps {
   level: FullLevel;
@@ -14,16 +14,18 @@ export const LevelSection = ({ level }: LevelSectionProps) => {
     <div className="p-4">
       <h3>Level {level.level}</h3>
       <p>
-        {attributes.map(attr => (
-          <span className="pr-4"><b>{attr.label}:</b> {attr.value}</span>
+        {attributes.map((attr) => (
+          <span className="pr-4">
+            <b>{attr.label}:</b> {attr.value}
+          </span>
         ))}
       </p>
 
-      {level.path_talents.map(talent => (
+      {level.path_talents.map((talent) => (
         <TalentCard talent={talent} />
       ))}
     </div>
-  )
+  );
 };
 
 interface Attribute {
@@ -108,11 +110,11 @@ const calculateAttributes = (level: FullLevel): Attribute[] => {
   }
   if (spellSubstrings.length > 0) {
     attrs.push({
-      label: "Spell",
-      value: spellSubstrings.join(", "),
+      label: 'Spell',
+      value: spellSubstrings.join(', '),
     });
   }
-  
+
   return attrs;
 };
 
@@ -121,21 +123,19 @@ const speedTraitString = (traits: FullSpeedTrait[]) => {
     return null;
   }
 
-  const traitSubstrings = traits.map(trait => {
-    const amountString = trait.amount
-      ? `${trait.amount} ${trait.unit}`
-      : null;
+  const traitSubstrings = traits.map((trait) => {
+    const amountString = trait.amount ? `${trait.amount} ${trait.unit}` : null;
 
-    return `${trait.name} ${amountString}`.trim()
+    return `${trait.name} ${amountString}`.trim();
   });
 
   return traitSubstrings.join(', ');
-}
+};
 
 const speedAttrString = (add: number, traits: FullSpeedTrait[]) => {
   const traitString = speedTraitString(traits);
   const speedIncreased = add > 0;
-  
+
   if (!speedIncreased && !traitString) {
     return null;
   }
@@ -145,11 +145,11 @@ const speedAttrString = (add: number, traits: FullSpeedTrait[]) => {
   }
 
   if (!speedIncreased && traitString) {
-    return traitString
+    return traitString;
   }
 
   return `+${add} (${traitString})`;
-}
+};
 
 // Works for both languages and traditions
 const mixedAttrString = (choices: number, named: string[]) => {

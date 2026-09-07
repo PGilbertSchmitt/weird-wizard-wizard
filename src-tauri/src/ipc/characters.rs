@@ -12,4 +12,3 @@ pub async fn get_character_index(app: AppHandle<Wry>) -> WWResult<Vec<CharacterI
     let db_state = db_state.lock().await;
     Ok(characters::get_index(&db_state.pool).await?)
 }
-

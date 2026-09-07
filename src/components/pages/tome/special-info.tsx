@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
-import { isNil } from "ramda";
-import { useMemo } from "react";
+import { cn } from '@/lib/utils';
+import { isNil } from 'ramda';
+import { useMemo } from 'react';
 
 interface SpecialInfoProps {
   specialInfo: string | null;
@@ -11,9 +11,7 @@ export const SpecialInfo = ({ specialInfo }: SpecialInfoProps) => {
     if (isNil(specialInfo)) {
       return null;
     }
-    const elements = specialInfo
-      .split('|')
-      .map(line => line.trim());
+    const elements = specialInfo.split('|').map((line) => line.trim());
 
     return elements.length > 1 ? elements : elements[0];
   }, [specialInfo]);
@@ -24,21 +22,25 @@ export const SpecialInfo = ({ specialInfo }: SpecialInfoProps) => {
 
   if (typeof info === 'string') {
     return (
-      <p className={cn('border rounded-base bg-secondary-background text-foreground p-4')}>
+      <p
+        className={cn(
+          'border rounded-base bg-secondary-background text-foreground p-4',
+        )}
+      >
         {info}
       </p>
-    )
+    );
   }
 
   return (
-    <ul className={cn('border rounded-base bg-secondary-background text-foreground p-4 pl-6 list-disc')}>
-      {
-        info.map(item => (
-          <li key={item}>
-            {item}
-          </li>
-        ))
-      }
+    <ul
+      className={cn(
+        'border rounded-base bg-secondary-background text-foreground p-4 pl-6 list-disc',
+      )}
+    >
+      {info.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
     </ul>
   );
 };

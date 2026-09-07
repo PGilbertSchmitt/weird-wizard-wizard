@@ -1,7 +1,9 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    WWResult, db::paths::{self, FullPath, NovicePath, PathIndexItem}, store::get_database,
+    db::paths::{self, FullPath, NovicePath, PathIndexItem},
+    store::get_database,
+    WWResult,
 };
 
 #[command]

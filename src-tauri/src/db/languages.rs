@@ -3,7 +3,9 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, import::{LanguageRow, NameToId, is_affirmative}, util::db_boolean,
+    import::{is_affirmative, LanguageRow, NameToId},
+    util::db_boolean,
+    WWError, WWResult,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -57,12 +59,17 @@ pub async fn get_for_ancestry(db: &Pool<Sqlite>, ancestry_id: i64) -> WWResult<V
         JOIN ancestry_languages a_l ON a_l.language_id = l.id
         WHERE a_l.ancestry_id = ?",
         ancestry_id,
-    ).fetch_all(db).await?;
+    )
+    .fetch_all(db)
+    .await?;
 
-    Ok(languages.into_iter().map(|l| Language {
-        id: l.id,
-        name: l.name,
-        description: l.description,
-        secret: db_boolean(l.secret),
-    }).collect())
+    Ok(languages
+        .into_iter()
+        .map(|l| Language {
+            id: l.id,
+            name: l.name,
+            description: l.description,
+            secret: db_boolean(l.secret),
+        })
+        .collect())
 }

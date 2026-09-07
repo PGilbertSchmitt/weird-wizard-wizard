@@ -4,9 +4,15 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError, WWResult, db::{
-        etc, immunities::Immunity, languages::{self, Language}, path_talents::{self, FullPathTalent}, speed_traits::FullSpeedTrait,
-    }, import::{AncestryRow, NamePairToId, NameToId, pipe_separate},
+    db::{
+        etc,
+        immunities::Immunity,
+        languages::{self, Language},
+        path_talents::{self, FullPathTalent},
+        speed_traits::FullSpeedTrait,
+    },
+    import::{pipe_separate, AncestryRow, NamePairToId, NameToId},
+    WWError, WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]

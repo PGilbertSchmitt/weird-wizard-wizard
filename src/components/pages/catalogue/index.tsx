@@ -1,16 +1,18 @@
-import { usePathIndex } from "@/api/paths";
-import { PathKind } from "@/types/etc";
-import { PathIndexItem } from "@/types/path";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/neo/tabs';
-import { useMemo } from "react";
-import { keys, toPairs } from "ramda";
-import { PathsByCategory } from "./paths-by-category";
-import { Ancestries } from "./ancestries";
+import { usePathIndex } from '@/api/paths';
+import { PathKind } from '@/types/etc';
+import { PathIndexItem } from '@/types/path';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@/components/ui/neo/tabs';
+import { useMemo } from 'react';
+import { keys, toPairs } from 'ramda';
+import { PathsByCategory } from './paths-by-category';
+import { Ancestries } from './ancestries';
 
-type PathCollection = Record<
-  PathKind,
-  Record<string, PathIndexItem[]>
->;
+type PathCollection = Record<PathKind, Record<string, PathIndexItem[]>>;
 
 export const Catalogue = () => {
   const { data: rawPaths } = usePathIndex();
@@ -49,14 +51,16 @@ export const Catalogue = () => {
         <TabsContent key="Ancestries" value="Ancestries">
           <Ancestries />
         </TabsContent>
-        {toPairs(pathCollection).flatMap(([kind, categoryMap]) => keys(categoryMap).flatMap(cat => {
-          const contentKey = `${kind} ${cat}`;
-          return (
-            <TabsContent key={contentKey} value={contentKey}>
-              <PathsByCategory kind={kind} category={cat} />
-            </TabsContent>
-          )
-        }))}
+        {toPairs(pathCollection).flatMap(([kind, categoryMap]) =>
+          keys(categoryMap).flatMap((cat) => {
+            const contentKey = `${kind} ${cat}`;
+            return (
+              <TabsContent key={contentKey} value={contentKey}>
+                <PathsByCategory kind={kind} category={cat} />
+              </TabsContent>
+            );
+          }),
+        )}
       </Tabs>
     </div>
   );
@@ -69,14 +73,18 @@ interface TriggerListProps {
 
 const TabTriggers = ({ kind, byKind }: TriggerListProps) => (
   <div className="flex flex-col">
-    {kind === "Novice" && (
-      <TabsTrigger key='Ancestries' value="Ancestries">Ancestries</TabsTrigger>
+    {kind === 'Novice' && (
+      <TabsTrigger key="Ancestries" value="Ancestries">
+        Ancestries
+      </TabsTrigger>
     )}
-    {keys(byKind).map(cat => {
+    {keys(byKind).map((cat) => {
       const key = `${kind} ${cat}`;
 
       return (
-        <TabsTrigger key={key} value={key}>{key}</TabsTrigger>
+        <TabsTrigger key={key} value={key}>
+          {key}
+        </TabsTrigger>
       );
     })}
   </div>

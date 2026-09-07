@@ -131,11 +131,16 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullMagicTalent> {
     })
 }
 
-pub async fn get_for_tradition(db: &Pool<Sqlite>, tradition_id: i64) -> WWResult<Vec<FullMagicTalent>> {
+pub async fn get_for_tradition(
+    db: &Pool<Sqlite>,
+    tradition_id: i64,
+) -> WWResult<Vec<FullMagicTalent>> {
     let talent_ids = sqlx::query_scalar!(
         "SELECT id FROM magic_talents WHERE tradition_id = ?",
         tradition_id,
-    ).fetch_all(db).await?;
+    )
+    .fetch_all(db)
+    .await?;
 
     let talents = futures::stream::iter(talent_ids)
         .map(|id| async move { get(db, id).await })

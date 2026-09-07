@@ -21,9 +21,7 @@ export const InfoTable = ({ table }: InfoTableProps) => (
         {table.entries.map((row) => (
           <tr
             key={row.key}
-            className={cn(
-              'align-top border-b border-border last:border-none',
-            )}
+            className={cn('align-top border-b border-border last:border-none')}
           >
             <th
               className={cn('p-0.5 pr-5 w-1 whitespace-nowrap')}
