@@ -1,3 +1,4 @@
+use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
@@ -11,8 +12,8 @@ use crate::{
     WWError, WWResult,
 };
 
-#[derive(TS, Debug, Serialize, Deserialize)]
-pub struct CreatePath {
+#[derive(Debug, Serialize, Deserialize)]
+struct CreatePath {
     name: String,
     path_kind: PathKind,
     category: String,
@@ -68,9 +69,9 @@ pub async fn insert_all_novice(
         let (rec_str, rec_agl, rec_int, rec_will) = split_lvl_1_scores(&row.init_scores_lvl_1)?;
         let is_ancestry = is_affirmative(row.origin_locked.as_deref());
         let category = if is_ancestry {
-            "Ancestry Path"
+            "Ancestry-locked Path"
         } else {
-            "Novice Path"
+            "Generic Path"
         };
         let ancestry_id = if is_ancestry {
             Some(ancestry_map.get_id(&row.name).map_err(|_| {
@@ -206,6 +207,16 @@ pub struct FullPath {
     levels: Vec<FullLevel>,
 }
 
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "path.ts")]
+pub struct PathIndexItem {
+    id: i64,
+    name: String,
+    path_kind: PathKind,
+    category: String,
+    description: String,
+}
+
 pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullPath> {
     let (path, levels) = futures::join!(
         sqlx::query_as!(RawPath, "SELECT * FROM paths WHERE id = ?", id).fetch_one(db),
@@ -261,4 +272,29 @@ pub async fn get_novice_path(db: &Pool<Sqlite>, id: i64) -> WWResult<NovicePath>
         rec_will: path.rec_will.unwrap_or(10),
         ancestry,
     })
+}
+
+pub async fn get_for_kind_and_category(db: &Pool<Sqlite>, kind: String, category: String) -> WWResult<Vec<FullPath>> {
+    let ids = sqlx::query_scalar!(
+        "SELECT id FROM paths WHERE path_kind = ? AND category = ?",
+        kind,
+        category
+    ).fetch_all(db).await?;
+
+    let paths = futures::stream::iter(ids)
+        .map(|id| async move { get(db, id).await })
+        .buffered(100)
+        .try_collect()
+        .await?;
+
+    Ok(paths)
+}
+
+pub async fn get_path_index(db: &Pool<Sqlite>) -> WWResult<Vec<PathIndexItem>> {
+    let paths = sqlx::query_as!(
+        PathIndexItem,
+        "SELECT id, name, path_kind, category, description FROM paths",
+    ).fetch_all(db).await?;
+
+    Ok(paths)
 }

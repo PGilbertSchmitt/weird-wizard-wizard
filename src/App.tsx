@@ -9,6 +9,7 @@ import { CharacterPage } from './components/pages/characters';
 import { Tome } from './components/pages/tome';
 import { TraditionPage } from './components/pages/tome/tradition-page';
 import { TooltipProvider } from './components/ui/neo/tooltip';
+import { Catalogue } from './components/pages/catalogue';
 // import { Tome } from './components/pages/tome/tradition-index';
 // import { TraditionPage } from './components/pages/tome/tradition-page';
 // import { SeedDropzone } from "./dropzone";
@@ -28,7 +29,7 @@ const App = () => (
                 <Route index Component={Tome} />
                 <Route path=":traditionId" Component={TraditionPage} />
               </Route>
-              {/* <Route path="/Catalogue" Component={Catalogue} /> */}
+              <Route path="/Catalogue" Component={Catalogue} />
               <Route path="/import" Component={ImportSeed} />
             </Routes>
           </Layout>

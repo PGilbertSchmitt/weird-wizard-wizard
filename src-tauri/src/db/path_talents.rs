@@ -38,8 +38,8 @@ pub struct FullPathTalent {
     restore: TalentRestore,
     activate: Option<String>,
     description: String,
-    info_table_id: Option<FullInfoTable>,
-    option_block_id: Option<FullOptionBlock>,
+    info_table: Option<FullInfoTable>,
+    option_block: Option<FullOptionBlock>,
     mod_str: Option<String>,
     cluster: Option<String>,
 }
@@ -121,8 +121,8 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullPathTalent> {
         restore: raw_talent.restore,
         activate: raw_talent.activate,
         description: raw_talent.description,
-        info_table_id: info_table?,
-        option_block_id: option_block?,
+        info_table: info_table?,
+        option_block: option_block?,
         mod_str: raw_talent.mod_str,
         cluster: raw_talent.cluster,
     })

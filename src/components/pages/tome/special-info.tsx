@@ -24,14 +24,14 @@ export const SpecialInfo = ({ specialInfo }: SpecialInfoProps) => {
 
   if (typeof info === 'string') {
     return (
-      <p className={cn('border rounded-base bg-secondary-background p-4')}>
+      <p className={cn('border rounded-base bg-secondary-background text-foreground p-4')}>
         {info}
       </p>
     )
   }
 
   return (
-    <ul className={cn('border rounded-base bg-secondary-background p-4 pl-6 list-disc')}>
+    <ul className={cn('border rounded-base bg-secondary-background text-foreground p-4 pl-6 list-disc')}>
       {
         info.map(item => (
           <li key={item}>

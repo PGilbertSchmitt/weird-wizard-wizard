@@ -13,9 +13,9 @@ export const Badge = ({ children, label }: BadgeProps) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <div className="border-border border-2 w-7 h-7 p-1 rounded-full flex items-center justify-center">
-        {label}
+        {children}
       </div>
     </TooltipTrigger>
-    <TooltipContent className="brightness-110">{children}</TooltipContent>
+    <TooltipContent className="brightness-110">{label}</TooltipContent>
   </Tooltip>
 );

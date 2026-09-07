@@ -52,11 +52,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const state: ThemeContextState = {
     ...theme,
     setLight: (light) => {
-      localStorage.setItem(THEME_STORAGE_KEY, `${light}-${theme.color}`);
+      localStorage.setItem(THEME_STORAGE_KEY, `${light}:${theme.color}`);
       setTheme({ light, color: theme.color });
     },
     setColor: (color) => {
-      localStorage.setItem(THEME_STORAGE_KEY, `${theme.light}-${color}`);
+      localStorage.setItem(THEME_STORAGE_KEY, `${theme.light}:${color}`);
       setTheme({ light: theme.light, color });
     },
   };

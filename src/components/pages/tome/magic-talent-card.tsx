@@ -53,12 +53,12 @@ export const MagicTalentCard = ({ talent }: MagicTalentCardProps) => {
           <h2 className={cn('text-lg w-fit pt-1')}>{talent.name}</h2>
           <div className={cn('flex gap-2')}>
             {talent.activate.includes('Ritual') && (
-              <Badge label={<Waypoints size="14px" strokeWidth="1px" />}>
-                Ritual - Takes 10 minutes to cast
+              <Badge label="Ritual - Takes 10 minutes to cast">
+                <Waypoints size="14px" strokeWidth="1px" />
               </Badge>
             )}
-            <Badge label={<Sparkles size="14px" strokeWidth="1px" />}>
-              This talent is considered Magical
+            <Badge label="This talent is considered Magical">
+              <Sparkles size="14px" strokeWidth="1px" />
             </Badge>
           </div>
         </div>
@@ -70,7 +70,7 @@ export const MagicTalentCard = ({ talent }: MagicTalentCardProps) => {
 
       <Separator />
 
-      <div className='bg-secondary-background p-4'>
+      <div className='bg-secondary-background text-foreground p-4'>
         <Paragraph size="sm">{talent.description}</Paragraph>
 
         {talent.option_block && (

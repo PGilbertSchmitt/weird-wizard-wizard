@@ -40,6 +40,9 @@ pub fn run() {
             ipc::get_tradition,
             ipc::get_tradition_index,
 
+            ipc::get_path_index,
+            ipc::get_paths_for_kind_and_category,
+
             ipc::get_full_ancestry,
             ipc::get_all_ancestries,
             ipc::get_full_talent,

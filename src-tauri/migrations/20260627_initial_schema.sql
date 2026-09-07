@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS speed_traits (
     id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
-    unit        TEXT CHECK (unit IN ('inches', 'yards'))
+    unit        TEXT
 );
 
 CREATE TABLE IF NOT EXISTS senses (
@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS ancestries (
     descriptor  TEXT,
     size        TEXT CHECK (size IN ('sm', 'md', 'lg')) NOT NULL,
     speed       INTEGER NOT NULL,
-    add_health  INTEGER,
-    add_nat_def INTEGER
+    add_health  INTEGER DEFAULT 0,
+    add_nat_def INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS ancestry_languages (

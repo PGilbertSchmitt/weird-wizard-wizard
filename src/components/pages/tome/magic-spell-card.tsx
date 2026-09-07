@@ -41,8 +41,8 @@ export const SpellCard = ({ spell }: SpellCardProps) => {
           <h2 className={cn('text-lg w-fit pt-1')}>{spell.name}</h2>
           <div className={cn('flex gap-2')}>
             {spell.ritual && (
-              <Badge label={<Waypoints size="14px" strokeWidth="1px" />}>
-                Ritual - Takes 10 minutes to cast
+              <Badge label="Ritual - Takes 10 minutes to cast">
+                <Waypoints size="14px" strokeWidth="1px" />
               </Badge>
             )}
           </div>
@@ -55,7 +55,7 @@ export const SpellCard = ({ spell }: SpellCardProps) => {
 
       <Separator />
 
-      <div className="bg-secondary-background p-4">
+      <div className="bg-secondary-background text-foreground p-4">
         <Paragraph size="sm">{spell.description}</Paragraph>
         
         {spell.option_block && (

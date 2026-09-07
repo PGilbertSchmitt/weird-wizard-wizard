@@ -12,16 +12,14 @@ export type AncestrySense = {
   amount: string | null;
 };
 
-export type AncestryTalent = { ancestry_id: number; path_talent_id: number };
-
 export type FullAncestry = {
   id: number;
   name: string;
   descriptor: string | null;
   size: Size;
   speed: number;
-  add_health: number | null;
-  add_nat_def: number | null;
+  add_health: number;
+  add_nat_def: number;
   languages: Array<Language>;
   immunities: Array<Immunity>;
   speed_traits: Array<FullSpeedTrait>;
@@ -68,8 +66,8 @@ export type FullPathTalent = {
   restore: TalentRestore;
   activate: string | null;
   description: string;
-  info_table_id: FullInfoTable | null;
-  option_block_id: FullOptionBlock | null;
+  info_table: FullInfoTable | null;
+  option_block: FullOptionBlock | null;
   mod_str: string | null;
   cluster: string | null;
 };
@@ -91,6 +89,14 @@ export type NovicePath = {
 };
 
 export type PathAncestry = { id: number; name: string };
+
+export type PathIndexItem = {
+  id: number;
+  name: string;
+  path_kind: PathKind;
+  category: string;
+  description: string;
+};
 
 export type RawAncestry = {
   id: number;
