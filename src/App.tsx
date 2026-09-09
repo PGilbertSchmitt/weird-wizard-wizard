@@ -10,6 +10,7 @@ import { Tome } from './components/pages/tome';
 import { TraditionPage } from './components/pages/tome/tradition-page';
 import { TooltipProvider } from './components/ui/neo/tooltip';
 import { Catalogue } from './components/pages/catalogue';
+import { CharacterCreationPage } from './components/pages/character-creation';
 // import { Tome } from './components/pages/tome/tradition-index';
 // import { TraditionPage } from './components/pages/tome/tradition-page';
 // import { SeedDropzone } from "./dropzone";
@@ -25,6 +26,10 @@ const App = () => (
             <Routes>
               <Route path="/" Component={Home} />
               <Route path="/character/:id" Component={CharacterPage} />
+              <Route
+                path="/character-creation"
+                Component={CharacterCreationPage}
+              />
               <Route path="/tome">
                 <Route index Component={Tome} />
                 <Route path=":traditionId" Component={TraditionPage} />

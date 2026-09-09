@@ -6,9 +6,24 @@ type BaseButtonProps = React.DetailedHTMLProps<
   HTMLButtonElement
 >;
 
-export const Button = (props: BaseButtonProps) => {
+interface ButtonProps extends BaseButtonProps {
+  pressStyle?: boolean;
+}
+
+export const Button = (props: ButtonProps) => {
+  const adjustedPressStyle =
+    (props.pressStyle ?? true) ? pressStyle : 'shadow-0 shadow-none';
   return (
-    <button {...props} className={cn(cardStyle, pressStyle, props.className)}>
+    <button
+      {...props}
+      className={cn(
+        cardStyle,
+        props.disabled ? 'saturate-0' : adjustedPressStyle,
+        adjustedPressStyle,
+        'cursor-pointer',
+        props.className,
+      )}
+    >
       {props.children}
     </button>
   );

@@ -17,6 +17,7 @@ export const Tome = () => {
       <div className={cn('w-full max-w-400 mx-2 grid grid-cols-3')}>
         {traditions?.map((tradition) => (
           <NavCard
+            key={tradition.id}
             className={cn(cardStyle, pressStyle, 'm-2')}
             href={`/tome/${tradition.id}`}
           >

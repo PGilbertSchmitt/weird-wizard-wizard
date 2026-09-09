@@ -42,6 +42,7 @@ pub fn run() {
             ipc::get_paths_for_kind_and_category,
             ipc::get_full_ancestry,
             ipc::get_all_ancestries,
+            ipc::get_all_professions,
             ipc::get_full_talent,
             ipc::get_ancestry_talents,
             ipc::get_table,

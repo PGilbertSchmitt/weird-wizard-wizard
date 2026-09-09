@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::SqliteConnection;
+use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{import::ProfessionRow, WWError, WWResult};
@@ -31,4 +31,12 @@ pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<ProfessionRow>) ->
         })?;
     }
     Ok(())
+}
+
+pub async fn get_all(db: &Pool<Sqlite>) -> WWResult<Vec<Profession>> {
+    let professions = sqlx::query_as!(Profession, "SELECT * FROM professions")
+        .fetch_all(db)
+        .await?;
+
+    return Ok(professions);
 }

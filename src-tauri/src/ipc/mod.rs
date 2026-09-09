@@ -4,6 +4,7 @@ mod import;
 mod magic;
 mod path_talents;
 mod paths;
+mod professions;
 mod response;
 mod tables;
 
@@ -13,6 +14,7 @@ pub use import::*;
 pub use magic::*;
 pub use path_talents::*;
 pub use paths::*;
+pub use professions::*;
 pub use tables::*;
 
 use serde::Serialize;

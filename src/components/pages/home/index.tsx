@@ -57,7 +57,12 @@ export const Home = () => {
           );
         })}
 
-        <Button className="my-2 w-fit">Create Character</Button>
+        <Link
+          to="/character-creation"
+          className={cn(cardStyle, pressStyle, 'my-2 w-fit')}
+        >
+          Create Character
+        </Link>
       </div>
     </div>
   );
