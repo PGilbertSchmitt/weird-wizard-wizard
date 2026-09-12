@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import { keys, toPairs } from 'ramda';
 import { PathsByCategory } from './paths-by-category';
 import { Ancestries } from './ancestries';
+import { AnimatePresence, motion } from 'motion/react';
 
 type PathCollection = Record<PathKind, Record<string, PathIndexItem[]>>;
 
@@ -42,26 +43,32 @@ export const Catalogue = () => {
     <div>
       <h1>Catalogue of Paths</h1>
 
-      <Tabs defaultValue="Novice Generic Path">
-        <TabsList className="border-none w-full flex items-start h-fit">
-          <TabTriggers kind="Novice" byKind={pathCollection.Novice} />
-          <TabTriggers kind="Expert" byKind={pathCollection.Expert} />
-          <TabTriggers kind="Master" byKind={pathCollection.Master} />
-        </TabsList>
-        <TabsContent key="Ancestries" value="Ancestries">
-          <Ancestries />
-        </TabsContent>
-        {toPairs(pathCollection).flatMap(([kind, categoryMap]) =>
-          keys(categoryMap).flatMap((cat) => {
-            const contentKey = `${kind} ${cat}`;
-            return (
-              <TabsContent key={contentKey} value={contentKey}>
-                <PathsByCategory kind={kind} category={cat} />
-              </TabsContent>
-            );
-          }),
-        )}
-      </Tabs>
+      <AnimatePresence>
+        <Tabs defaultValue="Novice Generic Path">
+          <TabsList className="border-none w-full flex items-start h-fit">
+            <TabTriggers kind="Novice" byKind={pathCollection.Novice} />
+            <TabTriggers kind="Expert" byKind={pathCollection.Expert} />
+            <TabTriggers kind="Master" byKind={pathCollection.Master} />
+          </TabsList>
+          <TabsContent key="Ancestries" value="Ancestries">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Ancestries />
+            </motion.div>
+          </TabsContent>
+          {toPairs(pathCollection).flatMap(([kind, categoryMap]) =>
+            keys(categoryMap).flatMap((cat) => {
+              const contentKey = `${kind} ${cat}`;
+              return (
+                <TabsContent key={contentKey} value={contentKey}>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <PathsByCategory kind={kind} category={cat} />
+                  </motion.div>
+                </TabsContent>
+              );
+            }),
+          )}
+        </Tabs>
+      </AnimatePresence>
     </div>
   );
 };

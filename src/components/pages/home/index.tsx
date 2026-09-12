@@ -1,5 +1,4 @@
 import { useCharacterIndex } from '@/api/characters';
-import { Button } from '@/components/ui/button';
 import { cardStyle, pressStyle } from '@/components/ui/styles';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router';
@@ -9,18 +8,12 @@ export const Home = () => {
 
   console.log('Characters:', characters);
 
-  const moreCharacters = [
-    ...(characters || []),
-    ...(characters || []),
-    ...(characters || []),
-  ];
-
   return (
     <div>
       <h1>Characters</h1>
 
       <div className={cn('w-140 flex flex-col items-center')}>
-        {moreCharacters?.map((character) => {
+        {characters?.map((character) => {
           // const paths = [character.novice_path, character.expert_path, character.master_path];
           const paths: Array<[string, string]> = [
             [character.novice_path, 'Novice'],

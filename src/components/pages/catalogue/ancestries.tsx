@@ -15,17 +15,19 @@ import { useMemo } from 'react';
 import { FullSpeedTrait } from '@/types/other_info';
 import { TalentCard } from './talent-card';
 
-export const Ancestries = () => {
+interface AncestriesProps {
+  selectedId?: number;
+  onSelect?: (id: number, name: string) => void;
+}
+
+export const Ancestries = ({ selectedId, onSelect }: AncestriesProps) => {
   const { isFetched, data: rawAncestries } = useAllAncestries();
   const ancestries = rawAncestries || [];
 
-  const ids = useMemo(() => {
-    if (isFetched) {
-      return ancestries.map((a) => a.id);
-    } else {
-      return [];
-    }
-  }, [isFetched, ancestries]);
+  const ids = useMemo(
+    () => (isFetched ? ancestries.map((a) => a.id) : []),
+    [isFetched, ancestries],
+  );
 
   const { isCollapsed, toggleCollapse, toggleAll, allCollapsed } =
     useCollapseState(ids);
@@ -46,7 +48,7 @@ export const Ancestries = () => {
 
       {ancestries.map((item) => {
         const collapsed = isCollapsed(item.id);
-        const attributes = calculateAttributes(item);
+        const attributes = calculateAncestryAttributes(item);
 
         return (
           <StaticCard key={item.id} className={cn('my-4 p-0')}>
@@ -54,7 +56,10 @@ export const Ancestries = () => {
               className="flex flex-row justify-between items-center p-2 cursor-pointer"
               onClick={() => toggleCollapse(item.id)}
             >
-              <h2>{item.name}</h2>
+              <div className={cn('flex flex-row gap-4')}>
+                <h2>{item.name}</h2>
+                {selectedId === item.id && <p>(Selected)</p>}
+              </div>
               {collapsed ? (
                 <ChevronDown strokeWidth="1px" size="18px" />
               ) : (
@@ -66,7 +71,22 @@ export const Ancestries = () => {
               <>
                 <Separator />
                 <div className={cn('bg-secondary-background text-foreground')}>
-                  <div className="p-4 flex flex-row flex-wrap gap-x-5 gap-y-1">
+                  {typeof selectedId === 'number' && selectedId !== item.id && (
+                    <div className={cn('flex justify-center pt-2')}>
+                      <Button
+                        className={cn('py-0 shadow-0')}
+                        onClick={() => onSelect && onSelect(item.id, item.name)}
+                      >
+                        Pick
+                      </Button>
+                    </div>
+                  )}
+
+                  <div
+                    className={cn(
+                      'p-4 flex flex-row flex-wrap gap-x-5 gap-y-1',
+                    )}
+                  >
                     {attributes.map((attr) => (
                       <p className="block">
                         <b>{attr.label}:</b> {attr.value}
@@ -74,13 +94,17 @@ export const Ancestries = () => {
                     ))}
                   </div>
 
-                  <Separator />
+                  {item.talents.length > 0 && (
+                    <>
+                      <Separator />
 
-                  <div className="py-1 px-4">
-                    {item.talents.map((talent) => (
-                      <TalentCard talent={talent} />
-                    ))}
-                  </div>
+                      <div className="py-1 px-4">
+                        {item.talents.map((talent) => (
+                          <TalentCard talent={talent} />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             )}
@@ -96,7 +120,9 @@ interface Attribute {
   value: string;
 }
 
-const calculateAttributes = (ancestry: FullAncestry): Attribute[] => {
+export const calculateAncestryAttributes = (
+  ancestry: FullAncestry,
+): Attribute[] => {
   const attrs: Attribute[] = [];
 
   const speedString = speedAttrString(ancestry.speed, ancestry.speed_traits);

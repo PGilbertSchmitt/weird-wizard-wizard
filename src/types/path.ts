@@ -55,6 +55,7 @@ export type FullPath = {
   category: string;
   description: string;
   levels: Array<FullLevel>;
+  ancestry_id: number | null;
 };
 
 export type FullPathTalent = {

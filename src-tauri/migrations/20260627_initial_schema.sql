@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS senses (
     id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name        TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
-    unit        TEXT CHECK (unit IN ('inches', 'yards'))
+    unit        TEXT
 );
 
 CREATE TABLE IF NOT EXISTS immunities (
@@ -281,10 +281,13 @@ CREATE TABLE IF NOT EXISTS characters (
     id             INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name           TEXT    NOT NULL,
     level          INTEGER NOT NULL,
+    health         INTEGER NOT NULL,
+    damage         INTEGER NOT NULL,
     strength       INTEGER NOT NULL,
     agility        INTEGER NOT NULL,
     intellect      INTEGER NOT NULL,
     will           INTEGER NOT NULL,
+    profession_id  INTEGER REFERENCES professions(id) NOT NULL,
     ancestry_id    INTEGER REFERENCES ancestries(id) NOT NULL,
     novice_path_id INTEGER REFERENCES paths(id) NOT NULL, 
     expert_path_id INTEGER REFERENCES paths(id), 

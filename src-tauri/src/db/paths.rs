@@ -205,6 +205,7 @@ pub struct FullPath {
     category: String,
     description: String,
     levels: Vec<FullLevel>,
+    ancestry_id: Option<i64>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -233,6 +234,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullPath> {
         category: path.category,
         description: path.description,
         levels,
+        ancestry_id: path.ancestry_id,
     })
 }
 

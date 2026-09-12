@@ -9,37 +9,38 @@ import {
   ListChevronsDownUp,
   ListChevronsUpDown,
 } from 'lucide-react';
-import { all } from 'ramda';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { LevelSection } from './level-section';
 import { Paragraph } from '@/components/ui/paragraph';
+import { useCollapseState } from '@/hooks/use-collapse-state';
 
 interface PathsByCategoryProps {
   kind: string;
   category: string;
+  selectedId?: number;
+  onSelect?: (
+    pathId: number,
+    pathName: string,
+    ancestryId: number | null,
+  ) => void;
 }
 
-export const PathsByCategory = ({ kind, category }: PathsByCategoryProps) => {
+export const PathsByCategory = ({
+  kind,
+  category,
+  onSelect,
+  selectedId,
+}: PathsByCategoryProps) => {
   const { isFetched, data: rawPaths } = usePathsForCategory(kind, category);
   const paths = rawPaths || [];
 
-  const [collapseState, setCollapsedState] = useState<Record<number, boolean>>(
-    {},
+  const ids = useMemo(
+    () => (isFetched ? paths.map((p) => p.id) : []),
+    [isFetched, paths],
   );
 
-  const toggleCollapse = (id: number) => {
-    setCollapsedState({
-      ...collapseState,
-      [id]: !collapseState[id],
-    });
-  };
-
-  const allCollapsed = useMemo(() => {
-    if (!isFetched) {
-      return false;
-    }
-    return all(({ id }) => !!collapseState[id], paths);
-  }, [isFetched, collapseState]);
+  const { isCollapsed, toggleCollapse, toggleAll, allCollapsed } =
+    useCollapseState(ids);
 
   if (!isFetched) {
     return null;
@@ -47,20 +48,7 @@ export const PathsByCategory = ({ kind, category }: PathsByCategoryProps) => {
 
   return (
     <div className={cn('w-dvw max-w-250 px-4')}>
-      <Button
-        className="p-1"
-        onClick={() => {
-          setCollapsedState(
-            paths.reduce(
-              (acc, { id }) => ({
-                ...acc,
-                [id]: !allCollapsed,
-              }),
-              {},
-            ),
-          );
-        }}
-      >
+      <Button className="p-1" onClick={toggleAll}>
         {allCollapsed ? (
           <ListChevronsUpDown strokeWidth="1px" size="14px" />
         ) : (
@@ -69,29 +57,48 @@ export const PathsByCategory = ({ kind, category }: PathsByCategoryProps) => {
       </Button>
 
       {paths.map((item) => {
-        const collapsed = !!collapseState[item.id];
+        const collapsed = isCollapsed(item.id);
 
         return (
           <StaticCard key={item.id} className={cn('my-4 p-0')}>
-            <div className="flex flex-row justify-between items-center p-2 cursor-pointer">
-              <h2>{item.name}</h2>
-              <Button className="p-1" onClick={() => toggleCollapse(item.id)}>
-                {collapsed ? (
-                  <ChevronDown strokeWidth="1px" size="14px" />
-                ) : (
-                  <ChevronUp strokeWidth="1px" size="14px" />
-                )}
-              </Button>
+            <div
+              className="flex flex-row justify-between items-center p-2 cursor-pointer"
+              onClick={() => toggleCollapse(item.id)}
+            >
+              <div className={cn('flex flex-row gap-4')}>
+                <h2>{item.name}</h2>
+                {selectedId === item.id && <p>(Selected)</p>}
+              </div>
+              {collapsed ? (
+                <ChevronDown strokeWidth="1px" size="18px" />
+              ) : (
+                <ChevronUp strokeWidth="1px" size="18px" />
+              )}
             </div>
 
             {!collapsed && (
               <>
                 <Separator />
-                <div className="bg-secondary-background text-foreground">
+
+                <div className={cn('bg-secondary-background text-foreground')}>
+                  {typeof selectedId === 'number' && selectedId !== item.id && (
+                    <div className={cn('flex justify-center pt-2')}>
+                      <Button
+                        className={cn('py-0 shadow-0')}
+                        onClick={() =>
+                          onSelect &&
+                          onSelect(item.id, item.name, item.ancestry_id)
+                        }
+                      >
+                        Pick
+                      </Button>
+                    </div>
+                  )}
+
                   <Paragraph className="m-0 p-4">{item.description}</Paragraph>
 
                   {item.levels.map((level) => (
-                    <div>
+                    <div key={level.id}>
                       <Separator />
                       <LevelSection level={level} />
                     </div>

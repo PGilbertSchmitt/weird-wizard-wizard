@@ -4,41 +4,52 @@ import { ProfessionForm } from './profession-form';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/neo/input';
-
-interface CharacterInfo {
-  name: string;
-  professionId: number;
-  novicePathId: number;
-  ancestryId: number;
-}
+import { NovicePathForm } from './novice-path-form';
+import { AnimatePresence, motion } from 'motion/react';
+import { Ancestries } from '../catalogue/ancestries';
+import { LockedAncestry } from './locked-ancestry';
+import { Summary } from './summary';
+import { useCreateCharacter } from '@/api/characters';
+import { useNavigate } from 'react-router';
+import { ChooseScores, Scores } from './choose-scores';
 
 const Step = {
   NAME: 0,
   PROFESSION: 1,
   NOVICE_PATH: 2,
   ANCESTRY: 3,
+  SCORES: 4,
+  SUMMARY: 5,
 } as const;
 type StepValue = (typeof Step)[keyof typeof Step];
 
-const stepInstruction = (step: StepValue) => {
+const stepInstruction = (step: StepValue, ancestryLocked: boolean | null) => {
   switch (step) {
     case Step.NAME:
       return 'Choose a name';
     case Step.PROFESSION:
-      return 'Pick a profession';
+      return 'Choose a profession';
     case Step.NOVICE_PATH:
       return 'Choose a novice path';
     case Step.ANCESTRY:
-      'Choose an ancestry';
+      return ancestryLocked ? 'Confirm ancestry' : 'Choose an ancestry';
+    case Step.SCORES:
+      return 'Decide ability scores';
+    case Step.SUMMARY:
+      return 'Summary';
   }
 };
 
 interface FormData {
   name: string;
   professionId: number | null;
+  professionName: string;
   noviceId: number | null;
+  noviceName: string;
   ancestryLocked: boolean | null;
   ancestryId: number | null;
+  ancestryName: string;
+  scores: Scores | null;
 }
 
 export const CharacterCreationPage = () => {
@@ -48,7 +59,15 @@ export const CharacterCreationPage = () => {
     ancestryId: null,
     ancestryLocked: null,
     noviceId: null,
+    professionName: '',
+    noviceName: '',
+    ancestryName: '',
+    scores: null,
   });
+
+  const { mutateAsync } = useCreateCharacter();
+
+  const navigate = useNavigate();
 
   const maxStep = useMemo(() => {
     if (characterInfo.name.length === 0) {
@@ -66,12 +85,27 @@ export const CharacterCreationPage = () => {
     if (characterInfo.ancestryId === null) {
       return Step.ANCESTRY;
     }
+
+    if (characterInfo.scores === null) {
+      return Step.SCORES;
+    }
+
+    return Step.SUMMARY;
   }, [characterInfo]);
 
   const [curStep, setCurStep] = useState<StepValue>(Step.NAME);
 
-  const nextStep = () => setCurStep((curStep + 1) as StepValue);
-  const prevStep = () => setCurStep((curStep - 1) as StepValue);
+  const scrollToTop = () => {
+    window.scrollTo(0, 0);
+  };
+  const nextStep = () => {
+    scrollToTop();
+    setCurStep((curStep + 1) as StepValue);
+  };
+  const prevStep = () => {
+    scrollToTop();
+    setCurStep((curStep - 1) as StepValue);
+  };
 
   return (
     <>
@@ -80,17 +114,21 @@ export const CharacterCreationPage = () => {
           <h1>Create a new Character</h1>
         </div>
 
-        <div className={cn('flex flex-row justify-between mb-10 w-100 gap-10')}>
+        <div
+          className={cn(
+            'flex flex-row justify-between items-center mb-10 w-100 gap-10',
+          )}
+        >
           <Button
-            className={cn('p-1')}
+            className={cn('p-1', curStep === Step.NAME && 'opacity-0')}
             disabled={curStep === Step.NAME}
             onClick={prevStep}
           >
             <ChevronLeft strokeWidth="1px" size="14px" />
           </Button>
-          <p>{stepInstruction(curStep)}</p>
+          <p>{stepInstruction(curStep, characterInfo.ancestryLocked)}</p>
           <Button
-            className={cn('p-1')}
+            className={cn('p-1', curStep === Step.SUMMARY && 'opacity-0')}
             disabled={curStep === maxStep}
             onClick={nextStep}
           >
@@ -99,39 +137,156 @@ export const CharacterCreationPage = () => {
         </div>
       </div>
 
-      {(() => {
-        switch (curStep) {
-          case Step.NAME:
-            return (
-              <>
-                <Input
-                  id="character-name"
-                  value={characterInfo.name}
-                  placeholder="Character Name"
-                  onChange={(e) =>
-                    setCharacterInfo({
-                      ...characterInfo,
-                      name: e.target.value,
-                    })
-                  }
-                />
-              </>
-            );
-          case Step.PROFESSION:
-            return (
-              <ProfessionForm
-                selected={characterInfo.professionId}
-                onSelect={(id) => {
-                  setCharacterInfo({
-                    ...characterInfo,
-                    professionId: id,
-                  });
-                  nextStep();
-                }}
-              />
-            );
-        }
-      })()}
+      <AnimatePresence>
+        {(() => {
+          switch (curStep) {
+            case Step.NAME:
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  key={Step.NAME}
+                >
+                  <Input
+                    id="character-name"
+                    value={characterInfo.name}
+                    placeholder="Character Name"
+                    onChange={(e) =>
+                      setCharacterInfo({
+                        ...characterInfo,
+                        name: e.target.value,
+                      })
+                    }
+                  />
+                </motion.div>
+              );
+            case Step.PROFESSION:
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  key={Step.PROFESSION}
+                >
+                  <ProfessionForm
+                    selected={characterInfo.professionId}
+                    onSelect={(id, name) => {
+                      setCharacterInfo({
+                        ...characterInfo,
+                        professionId: id,
+                        professionName: name,
+                      });
+                      nextStep();
+                    }}
+                  />
+                </motion.div>
+              );
+            case Step.NOVICE_PATH:
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  key={Step.NOVICE_PATH}
+                >
+                  <NovicePathForm
+                    noviceId={characterInfo.noviceId ?? -1}
+                    ancestryLocked={characterInfo.ancestryLocked}
+                    onSelect={(noviceId, noviceName, ancestryId) => {
+                      setCharacterInfo({
+                        ...characterInfo,
+                        noviceId,
+                        noviceName,
+                        ancestryId,
+                        ancestryLocked: ancestryId !== null,
+                      });
+                      nextStep();
+                    }}
+                  />
+                </motion.div>
+              );
+            case Step.ANCESTRY:
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  key={Step.NOVICE_PATH}
+                >
+                  {characterInfo.ancestryLocked ? (
+                    <LockedAncestry
+                      ancestryId={characterInfo.ancestryId!}
+                      setName={(name) => {
+                        setCharacterInfo({
+                          ...characterInfo,
+                          ancestryName: name,
+                        });
+                      }}
+                    />
+                  ) : (
+                    <Ancestries
+                      selectedId={characterInfo.ancestryId ?? -1}
+                      onSelect={(ancestryId, ancestryName) => {
+                        setCharacterInfo({
+                          ...characterInfo,
+                          ancestryId,
+                          ancestryName,
+                        });
+                        nextStep();
+                      }}
+                    />
+                  )}
+                </motion.div>
+              );
+            case Step.SCORES:
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  key={Step.NOVICE_PATH}
+                >
+                  <ChooseScores
+                    novicePathId={characterInfo.noviceId || -1}
+                    onConfirm={(scores) => {
+                      setCharacterInfo({
+                        ...characterInfo,
+                        scores,
+                      });
+                      nextStep();
+                    }}
+                  />
+                </motion.div>
+              );
+            case Step.SUMMARY:
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  key={Step.NOVICE_PATH}
+                >
+                  <Summary
+                    name={characterInfo.name}
+                    professionName={characterInfo.professionName}
+                    novicePathName={characterInfo.noviceName}
+                    ancestryName={characterInfo.ancestryName}
+                    ancestryLocked={characterInfo.ancestryLocked || false}
+                    scores={characterInfo.scores!}
+                    onConfirm={async () => {
+                      const id = await mutateAsync({
+                        name: characterInfo.name,
+                        profession_id: characterInfo.professionId!,
+                        novice_path_id: characterInfo.noviceId!,
+                        ancestry_id: characterInfo.ancestryId!,
+                        strength: characterInfo.scores?.strength!,
+                        agility: characterInfo.scores?.agility!,
+                        intellect: characterInfo.scores?.intellect!,
+                        will: characterInfo.scores?.will!,
+                      });
+                      navigate(`/character/${id}`);
+                    }}
+                  />
+                </motion.div>
+              );
+          }
+        })()}
+      </AnimatePresence>
     </>
   );
 };

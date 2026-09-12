@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 
 interface ProfessionFormProps {
   selected: number | null;
-  onSelect: (id: number) => void;
+  onSelect: (id: number, name: string) => void;
 }
 
 export const ProfessionForm = ({ selected, onSelect }: ProfessionFormProps) => {
@@ -85,7 +85,7 @@ const Category = ({ selected, onSelect, category }: CategoryProps) => {
                       className="p-1"
                       pressStyle={false}
                       disabled={selected === prof.id}
-                      onClick={() => onSelect(prof.id)}
+                      onClick={() => onSelect(prof.id, prof.name)}
                     >
                       Pick
                     </Button>

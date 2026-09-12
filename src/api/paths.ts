@@ -1,4 +1,4 @@
-import { FullPath, PathIndexItem } from '@/types/path';
+import { FullPath, NovicePath, PathIndexItem } from '@/types/path';
 import { useQuery } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -16,4 +16,10 @@ export const usePathsForCategory = (kind: string, category: string) =>
         kind,
         category,
       }),
+  });
+
+export const useFullNovicePath = (id: number) =>
+  useQuery({
+    queryKey: ['novice_path', id],
+    queryFn: () => invoke<NovicePath>('get_novice_path', { id }),
   });

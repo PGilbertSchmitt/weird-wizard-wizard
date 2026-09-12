@@ -11,6 +11,17 @@ export type CharacterIndexItem = {
   master_path: string | null;
 };
 
+export type CreateCharacter = {
+  name: string;
+  profession_id: number;
+  ancestry_id: number;
+  novice_path_id: number;
+  strength: number;
+  agility: number;
+  intellect: number;
+  will: number;
+};
+
 export type FullCharacter = {
   id: number;
   name: string;
