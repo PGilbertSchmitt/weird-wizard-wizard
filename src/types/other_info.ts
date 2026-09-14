@@ -7,6 +7,14 @@ export type FullProfessionCategory = {
   professions: Array<Profession>;
 };
 
+export type FullSense = {
+  id: number;
+  name: string;
+  description: string;
+  unit: string | null;
+  amount: string | null;
+};
+
 export type FullSpeedTrait = {
   id: number;
   name: string;
@@ -35,11 +43,4 @@ export type ProfessionCategory = {
   id: number;
   name: string;
   description: string;
-};
-
-export type Sense = {
-  id: number;
-  name: string;
-  description: string;
-  unit: string | null;
 };

@@ -14,6 +14,7 @@ export type FullMagicTalent = {
   activate: string;
   info_table: FullInfoTable | null;
   option_block: FullOptionBlock | null;
+  mod_str: string | null;
 };
 
 export type FullSpell = {

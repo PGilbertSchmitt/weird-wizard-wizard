@@ -159,7 +159,8 @@ CREATE TABLE IF NOT EXISTS magic_talents (
     restore         TEXT CHECK (restore IN ('Luck Ends', 'Rest', 'Day', 'Hour', 'Minute')),
     activate        TEXT NOT NULL,
     info_table_id   INTEGER REFERENCES info_tables(id),
-    option_block_id INTEGER REFERENCES option_blocks(id)
+    option_block_id INTEGER REFERENCES option_blocks(id),
+    mod_str         TEXT
 );
 
 CREATE TABLE IF NOT EXISTS spells (
@@ -174,7 +175,8 @@ CREATE TABLE IF NOT EXISTS spells (
     condition       TEXT,
     ritual          TEXT, -- Boolean
     info_table_id   INTEGER REFERENCES info_tables(id),
-    option_block_id INTEGER REFERENCES option_blocks(id)
+    option_block_id INTEGER REFERENCES option_blocks(id),
+    mod_str         TEXT
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_spells ON spells (name, tradition_id);
@@ -293,7 +295,7 @@ CREATE TABLE IF NOT EXISTS characters (
     expert_path_id INTEGER REFERENCES paths(id), 
     master_path_id INTEGER REFERENCES paths(id), 
 
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE TRIGGER IF NOT EXISTS validate_path_assoc BEFORE UPDATE ON characters
@@ -313,9 +315,30 @@ CREATE TABLE IF NOT EXISTS character_choices (
     id           INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE NOT NULL,
     choice_key   TEXT NOT NULL,
-    selection    TEXT,
+    selection    TEXT NOT NULL,
     dismissable  TEXT, -- Boolean
     duration     TEXT CHECK (duration IN ('OneMinute', 'OneHour', 'FourHours', 'EightHours', 'OneDay', 'Rest'))
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character_id, choice_key);
+
+-- The interpretation of the character_choices `selection` column depends on the mod target:
+-- Language        => id, foreign key to languages table
+-- Profession      => id, foreign key to professions table
+-- Tradition       => id|id, foreign key to traditions table and foreign key to magic_talents table
+-- NoviceSpell     => id, foreign key to spells table
+-- NoviceSpellFrom => id, foreign key to spells table
+-- ExpertSpell     => id, foreign key to spells table
+-- ExpertSpellFrom => id, foreign key to spells table
+-- MasterSpell     => id, foreign key to spells table
+-- MasterSpellFrom => id, foreign key to spells table
+-- Select          => id, foreign key to choice_selections table
+-- SelectAgain     => id, foreign key to choice_selections table
+-- Score           => [Ability]:[integer], where Ability is one of Strength, Agility, Intellect, and Will
+-- Slots           => [plus|times]-[integer]:id, where id is a foreign key to spells table
+--   Tradition, all pure spell IDs, and Select/SelectAgain can trigger additional mods.
+--   The rest are terminal and won't affect the character further.
+
+
 
 -- END: USER-GENERATED RECORD TABLES 

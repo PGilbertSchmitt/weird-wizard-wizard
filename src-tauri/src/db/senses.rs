@@ -7,13 +7,22 @@ use crate::{
     WWError, WWResult,
 };
 
-#[derive(TS, Debug, Serialize, Deserialize)]
-#[ts(export, export_to = "other_info.ts")]
-pub struct Sense {
+#[derive(Debug)]
+struct Sense {
     pub id: i64,
     pub name: String,
     pub description: String,
     pub unit: Option<String>,
+}
+
+#[derive(TS, Debug, Serialize, Deserialize, Clone)]
+#[ts(export, export_to = "other_info.ts")]
+pub struct FullSense {
+    pub id: i64,
+    pub name: String,
+    pub description: String,
+    pub unit: Option<String>,
+    pub amount: Option<String>,
 }
 
 pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<SenseRow>) -> WWResult<NameToId> {

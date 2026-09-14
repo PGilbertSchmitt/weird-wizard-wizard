@@ -40,3 +40,11 @@ pub async fn get_all(db: &Pool<Sqlite>) -> WWResult<Vec<Profession>> {
 
     return Ok(professions);
 }
+
+pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<Profession> {
+    Ok(
+        sqlx::query_as!(Profession, "SELECT * FROM professions WHERE id = ?", id)
+            .fetch_one(db)
+            .await?,
+    )
+}

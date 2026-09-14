@@ -9,6 +9,7 @@ use crate::{
         immunities::Immunity,
         languages::{self, Language},
         path_talents::{self, FullPathTalent},
+        senses::FullSense,
         speed_traits::FullSpeedTrait,
     },
     import::{pipe_separate, AncestryRow, NamePairToId, NameToId},
@@ -30,27 +31,17 @@ struct RawAncestry {
 #[ts(export, export_to = "path.ts")]
 pub struct FullAncestry {
     pub id: i64,
-    name: String,
-    descriptor: Option<String>,
-    size: etc::Size,
-    speed: i64,
-    add_health: i64,
-    add_nat_def: i64,
-    languages: Vec<Language>,
-    immunities: Vec<Immunity>,
-    speed_traits: Vec<FullSpeedTrait>,
-    senses: Vec<AncestrySense>,
-    talents: Vec<FullPathTalent>,
-}
-
-#[derive(TS, Debug, Serialize, Deserialize)]
-#[ts(export, export_to = "path.ts")]
-pub struct AncestrySense {
-    pub id: i64,
     pub name: String,
-    pub description: String,
-    pub unit: Option<String>,
-    pub amount: Option<String>,
+    pub descriptor: Option<String>,
+    pub size: etc::Size,
+    pub speed: i64,
+    pub add_health: i64,
+    pub add_nat_def: i64,
+    pub languages: Vec<Language>,
+    pub immunities: Vec<Immunity>,
+    pub speed_traits: Vec<FullSpeedTrait>,
+    pub senses: Vec<FullSense>,
+    pub talents: Vec<FullPathTalent>,
 }
 
 pub async fn insert_all(
@@ -187,7 +178,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullAncestry> {
         )
         .fetch_all(db),
         sqlx::query_as!(
-            AncestrySense,
+            FullSense,
             "SELECT s.*, a_s.amount FROM senses as s
             JOIN ancestry_senses a_s ON a_s.sense_id = s.id
             WHERE a_s.ancestry_id = ?",

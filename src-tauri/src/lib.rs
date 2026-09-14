@@ -4,6 +4,7 @@ mod db;
 mod import;
 mod ipc;
 mod mod_dsl;
+mod modifiers;
 mod result;
 mod store;
 mod util;
@@ -46,6 +47,7 @@ pub fn run() {
             ipc::get_all_professions,
             ipc::get_character_index,
             ipc::create_character,
+            ipc::get_full_character,
             // Not used yet:
             ipc::get_full_talent,
             ipc::get_ancestry_talents,

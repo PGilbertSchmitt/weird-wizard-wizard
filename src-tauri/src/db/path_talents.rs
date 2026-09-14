@@ -34,8 +34,8 @@ struct RawPathTalent {
 #[ts(export, export_to = "path.ts")]
 pub struct FullPathTalent {
     id: i64,
-    name: String,
-    source: String,
+    pub name: String,
+    pub source: String,
     magical: bool,
     charges: Option<String>,
     restore: TalentRestore,
@@ -43,7 +43,7 @@ pub struct FullPathTalent {
     description: String,
     info_table: Option<FullInfoTable>,
     option_block: Option<FullOptionBlock>,
-    mod_str: Option<String>,
+    pub mod_str: Option<String>,
     cluster: Option<String>,
 }
 
@@ -110,13 +110,17 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullPathTalent> {
         .fetch_one(db)
         .await?;
 
+    extend_raw_path_talent(db, raw_talent).await
+}
+
+async fn extend_raw_path_talent(db: &Pool<Sqlite>, raw_talent: RawPathTalent) -> WWResult<FullPathTalent> {
     let (info_table, option_block) = futures::join!(
         info_tables::get_from_opt(db, raw_talent.info_table_id),
         option_blocks::get_from_opt(db, raw_talent.option_block_id),
     );
 
     Ok(FullPathTalent {
-        id,
+        id: raw_talent.id,
         name: raw_talent.name,
         source: raw_talent.source,
         magical: db_boolean(raw_talent.magical),
@@ -162,4 +166,17 @@ pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<Ful
     .fetch_all(db)
     .await?;
     get_from_ids(db, ids).await
+}
+
+pub async fn get_by_name_and_source(db: &Pool<Sqlite>, name: &str, source: &str) -> WWResult<FullPathTalent> {
+    let raw_talent = sqlx::query_as!(
+        RawPathTalent,
+        "SELECT * FROM path_talents WHERE source = ? AND name = ?",
+        source,
+        name,
+    )
+    .fetch_one(db)
+    .await?;
+
+    extend_raw_path_talent(db, raw_talent).await
 }

@@ -26,6 +26,7 @@ struct RawMagicTalent {
     activate: String,
     info_table_id: Option<i64>,
     option_block_id: Option<i64>,
+    mod_str: Option<String>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -41,14 +42,15 @@ pub enum MagicTalentCharges {
 pub struct FullMagicTalent {
     id: i64,
     tradition_id: i64,
-    tradition_name: String,
-    name: String,
+    pub tradition_name: String,
+    pub name: String,
     description: String,
     charges: MagicTalentCharges,
     restore: TalentRestore,
     activate: String,
     info_table: Option<FullInfoTable>,
     option_block: Option<FullOptionBlock>,
+    pub mod_str: Option<String>,
 }
 
 pub async fn insert_all(
@@ -72,8 +74,9 @@ pub async fn insert_all(
                 restore,
                 activate,
                 info_table_id,
-                option_block_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                option_block_id,
+                mod_str
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             tradition_id,
             row.talent_name,
             row.description,
@@ -82,6 +85,7 @@ pub async fn insert_all(
             row.activate,
             table_id,
             options_id,
+            row.mod_str,
         )
         .execute(&mut *tx)
         .await
@@ -97,7 +101,7 @@ pub async fn insert_all(
 }
 
 pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullMagicTalent> {
-    let talent = sqlx::query_as!(
+    let raw_talent = sqlx::query_as!(
         RawMagicTalent,
         "SELECT mt.*, t.name as tradition_name
         FROM magic_talents mt
@@ -108,26 +112,31 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullMagicTalent> {
     .fetch_one(db)
     .await?;
 
-    let info_table = info_tables::get_from_opt(db, talent.info_table_id).await?;
-    let option_block = option_blocks::get_from_opt(db, talent.option_block_id).await?;
+    extend_raw_magic_talent(db, raw_talent).await
+}
 
-    let charges = match talent.charges.as_deref() {
+async fn extend_raw_magic_talent(db: &Pool<Sqlite>, raw_talent: RawMagicTalent) -> WWResult<FullMagicTalent> {
+    let info_table = info_tables::get_from_opt(db, raw_talent.info_table_id).await?;
+    let option_block = option_blocks::get_from_opt(db, raw_talent.option_block_id).await?;
+
+    let charges = match raw_talent.charges.as_deref() {
         Some("1") => MagicTalentCharges::One,
         Some("123") => MagicTalentCharges::OneTwoThree,
         _ => MagicTalentCharges::None,
     };
 
     Ok(FullMagicTalent {
-        id,
-        tradition_id: talent.tradition_id,
-        tradition_name: talent.tradition_name,
-        name: talent.name,
-        description: talent.description,
+        id: raw_talent.id,
+        tradition_id: raw_talent.tradition_id,
+        tradition_name: raw_talent.tradition_name,
+        name: raw_talent.name,
+        description: raw_talent.description,
         charges: charges,
-        restore: talent.restore,
-        activate: talent.activate,
+        restore: raw_talent.restore,
+        activate: raw_talent.activate,
         info_table: info_table,
         option_block: option_block,
+        mod_str: raw_talent.mod_str,
     })
 }
 
@@ -149,4 +158,19 @@ pub async fn get_for_tradition(
         .await?;
 
     Ok(talents)
+}
+
+pub async fn get_by_name_and_tradition(db: &Pool<Sqlite>, tradition: &str, name: &str) -> WWResult<FullMagicTalent> {
+    let raw_talent = sqlx::query_as!(
+        RawMagicTalent,
+        "SELECT mt.*, t.name as tradition_name FROM magic_talents mt
+        JOIN traditions t ON t.id = mt.tradition_id
+        WHERE t.name = ? AND mt.name = ?",
+        tradition,
+        name,
+    )
+    .fetch_one(db)
+    .await?;
+
+    extend_raw_magic_talent(db, raw_talent).await
 }

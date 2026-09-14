@@ -1,7 +1,7 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    db::characters::{self, CharacterIndexItem, CreateCharacter},
+    db::characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter},
     store::get_database,
     WWResult,
 };
@@ -21,4 +21,11 @@ pub async fn create_character(
     let db_state = get_database(&app)?;
     let db_state = db_state.lock().await;
     Ok(characters::create_character(&db_state.pool, character_info).await?)
+}
+
+#[command]
+pub async fn get_full_character(app: AppHandle<Wry>, id: i64) -> WWResult<FullCharacter> {
+    let db_state = get_database(&app)?;
+    let db_state = db_state.lock().await;
+    Ok(characters::get(&db_state.pool, id).await?)
 }

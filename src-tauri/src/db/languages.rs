@@ -16,7 +16,7 @@ struct RawLanguage {
     pub secret: Option<String>,
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Serialize, Deserialize, Clone)]
 #[ts(export, export_to = "other_info.ts")]
 pub struct Language {
     pub id: i64,

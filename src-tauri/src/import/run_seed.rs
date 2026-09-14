@@ -30,7 +30,11 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
             &import_data.magic_talents,
             &import_data.magic_spells,
             &import_data.path_talents,
+            // Include choice_selection mods
         )?;
+
+        // TODO: Validate that records referenced in Modifiers exist after
+        // inserting everything else.
 
         let language_map = db::languages::insert_all(&mut tx, &import_data.languages).await?;
         processed_records += summary.languages;

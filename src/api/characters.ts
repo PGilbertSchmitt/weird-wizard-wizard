@@ -1,9 +1,10 @@
-import { CharacterIndexItem, CreateCharacter } from '@/types/character';
+import { CharacterIndexItem, CreateCharacter, FullCharacter } from '@/types/character';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 
 const CHARACTER_KEYS = {
   characterIndex: ['characterIndex'],
+  character: (id: number) => ['character', id],
 };
 
 export const useCharacterIndex = () =>
@@ -24,3 +25,10 @@ export const useCreateCharacter = () => {
     },
   });
 };
+
+export const useCharacter = (id: number) =>
+  useQuery({
+    queryKey: CHARACTER_KEYS.character(id),
+    queryFn: () => invoke<FullCharacter>('get_full_character', { id }),
+    enabled: id >= 0,
+  })

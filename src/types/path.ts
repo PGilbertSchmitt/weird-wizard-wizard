@@ -2,15 +2,12 @@
 import type { PathKind, Size, TalentRestore } from './etc';
 import type { FullInfoTable } from './info_tables';
 import type { FullOptionBlock } from './option_blocks';
-import type { FullSpeedTrait, Immunity, Language } from './other_info';
-
-export type AncestrySense = {
-  id: number;
-  name: string;
-  description: string;
-  unit: string | null;
-  amount: string | null;
-};
+import type {
+  FullSense,
+  FullSpeedTrait,
+  Immunity,
+  Language,
+} from './other_info';
 
 export type FullAncestry = {
   id: number;
@@ -23,7 +20,7 @@ export type FullAncestry = {
   languages: Array<Language>;
   immunities: Array<Immunity>;
   speed_traits: Array<FullSpeedTrait>;
-  senses: Array<AncestrySense>;
+  senses: Array<FullSense>;
   talents: Array<FullPathTalent>;
 };
 

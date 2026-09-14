@@ -199,13 +199,13 @@ pub struct NovicePath {
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "path.ts")]
 pub struct FullPath {
-    id: i64,
-    name: String,
-    path_kind: PathKind,
-    category: String,
-    description: String,
-    levels: Vec<FullLevel>,
-    ancestry_id: Option<i64>,
+    pub id: i64,
+    pub name: String,
+    pub path_kind: PathKind,
+    pub category: String,
+    pub description: String,
+    pub levels: Vec<FullLevel>,
+    pub ancestry_id: Option<i64>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -235,6 +235,13 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullPath> {
         description: path.description,
         levels,
         ancestry_id: path.ancestry_id,
+    })
+}
+
+pub async fn get_from_opt(db: &Pool<Sqlite>, id: Option<i64>) -> WWResult<Option<FullPath>> {
+    Ok(match id {
+        Some(id) => Some(get(db, id).await?),
+        None => None,
     })
 }
 
@@ -289,7 +296,7 @@ pub async fn get_for_kind_and_category(
     .fetch_all(db)
     .await?;
 
-    let paths = futures::stream::iter(ids)
+    let paths: Vec<FullPath> = futures::stream::iter(ids)
         .map(|id| async move { get(db, id).await })
         .buffered(100)
         .try_collect()

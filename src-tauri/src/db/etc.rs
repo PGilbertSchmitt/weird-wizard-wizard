@@ -3,7 +3,7 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(TS, Debug, Serialize, Deserialize, sqlx::Type)]
+#[derive(TS, Debug, Serialize, Deserialize, sqlx::Type, Clone)]
 #[ts(export, export_to = "etc.ts")]
 #[sqlx(type_name = "TEXT")]
 pub enum Size {
@@ -89,6 +89,37 @@ impl From<Option<String>> for TalentRestore {
             }
         } else {
             Self::None
+        }
+    }
+}
+
+#[derive(TS, Debug, Serialize, Deserialize, sqlx::Type)]
+#[ts(export, export_to = "etc.ts")]
+#[sqlx(type_name = "TEXT")]
+pub enum ChoiceDuration {
+    OneMinute,
+    OneHour,
+    FourHours,
+    EightHours,
+    OneDay,
+    Rest,
+    Permanent,
+}
+
+impl From<Option<String>> for ChoiceDuration {
+    fn from(value: Option<String>) -> Self {
+        if let Some(value) = value {
+            match value.to_lowercase().as_str() {
+                "oneminute" => Self::OneMinute,
+                "onehour" => Self::OneHour,
+                "fourhours" => Self::FourHours,
+                "eighthours" => Self::EightHours,
+                "oneday" => Self::OneDay,
+                "rest" => Self::Rest,
+                _ => Self::Permanent,
+            }
+        } else {
+            Self::Permanent
         }
     }
 }

@@ -39,7 +39,7 @@ export const Home = () => {
                 </div>
                 <div className="text-right">
                   {paths.map((path) => (
-                    <p>
+                    <p key={path[0]}>
                       <b>{path[0]}</b>
                       <span>&nbsp;({path[1]})</span>
                     </p>

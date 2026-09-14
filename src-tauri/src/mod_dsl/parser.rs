@@ -95,7 +95,11 @@ fn parse_single_mod(tokens: &mut Tokens, when: WhenMod) -> Result<Option<Modifie
         Token::Grant => Target::Grant(parse_grant_target(tokens)?),
         Token::Lose => Target::Lose(parse_lose_target(tokens)?),
         Token::Override => Target::Override(parse_override_target(tokens)?),
-        Token::Choose => Target::Choose(parse_choose_target(tokens)?),
+        Token::Choose => {
+            let choose_target = parse_choose_target(tokens)?;
+            let choice_strings = choose_target.choice_strings();
+            Target::Choose(choose_target, choice_strings)
+        }
         Token::Apply => Target::Apply(parse_apply_target(tokens)?),
         other => {
             return Err(format!(
@@ -511,13 +515,13 @@ impl TmpExpr {
             } else {
                 Err(format!(
                     "Expected operator while parsing expression, received value '{}'",
-                    value.to_str()
+                    value
                 ))
             }
         } else {
             Err(format!(
                 "Unexpected value while parsing expression, received value '{}'",
-                value.to_str()
+                value
             ))
         }
     }
@@ -529,7 +533,7 @@ impl TmpExpr {
         } else {
             Err(format!(
                 "Expected value while parsing expression, received operator '{}'",
-                op.to_str()
+                op
             ))
         }
     }

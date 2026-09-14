@@ -14,22 +14,6 @@ use crate::{
     WWError, WWResult,
 };
 
-// #[derive(Debug, Serialize, Deserialize)]
-// struct RawSpell {
-//     id: i64,
-//     tradition_id: i64,
-//     name: String,
-//     description: String,
-//     path_kind: etc::PathKind,
-//     castings: i64,
-//     duration: String,
-//     target: String,
-//     condition: Option<String>,
-//     ritual: bool,
-//     info_table_id: Option<i64>,
-//     option_block_id: Option<i64>,
-// }
-
 #[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "magic.ts")]
 pub struct FullSpell {
@@ -64,6 +48,7 @@ struct SpellWithTradName {
     ritual: Option<String>,
     info_table_id: Option<i64>,
     option_block_id: Option<i64>,
+    mod_str: Option<String>,
 }
 
 pub async fn insert_all(
@@ -90,8 +75,9 @@ pub async fn insert_all(
                 condition,
                 ritual,
                 info_table_id,
-                option_block_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                option_block_id,
+                mod_str
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             tradition_id,
             row.name,
             row.description,
@@ -102,7 +88,8 @@ pub async fn insert_all(
             row.condition,
             row.ritual,
             table_id,
-            options_id
+            options_id,
+            row.mod_str
         )
         .execute(&mut *tx)
         .await
