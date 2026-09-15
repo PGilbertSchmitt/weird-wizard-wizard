@@ -1,3 +1,5 @@
+use dashmap::DashSet;
+use futures::{FutureExt, StreamExt, TryStreamExt, stream::FuturesUnordered};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -6,16 +8,7 @@ use ts_rs::TS;
 
 use crate::{
     WWResult, db::{
-        ancestries::{self, FullAncestry},
-        character_choices,
-        etc::{ChoiceDuration, Size},
-        immunities::Immunity,
-        languages::Language,
-        levels::FullLevel,
-        paths::{self, FullPath},
-        professions::{self, Profession},
-        senses::FullSense,
-        speed_traits::FullSpeedTrait,
+        ancestries::{self, FullAncestry}, character_choices::{self, ModifierSelections, collect_from_modifier_tree}, etc::{ChoiceDuration, Size}, immunities::Immunity, languages::Language, levels::FullLevel, paths::{self, FullPath}, professions::{self, Profession}, senses::FullSense, speed_traits::FullSpeedTrait,
     }, mod_dsl::ast::{ChooseTarget, Condition, GrantTarget, Modifier, Target, WhenMod}, modifiers::FullModifier,
 };
 
@@ -81,7 +74,7 @@ pub struct FullCharacter {
     immunities: Vec<Immunity>,
     languages: Vec<Language>,
     size: Size,
-    choices: Vec<FullModifier>,
+    // choices: Vec<FullModifier>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -171,7 +164,7 @@ pub async fn create_character(db: &Pool<Sqlite>, character_info: CreateCharacter
 pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     let (raw_character, all_character_choices) = futures::join!(
         sqlx::query_as!(RawCharacter, "SELECT * FROM characters WHERE id = ?", id).fetch_one(db),
-        character_choices::get_for_character(db, id),
+        character_choices::get_for_character(db.clone(), id),
     );
 
     let raw_character = raw_character?;
@@ -222,12 +215,18 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     let health = clamp(raw_character.health, 0, fields.max_health);
     let damage = clamp(raw_character.damage, 0, health);
 
-    // Choice stuff
-    // let choice_queue: Vec<String> = fields.choices.iter().flat_map(|ch| ch.keys()).collect();
-
-    for choice in &fields.choices {}
-
-    // println!("Choice Keys: {choice_queue:?}");
+    let dash_set = DashSet::new();
+    let mut modifier_futures = FuturesUnordered::new();
+    for choice in &fields.choices {
+        let saved_choices = saved_character_choices.clone();
+        let dash_set = dash_set.clone();
+        let db = db.clone();
+        modifier_futures.push(collect_from_modifier_tree(db, choice, saved_choices, dash_set));
+    }
+    let mut selections = ModifierSelections::new();
+    while let Some(selection) = modifier_futures.next().await {
+        selections.merge(selection?);
+    }
 
     Ok(FullCharacter {
         id,
@@ -257,7 +256,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         immunities: fields.immunities,
         languages: fields.languages,
         size: fields.size,
-        choices: fields.choices,
+        // choices: fields.choices,
     })
 }
 

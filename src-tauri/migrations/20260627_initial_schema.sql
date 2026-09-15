@@ -334,11 +334,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character
 -- MasterSpellFrom => id, foreign key to spells table
 -- Select          => id, foreign key to choice_selections table
 -- SelectAgain     => id, foreign key to choice_selections table
--- Score           => [Ability]:[integer], where Ability is one of Strength, Agility, Intellect, and Will
+-- Score           => [Ability], where Ability is one of Strength, Agility, Intellect, and Will
 -- Slots           => [plus|times]-[integer]:id, where id is a foreign key to spells table
 --   Tradition, all pure spell IDs, and Select/SelectAgain can trigger additional mods.
 --   The rest are terminal and won't affect the character further.
-
-
+-- Additionally, an Override Statblock can also be set in the character_choices table, where the `selection`
+-- column isn't an incrementing number. If, somehow, 2 overrides are active, the higher value dictates the
+-- active record.
 
 -- END: USER-GENERATED RECORD TABLES 

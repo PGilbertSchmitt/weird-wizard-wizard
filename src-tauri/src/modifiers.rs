@@ -2,13 +2,10 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::{
-    db::{magic_talents::FullMagicTalent, path_talents::FullPathTalent},
-    mod_dsl::{ast::Modifier, parser::parse_mods},
-    WWError::Generic,
-    WWResult,
+    WWError::Generic, WWResult, db::{magic_talents::FullMagicTalent, path_talents::FullPathTalent}, mod_dsl::{ast::{Modifier, WhenMod}, parser::parse_mods},
 };
 
-#[derive(TS, Serialize, Deserialize, Clone)]
+#[derive(TS, Debug, Serialize, Deserialize, Clone)]
 #[ts(export, export_to = "modifiers.ts")]
 pub struct FullModifier {
     pub path_str: String,
@@ -16,6 +13,10 @@ pub struct FullModifier {
 }
 
 impl FullModifier {
+    pub fn required(&self) -> bool {
+        self.mod_details.when.is_permanent()
+    }
+
     pub fn keys(&self) -> Vec<String> {
         self.mod_details
             .target

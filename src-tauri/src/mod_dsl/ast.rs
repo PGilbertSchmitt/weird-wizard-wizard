@@ -50,6 +50,15 @@ pub enum WhenMod {
     CastTimeDismiss(WhenDuration),
 }
 
+impl WhenMod {
+    pub fn is_permanent(&self) -> bool {
+        match self {
+            Self::Permanent => true,
+            _ => false,
+        }
+    }
+}
+
 // Grant - Everything except StatBlock, Heal, and Slots
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "modifiers.ts")]

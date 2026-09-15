@@ -65,7 +65,7 @@ pub async fn insert_all(
     Ok(table_map)
 }
 
-#[derive(TS, Debug, Serialize, Deserialize, sqlx::Type)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize, sqlx::Type)]
 #[ts(export, export_to = "info_tables.ts")]
 #[sqlx(type_name = "TEXT")]
 pub enum TableKind {
@@ -85,14 +85,14 @@ impl From<String> for TableKind {
     }
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "info_tables.ts")]
 pub struct Entry {
     key: String,
     value: String,
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "info_tables.ts")]
 pub struct FullInfoTable {
     pub id: i64,

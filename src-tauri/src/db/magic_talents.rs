@@ -29,7 +29,7 @@ struct RawMagicTalent {
     mod_str: Option<String>,
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "magic.ts")]
 pub enum MagicTalentCharges {
     None,
@@ -37,7 +37,7 @@ pub enum MagicTalentCharges {
     OneTwoThree,
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "magic.ts")]
 pub struct FullMagicTalent {
     id: i64,

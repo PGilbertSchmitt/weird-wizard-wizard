@@ -7,7 +7,7 @@ use crate::{
     WWError, WWResult,
 };
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "option_blocks.ts")]
 pub struct FullOptionBlock {
     pub id: i64,

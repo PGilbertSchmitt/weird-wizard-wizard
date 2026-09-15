@@ -30,7 +30,7 @@ struct RawPathTalent {
     cluster: Option<String>,
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Clone, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "path.ts")]
 pub struct FullPathTalent {
     id: i64,
