@@ -57,5 +57,15 @@ export type FullCharacter = {
   immunities: Array<Immunity>;
   languages: Array<Language>;
   size: Size;
-  choices: Array<FullModifier>;
+  gained_traditions: Array<string>;
+  gained_speed_traits: Array<string>;
+  gained_languages: Array<string>;
+  gained_senses: Array<string>;
+  gained_immunities: Array<string>;
+  modified_slots: Array<SlotMod>;
+  required_choices: Array<FullModifier>;
 };
+
+export type SlotMod =
+  | { Plus: { amount: number; spell_id: number } }
+  | { Times: { amount: number; spell_id: number } };

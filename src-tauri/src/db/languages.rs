@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Sqlite, SqliteConnection};
+use sqlx::{sqlite::SqliteRow, FromRow, Pool, Row, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
@@ -14,6 +14,17 @@ struct RawLanguage {
     pub name: String,
     pub description: String,
     pub secret: Option<String>,
+}
+
+impl<'r> FromRow<'r, SqliteRow> for RawLanguage {
+    fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
+        Ok(Self {
+            id: row.try_get("id")?,
+            name: row.try_get("name")?,
+            description: row.try_get("description")?,
+            secret: row.try_get("secret")?,
+        })
+    }
 }
 
 #[derive(TS, Debug, Serialize, Deserialize, Clone)]
@@ -52,6 +63,17 @@ pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<LanguageRow>) -> W
     Ok(name_to_id)
 }
 
+fn convert_languages(raw: Vec<RawLanguage>) -> Vec<Language> {
+    raw.into_iter()
+        .map(|l| Language {
+            id: l.id,
+            name: l.name,
+            description: l.description,
+            secret: db_boolean(l.secret),
+        })
+        .collect()
+}
+
 pub async fn get_for_ancestry(db: &Pool<Sqlite>, ancestry_id: i64) -> WWResult<Vec<Language>> {
     let languages = sqlx::query_as!(
         RawLanguage,
@@ -63,13 +85,19 @@ pub async fn get_for_ancestry(db: &Pool<Sqlite>, ancestry_id: i64) -> WWResult<V
     .fetch_all(db)
     .await?;
 
-    Ok(languages
-        .into_iter()
-        .map(|l| Language {
-            id: l.id,
-            name: l.name,
-            description: l.description,
-            secret: db_boolean(l.secret),
-        })
-        .collect())
+    Ok(convert_languages(languages))
+}
+
+pub async fn get_for_ids(db: &Pool<Sqlite>, mut ids: Vec<i64>) -> WWResult<Vec<Language>> {
+    ids.sort();
+    ids.dedup();
+    let q_mark_string = ids.iter().map(|_| "?").collect::<Vec<&str>>().join(",");
+    let query = format!("SELECT * FROM languages WHERE id in ({q_mark_string})");
+    let mut language_query = sqlx::query_as::<_, RawLanguage>(&query);
+    for id in ids {
+        language_query = language_query.bind(id);
+    }
+    let languages = language_query.fetch_all(db).await;
+
+    Ok(convert_languages(languages?))
 }

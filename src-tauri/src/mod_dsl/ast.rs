@@ -1,4 +1,7 @@
-use std::fmt::{Debug, Display, Formatter, Result as FmtResult, Write};
+use std::{
+    fmt::{Debug, Display, Formatter, Result as FmtResult, Write},
+    mem,
+};
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -26,6 +29,15 @@ impl Target {
         match self {
             Self::Choose(_, s) => s.clone(),
             _ => Vec::new(),
+        }
+    }
+
+    pub fn replace_choice_strings(&mut self, new_strings: Vec<String>) {
+        match self {
+            Self::Choose(_, old_strings) => {
+                *old_strings = new_strings;
+            }
+            _ => {}
         }
     }
 }
@@ -144,7 +156,9 @@ impl ChooseTarget {
             }
             Self::Score(count) => repeat_id("SCORE", *count),
             Self::Slots(target) => vec![format!("SLOTS='{target}'")],
-            Self::MagicTalent(count, tradition) => repeat_id(&format!("{tradition}.TALENT"), *count),
+            Self::MagicTalent(count, tradition) => {
+                repeat_id(&format!("{tradition}.TALENT"), *count)
+            }
         }
     }
 }

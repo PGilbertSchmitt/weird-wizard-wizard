@@ -1,15 +1,27 @@
 use dashmap::DashSet;
-use futures::{FutureExt, StreamExt, TryStreamExt, stream::FuturesUnordered};
-use std::sync::Arc;
+use futures::{stream::FuturesUnordered, StreamExt};
+use std::{sync::Arc, time::SystemTime};
 
 use serde::{Deserialize, Serialize};
 use sqlx::{types::chrono::NaiveDateTime, Pool, Sqlite};
 use ts_rs::TS;
 
 use crate::{
-    WWResult, db::{
-        ancestries::{self, FullAncestry}, character_choices::{self, ModifierSelections, collect_from_modifier_tree}, etc::{ChoiceDuration, Size}, immunities::Immunity, languages::Language, levels::FullLevel, paths::{self, FullPath}, professions::{self, Profession}, senses::FullSense, speed_traits::FullSpeedTrait,
-    }, mod_dsl::ast::{ChooseTarget, Condition, GrantTarget, Modifier, Target, WhenMod}, modifiers::FullModifier,
+    db::{
+        ancestries::{self, FullAncestry},
+        character_choices::{self, collect_from_modifier_tree, ModifierSelections, SlotMod},
+        etc::Size,
+        immunities::Immunity,
+        languages::{self, Language},
+        levels::FullLevel,
+        paths::{self, FullPath},
+        professions::{self, Profession},
+        senses::FullSense,
+        speed_traits::FullSpeedTrait,
+    },
+    mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod},
+    modifiers::FullModifier,
+    WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -74,7 +86,16 @@ pub struct FullCharacter {
     immunities: Vec<Immunity>,
     languages: Vec<Language>,
     size: Size,
-    // choices: Vec<FullModifier>,
+
+    // Extra fields derived only from choices
+    gained_traditions: Vec<String>,
+    gained_speed_traits: Vec<String>,
+    gained_languages: Vec<String>,
+    gained_senses: Vec<String>,
+    gained_immunities: Vec<String>,
+    modified_slots: Vec<SlotMod>,
+
+    required_choices: Vec<FullModifier>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -162,6 +183,7 @@ pub async fn create_character(db: &Pool<Sqlite>, character_info: CreateCharacter
 }
 
 pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
+    let start = SystemTime::now();
     let (raw_character, all_character_choices) = futures::join!(
         sqlx::query_as!(RawCharacter, "SELECT * FROM characters WHERE id = ?", id).fetch_one(db),
         character_choices::get_for_character(db.clone(), id),
@@ -221,12 +243,31 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         let saved_choices = saved_character_choices.clone();
         let dash_set = dash_set.clone();
         let db = db.clone();
-        modifier_futures.push(collect_from_modifier_tree(db, choice, saved_choices, dash_set));
+        modifier_futures.push(collect_from_modifier_tree(
+            db,
+            choice,
+            saved_choices,
+            dash_set,
+        ));
     }
     let mut selections = ModifierSelections::new();
     while let Some(selection) = modifier_futures.next().await {
         selections.merge(selection?);
     }
+
+    // Prune and flatten selections
+    let all_losses = selections.collect_losses();
+    let selections = selections.collect(&all_losses);
+
+    // Final collection of selected fields:
+    let (gained_languages, _) = futures::join!(
+        languages::get_for_ids(db, selections.gained_language_ids.clone()),
+        languages::get_for_ids(db, selections.gained_language_ids),
+    );
+
+    fields.languages.append(&mut gained_languages?);
+
+    println!("Took {}ms", start.elapsed().unwrap().as_millis());
 
     Ok(FullCharacter {
         id,
@@ -234,10 +275,10 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         level: raw_character.level,
         health: health,
         damage: damage,
-        strength: raw_character.strength,
-        agility: raw_character.agility,
-        intellect: raw_character.intellect,
-        will: raw_character.will,
+        strength: raw_character.strength + selections.strength,
+        agility: raw_character.agility + selections.agility,
+        intellect: raw_character.intellect + selections.intellect,
+        will: raw_character.will + selections.will,
         profession,
         ancestry,
         novice_path: novice_path,
@@ -246,17 +287,26 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         created_at: raw_character.created_at.to_string(),
 
         // Fields derived from ancestries, paths, and choices
-        max_health: fields.max_health,
-        nat_def: fields.nat_def,
-        arm_def: fields.arm_def,
-        speed: fields.speed,
-        bonus_dmg: fields.bonus_dmg,
+        max_health: fields.max_health + selections.health,
+        nat_def: fields.nat_def + selections.nat_def,
+        arm_def: fields.arm_def + selections.defense, // Is this right?
+        speed: fields.speed + selections.speed,
+        bonus_dmg: fields.bonus_dmg + selections.bonus_damage,
         speed_traits: fields.speed_traits,
         senses: fields.senses,
         immunities: fields.immunities,
         languages: fields.languages,
         size: fields.size,
-        // choices: fields.choices,
+
+        // Fields derived from grants/choices
+        gained_traditions: selections.gained_traditions,
+        gained_speed_traits: selections.gained_speed_traits,
+        gained_languages: selections.gained_languages,
+        gained_senses: selections.gained_senses,
+        gained_immunities: selections.gained_immunities,
+        modified_slots: selections.modified_slots,
+
+        required_choices: selections.required_choices,
     })
 }
 
@@ -278,8 +328,7 @@ impl CumulativeFields {
     fn from_ancestry(ancestry: &FullAncestry) -> WWResult<Self> {
         let mut choices = Vec::new();
         for talent in &ancestry.talents {
-            let mut these_mods = FullModifier::from_path_talent(talent)?;
-            choices.append(&mut these_mods);
+            choices.append(&mut talent.modifiers.clone());
         }
 
         Ok(Self {
@@ -310,32 +359,46 @@ impl CumulativeFields {
 
         if level.lang_choices > 0 {
             let target = ChooseTarget::Language(level.lang_choices as u32);
-            self.choices.push(level_choice(format!("Language;{};lvl{};", path_name, level.level), target));
+            self.choices.push(level_choice(
+                format!("Language;{};lvl{};", path_name, level.level),
+                target,
+            ));
         }
 
         if level.trad_choices > 0 {
             let target = ChooseTarget::Tradition(level.trad_choices as u32);
-            self.choices.push(level_choice(format!("Tradition;{};lvl{};", path_name, level.level), target));
+            self.choices.push(level_choice(
+                format!("Tradition;{};lvl{};", path_name, level.level),
+                target,
+            ));
         }
 
         if level.novice_spells > 0 {
-            let target = ChooseTarget::NoviceSpell(level.trad_choices as u32);
-            self.choices.push(level_choice(format!("NoviceSpell;{};lvl{};", path_name, level.level), target));
+            let target = ChooseTarget::NoviceSpell(level.novice_spells as u32);
+            self.choices.push(level_choice(
+                format!("NoviceSpell;{};lvl{};", path_name, level.level),
+                target,
+            ));
         }
 
         if level.expert_spells > 0 {
-            let target = ChooseTarget::ExpertSpell(level.trad_choices as u32);
-            self.choices.push(level_choice(format!("ExpertSpell;{};lvl{};", path_name, level.level), target));
+            let target = ChooseTarget::ExpertSpell(level.expert_spells as u32);
+            self.choices.push(level_choice(
+                format!("ExpertSpell;{};lvl{};", path_name, level.level),
+                target,
+            ));
         }
 
         if level.master_spells > 0 {
-            let target = ChooseTarget::MasterSpell(level.trad_choices as u32);
-            self.choices.push(level_choice(format!("MasterSpell;{};lvl{};", path_name, level.level), target));
+            let target = ChooseTarget::MasterSpell(level.master_spells as u32);
+            self.choices.push(level_choice(
+                format!("MasterSpell;{};lvl{};", path_name, level.level),
+                target,
+            ));
         }
 
         for talent in &level.path_talents {
-            let mut these_mods = FullModifier::from_path_talent(talent)?;
-            self.choices.append(&mut these_mods);
+            self.choices.append(&mut talent.modifiers.clone());
         }
         Ok(())
     }
@@ -357,11 +420,8 @@ fn level_choice(path_str: String, choose_target: ChooseTarget) -> FullModifier {
         path_str,
         mod_details: Modifier {
             when: WhenMod::Permanent,
-            target: Target::Choose(
-                choose_target,
-                target_strs,
-            ),
+            target: Target::Choose(choose_target, target_strs),
             condition: Condition::None,
-        }
+        },
     }
 }

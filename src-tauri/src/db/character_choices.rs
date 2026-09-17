@@ -1,19 +1,29 @@
 use futures::{StreamExt, TryStreamExt};
-use std::{collections::HashMap, sync::Arc};
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::{HashMap, HashSet},
+    mem,
+    sync::Arc,
+};
+use ts_rs::TS;
 
 use dashmap::DashSet;
 use sqlx::{Pool, Sqlite};
 
 use crate::{
     db::{
+        choice_selections,
         etc::ChoiceDuration,
         magic_talents::{self, FullMagicTalent},
         path_talents::{self, FullPathTalent},
     },
     mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target},
-    modifiers::FullModifier,
-    WWError, WWResult,
+    modifiers::{FullModifier, HasModifiers},
+    WWError::Generic,
+    WWResult,
 };
+
+const DISCLAIMER: &'static str = "If you're getting this error, this is a bug with the system. You did nothing wrong (probably).";
 
 #[derive(Debug)]
 struct RawCharacterChoice {
@@ -64,41 +74,45 @@ pub async fn get_for_character(
 // All data provided by Modifiers, and unselected Choices
 #[derive(Debug)]
 pub struct ModifierSelections {
-    strength: i32,
-    aglility: i32,
-    intellect: i32,
-    will: i32,
-    speed: i32,
-    health: i32,
-    defense: i32,
-    nat_def: i32,
-    bonus_damage: i32,
-    gained_languages: Vec<String>,
-    gained_language_ids: Vec<i32>,
-    gained_traditions: Vec<String>,
-    gained_senses: Vec<String>,
-    gained_immunities: Vec<String>,
-    gained_speed_traits: Vec<String>,
-    statblock_overrides: Vec<(i32, String)>,
+    pub strength: i64,
+    pub agility: i64,
+    pub intellect: i64,
+    pub will: i64,
+    pub speed: i64,
+    pub health: i64,
+    pub defense: i64,
+    pub nat_def: i64,
+    pub bonus_damage: i64,
+    pub gained_languages: Vec<String>,
+    pub gained_traditions: Vec<String>,
+    pub gained_senses: Vec<String>,
+    pub gained_immunities: Vec<String>,
+    pub gained_speed_traits: Vec<String>,
+    pub statblock_overrides: Vec<(i64, String)>,
+    pub gained_language_ids: Vec<i64>,
+    pub gained_profession_ids: Vec<i64>,
+    pub gained_spell_ids: Vec<i64>,
+    pub gained_tradition_ids: Vec<i64>,
+    pub modified_slots: Vec<SlotMod>,
 
     // These lists are for the source/name and tradition/name respectively, and are checked during the
     // flattening of the tree to prune gained_talents and gained_magic_talents respectively.
-    lost_talents: Vec<(String, String)>,
-    lost_magic_talents: Vec<(String, String)>,
+    pub lost_talents: Vec<(String, String)>,
+    pub lost_magic_talents: Vec<(String, String)>,
 
     // This is how the ModifierSelections recurses into a tree structure. It will later be collapsed into
     // a flat structure, during which time the accumulated "lost" talents can prune the tree.
-    gained_talents: Vec<(FullPathTalent, ModifierSelections)>,
-    gained_magic_talents: Vec<(FullMagicTalent, ModifierSelections)>,
+    pub gained_talents: Vec<(FullPathTalent, Vec<ModifierSelections>)>,
+    pub gained_magic_talents: Vec<(FullMagicTalent, Vec<ModifierSelections>)>,
 
-    required_choices: Vec<FullModifier>,
+    pub required_choices: Vec<FullModifier>,
 }
 
 impl ModifierSelections {
     pub fn new() -> Self {
         Self {
             strength: 0,
-            aglility: 0,
+            agility: 0,
             intellect: 0,
             will: 0,
             speed: 0,
@@ -107,13 +121,17 @@ impl ModifierSelections {
             nat_def: 0,
             bonus_damage: 0,
             gained_languages: Vec::new(),
-            gained_language_ids: Vec::new(),
             gained_traditions: Vec::new(),
             gained_senses: Vec::new(),
             gained_immunities: Vec::new(),
             gained_speed_traits: Vec::new(),
             gained_talents: Vec::new(),
             gained_magic_talents: Vec::new(),
+            gained_language_ids: Vec::new(),
+            gained_profession_ids: Vec::new(),
+            gained_spell_ids: Vec::new(),
+            gained_tradition_ids: Vec::new(),
+            modified_slots: Vec::new(),
             statblock_overrides: Vec::new(),
             lost_talents: Vec::new(),
             lost_magic_talents: Vec::new(),
@@ -123,7 +141,7 @@ impl ModifierSelections {
 
     pub fn merge(&mut self, mut other: Self) {
         self.strength += other.strength;
-        self.aglility += other.aglility;
+        self.agility += other.agility;
         self.intellect += other.intellect;
         self.will += other.will;
         self.speed += other.speed;
@@ -131,15 +149,22 @@ impl ModifierSelections {
         self.defense += other.defense;
         self.nat_def += other.nat_def;
         self.bonus_damage += other.bonus_damage;
+
         self.gained_languages.append(&mut other.gained_languages);
-        self.gained_language_ids
-            .append(&mut other.gained_language_ids);
         self.gained_traditions.append(&mut other.gained_traditions);
         self.gained_senses.append(&mut other.gained_senses);
         self.gained_immunities.append(&mut other.gained_immunities);
         self.gained_speed_traits
             .append(&mut other.gained_speed_traits);
         self.gained_talents.append(&mut other.gained_talents);
+        self.gained_language_ids
+            .append(&mut other.gained_language_ids);
+        self.gained_profession_ids
+            .append(&mut other.gained_profession_ids);
+        self.gained_spell_ids.append(&mut other.gained_spell_ids);
+        self.gained_tradition_ids
+            .append(&mut other.gained_tradition_ids);
+        self.modified_slots.append(&mut other.modified_slots);
         self.gained_magic_talents
             .append(&mut other.gained_magic_talents);
         self.statblock_overrides
@@ -149,10 +174,96 @@ impl ModifierSelections {
             .append(&mut other.lost_magic_talents);
         self.required_choices.append(&mut other.required_choices);
     }
+
+    pub fn collect_losses(&self) -> Losses {
+        let mut losses = Losses::new();
+
+        for talent in &self.lost_talents {
+            losses.path_talents.insert(talent.clone());
+        }
+        for (_, sub_trees) in &self.gained_talents {
+            for sub_tree in sub_trees {
+                losses.merge(sub_tree.collect_losses());
+            }
+        }
+
+        for talent in &self.lost_magic_talents {
+            losses.magic_talents.insert(talent.clone());
+        }
+        for (_, sub_trees) in &self.gained_magic_talents {
+            for sub_tree in sub_trees {
+                losses.merge(sub_tree.collect_losses());
+            }
+        }
+
+        losses
+    }
+
+    pub fn collect(mut self, losses: &Losses) -> Self {
+        let path_talents: Vec<(FullPathTalent, Vec<ModifierSelections>)> =
+            mem::replace(&mut self.gained_talents, Vec::new())
+                .into_iter()
+                .filter(|(talent, _)| {
+                    !losses
+                        .path_talents
+                        .contains(&(talent.source.to_owned(), talent.name.to_owned()))
+                })
+                .map(|(talent, sub_trees)| {
+                    sub_trees
+                        .into_iter()
+                        .for_each(|sub_tree| self.merge(sub_tree.collect(&losses)));
+                    (talent, Vec::new())
+                })
+                .collect();
+        let magic_talents: Vec<(FullMagicTalent, Vec<ModifierSelections>)> =
+            mem::replace(&mut self.gained_magic_talents, Vec::new())
+                .into_iter()
+                .filter(|(talent, _)| {
+                    !losses
+                        .magic_talents
+                        .contains(&(talent.tradition_name.to_owned(), talent.name.to_owned()))
+                })
+                .map(|(talent, sub_trees)| {
+                    sub_trees
+                        .into_iter()
+                        .for_each(|sub_tree| self.merge(sub_tree.collect(&losses)));
+                    (talent, Vec::new())
+                })
+                .collect();
+
+        self.gained_talents = path_talents;
+        self.gained_magic_talents = magic_talents;
+        self
+    }
 }
 
-// This function is totally nuts, and proof that I wouldn't dare let a
-// clanker touch my precious, handcrafted, brain-to-table codeslop.
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
+pub enum SlotMod {
+    Plus { amount: i64, spell_id: i64 },
+    Times { amount: i64, spell_id: i64 },
+}
+
+pub struct Losses {
+    path_talents: HashSet<(String, String)>,
+    magic_talents: HashSet<(String, String)>,
+}
+
+impl Losses {
+    pub fn new() -> Self {
+        Self {
+            path_talents: HashSet::new(),
+            magic_talents: HashSet::new(),
+        }
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        self.path_talents.extend(other.path_talents.into_iter());
+        self.magic_talents.extend(other.magic_talents.into_iter());
+    }
+}
+
+// This function is totally nuts.
 pub async fn collect_from_modifier_tree(
     db: Pool<Sqlite>,
     modifier: &FullModifier,
@@ -168,6 +279,8 @@ pub async fn collect_from_modifier_tree(
 
     let mut new_path_talents: Vec<(String, String)> = Vec::new();
     let mut new_magic_talents: Vec<(String, String)> = Vec::new();
+    let mut new_magic_talent_ids: Vec<i64> = Vec::new();
+    let mut new_choice_selections: Vec<i64> = Vec::new();
 
     match modifier.mod_details.target.clone() {
         Target::Grant(grant_target) => handle_grant_target(
@@ -193,7 +306,7 @@ pub async fn collect_from_modifier_tree(
                 saved_choices
                     .get(&format!("Override;{block_name}"))
                     .map(|asdf| {
-                        let idx = asdf.selection.parse::<i32>().unwrap_or(-1);
+                        let idx = asdf.selection.parse::<i64>().unwrap_or(-1);
                         selections.statblock_overrides.push((idx, block_name))
                     });
             }
@@ -206,7 +319,7 @@ pub async fn collect_from_modifier_tree(
                     &modifier,
                     saved_choices.clone(),
                     &mut selections,
-                    parse_id_choice,
+                    parse_score_choice,
                 )?;
             }
             ChooseTarget::Language(_) => {
@@ -214,84 +327,120 @@ pub async fn collect_from_modifier_tree(
                     &modifier,
                     saved_choices.clone(),
                     &mut selections,
-                    parse_score_choice,
-                )?;
+                    parse_id_choice,
+                )?
+                .map(|id| selections.gained_language_ids.push(id));
+            }
+            ChooseTarget::NoviceSpell(_)
+            | ChooseTarget::NoviceSpellFrom(_, _)
+            | ChooseTarget::ExpertSpell(_)
+            | ChooseTarget::ExpertSpellFrom(_, _)
+            | ChooseTarget::MasterSpell(_)
+            | ChooseTarget::MasterSpellFrom(_, _) => {
+                handle_choice(
+                    &modifier,
+                    saved_choices.clone(),
+                    &mut selections,
+                    parse_id_choice,
+                )?
+                .map(|id| selections.gained_spell_ids.push(id));
+            }
+            ChooseTarget::Profession(_) => {
+                handle_choice(
+                    &modifier,
+                    saved_choices.clone(),
+                    &mut selections,
+                    parse_id_choice,
+                )?
+                .map(|id| selections.gained_profession_ids.push(id));
+            }
+            ChooseTarget::Select(_, _) | ChooseTarget::SelectAgain(_, _) => {
+                handle_choice(
+                    &modifier,
+                    saved_choices.clone(),
+                    &mut selections,
+                    parse_id_choice,
+                )?
+                .map(|id| {
+                    new_choice_selections.push(id);
+                });
             }
 
-            _ => {}
+            ChooseTarget::Tradition(_) => {
+                handle_choice(
+                    &modifier,
+                    saved_choices.clone(),
+                    &mut selections,
+                    parse_twin_id_choice,
+                )?
+                .map(|(trad_id, talent_id)| {
+                    selections.gained_tradition_ids.push(trad_id);
+                    new_magic_talent_ids.push(talent_id);
+                });
+            }
+            ChooseTarget::MagicTalent(_, _) => {
+                handle_choice(
+                    &modifier,
+                    saved_choices.clone(),
+                    &mut selections,
+                    parse_id_choice,
+                )?
+                .map(|talent_id| {
+                    new_magic_talent_ids.push(talent_id);
+                });
+            }
+
+            ChooseTarget::Slots(_) => {
+                handle_choice(
+                    &modifier,
+                    saved_choices.clone(),
+                    &mut selections,
+                    parse_slots_choice,
+                )?
+                .map(|slot| {
+                    selections.modified_slots.push(slot);
+                });
+            }
         },
 
         // The Apply and remaining Override mods affect nothing and are only used on the frontend
         _ => {}
     }
 
-    // Check any gained talents for additional modifiers
-    let (path_talents, magic_talents) = futures::join!(
-        get_selection_path_talents(db.clone(), &new_path_talents),
-        get_selection_magic_talents(db.clone(), &new_magic_talents),
+    // Check any gained talents/choice selections for additional modifiers
+    let (path_talents, magic_talents, more_magic_talents, choices) = futures::join!(
+        path_talents::get_by_selections(db.clone(), new_path_talents),
+        magic_talents::get_by_selections(db.clone(), new_magic_talents),
+        magic_talents::get_by_ids(db.clone(), new_magic_talent_ids),
+        choice_selections::get_for_choice_ids(&db, new_choice_selections),
     );
 
     let path_talents = path_talents?;
-    let magic_talents = magic_talents?;
+    let mut magic_talents = magic_talents?;
+    magic_talents.append(&mut more_magic_talents?);
+    let choices = choices?;
 
-    let path_talent_nodes: WWResult<Vec<_>> =
-        path_talents
-            .into_iter()
-            .try_fold(Vec::new(), |mut pairs, talent| {
-                pairs.extend(
-                    FullModifier::from_path_talent(&talent)?
-                        .into_iter()
-                        .map(|new_mod| (talent.clone(), new_mod)),
-                );
-                Ok(pairs)
-            });
-
-    let magic_talent_nodes: WWResult<Vec<_>> =
-        magic_talents
-            .into_iter()
-            .try_fold(Vec::new(), |mut pairs, talent| {
-                pairs.extend(
-                    FullModifier::from_magic_talent(&talent)?
-                        .into_iter()
-                        .map(|new_mod| (talent.clone(), new_mod)),
-                );
-                Ok(pairs)
-            });
-
-    let path_talent_futures = futures::stream::iter(path_talent_nodes?)
-        .map(|(talent, modifier)| {
+    let path_talents_with_sub_trees = futures::stream::iter(path_talents)
+        .map(|talent| {
+            let db = db.clone();
             let saved_choices = saved_choices.clone();
             let processed_keys = processed_keys.clone();
-            let db = db.clone();
-            async move {
-                match collect_from_modifier_tree(db, &modifier, saved_choices, processed_keys).await
-                {
-                    Ok(sub_tree) => Ok((talent, sub_tree)),
-                    Err(err) => Err(err),
-                }
-            }
+            async move { process_with_modifiers(talent, db, saved_choices, processed_keys).await }
         })
-        .buffered(10)
-        .try_collect::<Vec<_>>();
+        .buffered(100)
+        .try_collect();
 
-    let magic_talent_futures = futures::stream::iter(magic_talent_nodes?)
-        .map(|(talent, modifier)| {
+    let magic_talents_with_sub_trees = futures::stream::iter(magic_talents)
+        .map(|talent| {
+            let db = db.clone();
             let saved_choices = saved_choices.clone();
             let processed_keys = processed_keys.clone();
-            let db = db.clone();
-            async move {
-                match collect_from_modifier_tree(db, &modifier, saved_choices, processed_keys).await
-                {
-                    Ok(sub_tree) => Ok((talent, sub_tree)),
-                    Err(err) => Err(err),
-                }
-            }
+            async move { process_with_modifiers(talent, db, saved_choices, processed_keys).await }
         })
-        .buffered(10)
-        .try_collect::<Vec<_>>();
+        .buffered(100)
+        .try_collect();
 
-    // Recurse on all newly acquired mods
-    let next_selection_futures = futures::stream::iter(new_choice_mods)
+    let granted_choice_futures = futures::stream::iter(new_choice_mods)
         .map(|modifier| {
             let saved_choices_clone = saved_choices.clone();
             let processed_keys_clone = processed_keys.clone();
@@ -304,14 +453,32 @@ pub async fn collect_from_modifier_tree(
         .buffered(20)
         .try_collect::<Vec<_>>();
 
-    let (path_talents, magic_talents, next_selections) = futures::join!(
-        path_talent_futures,
-        magic_talent_futures,
-        next_selection_futures,
+    let choice_selection_sub_trees = futures::stream::iter(choices)
+        .map(|choice| {
+            let db = db.clone();
+            let saved_choices = saved_choices.clone();
+            let processed_keys = processed_keys.clone();
+            async move { process_just_modifiers(choice, db, saved_choices, processed_keys).await }
+        })
+        .buffered(100)
+        .try_collect::<Vec<_>>();
+
+    let (path_talents, magic_talents, granted_choices, chosen_selections) = futures::join!(
+        path_talents_with_sub_trees,
+        magic_talents_with_sub_trees,
+        granted_choice_futures,
+        choice_selection_sub_trees,
     );
 
-    for s in next_selections? {
+    // No sub-trees needed here
+    for s in granted_choices? {
         selections.merge(s);
+    }
+
+    for selection in chosen_selections? {
+        for s in selection {
+            selections.merge(s);
+        }
     }
 
     // After checking talent mods, they go into the selection collection.
@@ -319,38 +486,6 @@ pub async fn collect_from_modifier_tree(
     selections.gained_magic_talents.append(&mut magic_talents?);
 
     Ok(selections)
-}
-
-async fn get_selection_path_talents(
-    db: Pool<Sqlite>,
-    selections: &Vec<(String, String)>,
-) -> WWResult<Vec<FullPathTalent>> {
-    let talents: Vec<FullPathTalent> = futures::stream::iter(selections.iter())
-        .map(|(source, talent_name)| {
-            let db = db.clone();
-            async move { path_talents::get_by_name_and_source(&db, talent_name, source).await }
-        })
-        .buffered(100)
-        .try_collect()
-        .await?;
-    Ok(talents)
-}
-
-async fn get_selection_magic_talents(
-    db: Pool<Sqlite>,
-    selections: &Vec<(String, String)>,
-) -> WWResult<Vec<FullMagicTalent>> {
-    let talents: Vec<FullMagicTalent> = futures::stream::iter(selections.iter())
-        .map(|(tradition_name, talent_name)| {
-            let db = db.clone();
-            async move {
-                magic_talents::get_by_name_and_tradition(&db, tradition_name, talent_name).await
-            }
-        })
-        .buffered(100)
-        .try_collect()
-        .await?;
-    Ok(talents)
 }
 
 fn handle_grant_target(
@@ -363,31 +498,31 @@ fn handle_grant_target(
 ) {
     match grant_target {
         GrantTarget::Str(x) => {
-            selections.strength += x;
+            selections.strength += x as i64;
         }
         GrantTarget::Agl(x) => {
-            selections.aglility += x;
+            selections.agility += x as i64;
         }
         GrantTarget::Int(x) => {
-            selections.intellect += x;
+            selections.intellect += x as i64;
         }
         GrantTarget::Will(x) => {
-            selections.will += x;
+            selections.will += x as i64;
         }
         GrantTarget::Speed(x) => {
-            selections.speed += x;
+            selections.speed += x as i64;
         }
         GrantTarget::Health(x) => {
-            selections.health += x;
+            selections.health += x as i64;
         }
         GrantTarget::Defense(x) => {
-            selections.defense += x;
+            selections.defense += x as i64;
         }
         GrantTarget::NatDef(x) => {
-            selections.nat_def += x;
+            selections.nat_def += x as i64;
         }
         GrantTarget::BonusDamage(x) => {
-            selections.bonus_damage += x;
+            selections.bonus_damage += x as i64;
         }
         GrantTarget::Language(mut items) => {
             selections.gained_languages.append(&mut items);
@@ -426,39 +561,45 @@ fn handle_grant_target(
     }
 }
 
-fn handle_choice<F>(
+fn handle_choice<F, T>(
     modifier: &FullModifier,
     saved_choices: Arc<HashMap<String, CharacterChoice>>,
     mut selections: &mut ModifierSelections,
     mut on_selection: F,
-) -> WWResult<()>
+) -> WWResult<Option<T>>
 where
-    F: FnMut(&str, &mut ModifierSelections) -> WWResult<()>,
+    F: FnMut(&str, &mut ModifierSelections) -> WWResult<T>,
 {
-    for key in modifier.keys() {
-        match saved_choices.get(&key) {
+    let mut required_choice_strings = Vec::new();
+    for (choice_key, full_key) in modifier.keys() {
+        match saved_choices.get(&full_key) {
             Some(ch) => {
-                on_selection(&ch.selection, &mut selections)?;
+                return Ok(Some(on_selection(&ch.selection, &mut selections)?));
             }
             None => {
                 if modifier.required() {
-                    selections.required_choices.push(modifier.clone())
+                    required_choice_strings.push(choice_key);
                 }
             }
         }
     }
+    if required_choice_strings.len() > 0 {
+        let mut new_modifier = modifier.clone();
+        new_modifier.set_choice_strings(required_choice_strings);
+        selections.required_choices.push(new_modifier);
+    }
 
-    Ok(())
+    Ok(None)
 }
 
 fn parse_score_choice(entry: &str, selections: &mut ModifierSelections) -> WWResult<()> {
     match entry {
         "Strength" => selections.strength += 1,
-        "Agility" => selections.aglility += 1,
+        "Agility" => selections.agility += 1,
         "Intellect" => selections.intellect += 1,
         "Will" => selections.will += 1,
         _ => {
-            return Err(WWError::Generic(format!(
+            return Err(Generic(format!(
                 "Failed to parse Score choice selection '{entry}'"
             )))
         }
@@ -467,17 +608,111 @@ fn parse_score_choice(entry: &str, selections: &mut ModifierSelections) -> WWRes
     Ok(())
 }
 
-fn parse_id_choice(entry: &str, selections: &mut ModifierSelections) -> WWResult<()> {
-    let id = entry.parse().map_err(|_| WWError::Generic(String::new()))?;
-    selections.gained_language_ids.push(id);
-    Ok(())
+fn parse_id_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<i64> {
+    Ok(entry
+        .parse()
+        .map_err(|_| Generic(format!("Failed to parse ID value '{entry}'. {DISCLAIMER}")))?)
 }
 
-fn parse_int(value: Option<&str>) -> WWResult<i32> {
-    match value {
-        Some(inner) => Ok(inner
-            .parse::<i32>()
-            .map_err(|_| WWError::Generic(String::new()))?),
-        None => Err(WWError::Generic(String::new())),
+fn parse_twin_id_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<(i64, i64)> {
+    let mut twin_ids = entry.split('|');
+    let trad_id = twin_ids
+        .next()
+        .ok_or_else(|| Generic(format!("Blank twin ID value '{entry}'. {DISCLAIMER}")))?
+        .parse()
+        .map_err(|_| Generic(format!("Failed to parse ID value '{entry}'. {DISCLAIMER}")))?;
+    let talent_id = twin_ids
+        .next()
+        .ok_or_else(|| {
+            Generic(format!(
+                "Failed to parse twin ID value '{entry}'. {DISCLAIMER}"
+            ))
+        })?
+        .parse()
+        .map_err(|_| Generic(format!("Failed to parse ID value '{entry}'. {DISCLAIMER}")))?;
+
+    Ok((trad_id, talent_id))
+}
+
+fn parse_slots_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<SlotMod> {
+    let make_error = || {
+        Generic(format!(
+            "Failed to parse slots decision '{entry}'. {DISCLAIMER}"
+        ))
+    };
+    let mut parts = entry.split('|');
+    let (kind, amount, id) = (parts.next(), parts.next(), parts.next());
+    if kind.is_some() && amount.is_some() && id.is_some() {
+        let kind = kind.unwrap();
+        let amount: i64 = amount.unwrap().parse().map_err(|_| make_error())?;
+        let spell_id: i64 = id.unwrap().parse().map_err(|_| make_error())?;
+        match kind {
+            "times" => Ok(SlotMod::Times { amount, spell_id }),
+            "plus" => Ok(SlotMod::Plus { amount, spell_id }),
+            _ => Err(make_error()),
+        }
+    } else {
+        Err(make_error())
     }
+}
+
+async fn process_just_modifiers<T>(
+    has_mods: T,
+    db: Pool<Sqlite>,
+    saved_choices: Arc<HashMap<String, CharacterChoice>>,
+    processed_keys: DashSet<String>,
+) -> WWResult<Vec<ModifierSelections>>
+where
+    T: HasModifiers,
+{
+    let db = db.clone();
+    let saved_choices = saved_choices.clone();
+    let modifiers = has_mods.modifiers();
+
+    let sub_trees =
+        futures::stream::iter(modifiers)
+            .map(|modifier| {
+                let saved_choices = saved_choices.clone();
+                let processed_keys = processed_keys.clone();
+                let db = db.clone();
+                async move {
+                    collect_from_modifier_tree(db, &modifier, saved_choices, processed_keys).await
+                }
+            })
+            .buffered(100)
+            .try_collect()
+            .await?;
+
+    Ok(sub_trees)
+}
+
+async fn process_with_modifiers<T>(
+    has_mods: T,
+    db: Pool<Sqlite>,
+    saved_choices: Arc<HashMap<String, CharacterChoice>>,
+    processed_keys: DashSet<String>,
+) -> WWResult<(T, Vec<ModifierSelections>)>
+where
+    T: HasModifiers + Clone,
+{
+    let has_mods = has_mods.clone();
+    let db = db.clone();
+    let saved_choices = saved_choices.clone();
+    let modifiers = has_mods.modifiers();
+
+    let sub_trees =
+        futures::stream::iter(modifiers)
+            .map(|modifier| {
+                let saved_choices = saved_choices.clone();
+                let processed_keys = processed_keys.clone();
+                let db = db.clone();
+                async move {
+                    collect_from_modifier_tree(db, &modifier, saved_choices, processed_keys).await
+                }
+            })
+            .buffered(100)
+            .try_collect()
+            .await?;
+
+    Ok((has_mods, sub_trees))
 }

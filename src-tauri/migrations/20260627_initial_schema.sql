@@ -227,6 +227,7 @@ CREATE TABLE IF NOT EXISTS choice_tables (
 );
 
 CREATE TABLE IF NOT EXISTS choice_selections (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     choice_table_id INTEGER REFERENCES choice_tables(id) NOT NULL,
     label           TEXT,
     description     TEXT NOT NULL,
@@ -335,7 +336,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character
 -- Select          => id, foreign key to choice_selections table
 -- SelectAgain     => id, foreign key to choice_selections table
 -- Score           => [Ability], where Ability is one of Strength, Agility, Intellect, and Will
--- Slots           => [plus|times]-[integer]:id, where id is a foreign key to spells table
+-- Slots           => [plus|times]|[integer]|id, where id is a foreign key to spells table
 --   Tradition, all pure spell IDs, and Select/SelectAgain can trigger additional mods.
 --   The rest are terminal and won't affect the character further.
 -- Additionally, an Override Statblock can also be set in the character_choices table, where the `selection`

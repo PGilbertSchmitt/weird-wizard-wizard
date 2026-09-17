@@ -10,6 +10,7 @@ use crate::{
         option_blocks::{self, FullOptionBlock},
     },
     import::{MagicTalentRow, NameToId},
+    modifiers::{FullModifier, HasModifiers},
     WWError, WWResult,
 };
 
@@ -50,7 +51,13 @@ pub struct FullMagicTalent {
     activate: String,
     info_table: Option<FullInfoTable>,
     option_block: Option<FullOptionBlock>,
-    pub mod_str: Option<String>,
+    pub modifiers: Vec<FullModifier>,
+}
+
+impl HasModifiers for FullMagicTalent {
+    fn modifiers(&self) -> Vec<FullModifier> {
+        self.modifiers.clone()
+    }
 }
 
 pub async fn insert_all(
@@ -115,7 +122,10 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullMagicTalent> {
     extend_raw_magic_talent(db, raw_talent).await
 }
 
-async fn extend_raw_magic_talent(db: &Pool<Sqlite>, raw_talent: RawMagicTalent) -> WWResult<FullMagicTalent> {
+async fn extend_raw_magic_talent(
+    db: &Pool<Sqlite>,
+    raw_talent: RawMagicTalent,
+) -> WWResult<FullMagicTalent> {
     let info_table = info_tables::get_from_opt(db, raw_talent.info_table_id).await?;
     let option_block = option_blocks::get_from_opt(db, raw_talent.option_block_id).await?;
 
@@ -124,6 +134,12 @@ async fn extend_raw_magic_talent(db: &Pool<Sqlite>, raw_talent: RawMagicTalent) 
         Some("123") => MagicTalentCharges::OneTwoThree,
         _ => MagicTalentCharges::None,
     };
+
+    let modifiers = FullModifier::from_magic_talent(
+        &raw_talent.name,
+        &raw_talent.tradition_name,
+        &raw_talent.mod_str,
+    )?;
 
     Ok(FullMagicTalent {
         id: raw_talent.id,
@@ -136,7 +152,7 @@ async fn extend_raw_magic_talent(db: &Pool<Sqlite>, raw_talent: RawMagicTalent) 
         activate: raw_talent.activate,
         info_table: info_table,
         option_block: option_block,
-        mod_str: raw_talent.mod_str,
+        modifiers,
     })
 }
 
@@ -160,7 +176,11 @@ pub async fn get_for_tradition(
     Ok(talents)
 }
 
-pub async fn get_by_name_and_tradition(db: &Pool<Sqlite>, tradition: &str, name: &str) -> WWResult<FullMagicTalent> {
+async fn get_by_name_and_tradition(
+    db: &Pool<Sqlite>,
+    tradition: &str,
+    name: &str,
+) -> WWResult<FullMagicTalent> {
     let raw_talent = sqlx::query_as!(
         RawMagicTalent,
         "SELECT mt.*, t.name as tradition_name FROM magic_talents mt
@@ -173,4 +193,31 @@ pub async fn get_by_name_and_tradition(db: &Pool<Sqlite>, tradition: &str, name:
     .await?;
 
     extend_raw_magic_talent(db, raw_talent).await
+}
+
+pub async fn get_by_selections(
+    db: Pool<Sqlite>,
+    selections: Vec<(String, String)>,
+) -> WWResult<Vec<FullMagicTalent>> {
+    let talents: Vec<FullMagicTalent> = futures::stream::iter(selections.into_iter())
+        .map(|(tradition_name, talent_name)| {
+            let db = db.clone();
+            async move { get_by_name_and_tradition(&db, &tradition_name, &talent_name).await }
+        })
+        .buffered(100)
+        .try_collect()
+        .await?;
+    Ok(talents)
+}
+
+pub async fn get_by_ids(db: Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullMagicTalent>> {
+    let talents: Vec<FullMagicTalent> = futures::stream::iter(ids.into_iter())
+        .map(|id| {
+            let db = db.clone();
+            async move { get(&db, id).await }
+        })
+        .buffered(100)
+        .try_collect()
+        .await?;
+    Ok(talents)
 }

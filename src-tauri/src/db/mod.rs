@@ -4,8 +4,8 @@ use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
 
 pub mod ancestries;
-pub mod characters;
 pub mod character_choices;
+pub mod characters;
 pub mod choice_selections;
 pub mod etc;
 pub mod immunities;

@@ -10,6 +10,7 @@ use crate::{
         option_blocks::{self, FullOptionBlock},
     },
     import::{is_affirmative, NamePairToId, NameToId, PathTalentRow},
+    modifiers::{FullModifier, HasModifiers},
     util::db_boolean,
     WWError, WWResult,
 };
@@ -43,8 +44,14 @@ pub struct FullPathTalent {
     description: String,
     info_table: Option<FullInfoTable>,
     option_block: Option<FullOptionBlock>,
-    pub mod_str: Option<String>,
     cluster: Option<String>,
+    pub modifiers: Vec<FullModifier>,
+}
+
+impl HasModifiers for FullPathTalent {
+    fn modifiers(&self) -> Vec<FullModifier> {
+        self.modifiers.clone()
+    }
 }
 
 pub async fn insert_all(
@@ -113,11 +120,17 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullPathTalent> {
     extend_raw_path_talent(db, raw_talent).await
 }
 
-async fn extend_raw_path_talent(db: &Pool<Sqlite>, raw_talent: RawPathTalent) -> WWResult<FullPathTalent> {
+async fn extend_raw_path_talent(
+    db: &Pool<Sqlite>,
+    raw_talent: RawPathTalent,
+) -> WWResult<FullPathTalent> {
     let (info_table, option_block) = futures::join!(
         info_tables::get_from_opt(db, raw_talent.info_table_id),
         option_blocks::get_from_opt(db, raw_talent.option_block_id),
     );
+
+    let full_modifier =
+        FullModifier::from_path_talent(&raw_talent.name, &raw_talent.source, &raw_talent.mod_str)?;
 
     Ok(FullPathTalent {
         id: raw_talent.id,
@@ -130,7 +143,7 @@ async fn extend_raw_path_talent(db: &Pool<Sqlite>, raw_talent: RawPathTalent) ->
         description: raw_talent.description,
         info_table: info_table?,
         option_block: option_block?,
-        mod_str: raw_talent.mod_str,
+        modifiers: full_modifier,
         cluster: raw_talent.cluster,
     })
 }
@@ -168,7 +181,11 @@ pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<Ful
     get_from_ids(db, ids).await
 }
 
-pub async fn get_by_name_and_source(db: &Pool<Sqlite>, name: &str, source: &str) -> WWResult<FullPathTalent> {
+async fn get_by_name_and_source(
+    db: &Pool<Sqlite>,
+    name: &str,
+    source: &str,
+) -> WWResult<FullPathTalent> {
     let raw_talent = sqlx::query_as!(
         RawPathTalent,
         "SELECT * FROM path_talents WHERE source = ? AND name = ?",
@@ -179,4 +196,19 @@ pub async fn get_by_name_and_source(db: &Pool<Sqlite>, name: &str, source: &str)
     .await?;
 
     extend_raw_path_talent(db, raw_talent).await
+}
+
+pub async fn get_by_selections(
+    db: Pool<Sqlite>,
+    selections: Vec<(String, String)>,
+) -> WWResult<Vec<FullPathTalent>> {
+    let talents: Vec<FullPathTalent> = futures::stream::iter(selections.into_iter())
+        .map(|(source, talent_name)| {
+            let db = db.clone();
+            async move { get_by_name_and_source(&db, &talent_name, &source).await }
+        })
+        .buffered(100)
+        .try_collect()
+        .await?;
+    Ok(talents)
 }

@@ -46,3 +46,11 @@ $ pnpm build-types
 ```
 
 The `#[ts(export, ...)]` macro defines the path to the type file in the TypeScript code where the types will be ported.
+
+## Did I use AI to create this?
+
+First of all, _**ew**_. I do not trust AI to write code for me. I think I'm better than any clanker in terms of quality and understanding requirements. And more than that, I _like_ programming. Why would I ever want to delegate my hobby to a machine? I may as well ask an LLM to enjoy life in my place. Not one single line of code was written by anything but my silly little fingers (Rust Macros don't count, they write themselves!). I promise you that within this repo, you will find only the finest handcrafted brain-to-table codeslop.
+
+HOWEVER, I would be a hypocrite if I did not at least admit that I will occasionally ask a LLM for help when I'm working with patterns that I'm unfamiliar with (async Rust) or, in only one case, stuck on a brutal async lifetimes bug that I could not resolve on my own.
+
+AI models have many uses around image and text processing (and misinformation campaigns), and it is a slight upgrade over a [rubber duck](https://en.wikipedia.org/wiki/Rubber_duck_debugging). But it is not going to replace experienced developers any time soon.

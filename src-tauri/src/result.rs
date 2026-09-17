@@ -13,6 +13,12 @@ pub enum WWError {
     Tauri(tauri::Error),
 }
 
+impl From<String> for WWError {
+    fn from(value: String) -> Self {
+        WWError::Generic(value)
+    }
+}
+
 impl From<sqlx::Error> for WWError {
     fn from(value: sqlx::Error) -> Self {
         WWError::Db(value)
