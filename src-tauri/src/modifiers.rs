@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -10,8 +12,113 @@ use crate::{
 #[derive(TS, Debug, Serialize, Deserialize, Clone)]
 #[ts(export, export_to = "modifiers.ts")]
 pub struct FullModifier {
-    pub path_str: String,
+    pub path_str: ModifierPathNode,
     pub mod_details: Modifier,
+}
+
+// This identifies a single leg of a modifier path. There's one kind per source of a Modifier.
+// The idx is needed because a single mod_str can have multiple Modifiers.
+#[derive(TS, Debug, Serialize, Deserialize, Clone)]
+#[ts(export, export_to = "modifiers.ts")]
+pub enum ModifierPathNode {
+    LevelLanguage {
+        path_name: String,
+        level_id: i64,
+    },
+    LevelTradition {
+        path_name: String,
+        level_id: i64,
+    },
+    LevelNoviceSpell {
+        path_name: String,
+        level_id: i64,
+    },
+    LevelExpertSpell {
+        path_name: String,
+        level_id: i64,
+    },
+    LevelMasterSpell {
+        path_name: String,
+        level_id: i64,
+    },
+    PathTalent {
+        name: String,
+        source: String,
+        idx: usize,
+    },
+    MagicTalent {
+        name: String,
+        tradition: String,
+        idx: usize,
+    },
+    Spell {
+        name: String,
+        tradition: String,
+        idx: usize,
+    },
+    ChoiceSelection {
+        name: String,
+        label: String,
+        idx: usize,
+    },
+}
+
+impl Display for ModifierPathNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::LevelLanguage {
+                path_name,
+                level_id,
+            } => {
+                f.write_fmt(format_args!("level_language|{path_name}|{level_id}"))?;
+            }
+            Self::LevelTradition {
+                path_name,
+                level_id,
+            } => {
+                f.write_fmt(format_args!("level_tradition|{path_name}|{level_id}"))?;
+            }
+            Self::LevelNoviceSpell {
+                path_name,
+                level_id,
+            } => {
+                f.write_fmt(format_args!("level_novice_spell|{path_name}|{level_id}"))?;
+            }
+            Self::LevelExpertSpell {
+                path_name,
+                level_id,
+            } => {
+                f.write_fmt(format_args!("level_expert_spell|{path_name}|{level_id}"))?;
+            }
+            Self::LevelMasterSpell {
+                path_name,
+                level_id,
+            } => {
+                f.write_fmt(format_args!("level_master_spell|{path_name}|{level_id}"))?;
+            }
+            Self::PathTalent { name, source, idx } => {
+                f.write_fmt(format_args!("path_talent|{name}|{source}|{idx}"))?;
+            }
+            Self::MagicTalent {
+                name,
+                tradition,
+                idx,
+            } => {
+                f.write_fmt(format_args!("magic_talent|{name}|{tradition}|{idx}"))?;
+            }
+            Self::Spell {
+                name,
+                tradition,
+                idx,
+            } => {
+                f.write_fmt(format_args!("spell|{name}|{tradition}|{idx}"))?;
+            }
+            Self::ChoiceSelection { name, label, idx } => {
+                f.write_fmt(format_args!("choice_selection|{name}|{label}|{idx}"))?;
+            }
+        };
+        Ok(())
+    }
 }
 
 pub trait HasModifiers {
@@ -31,7 +138,7 @@ impl FullModifier {
             .map(|choice_str| {
                 (
                     choice_str.clone(),
-                    format!("{};;{}", self.path_str, choice_str),
+                    format!("{}=>{}", self.path_str, choice_str),
                 )
             })
             .collect()
@@ -55,7 +162,11 @@ impl FullModifier {
                     .enumerate()
                     .map(|(idx, mod_details)| Self {
                         mod_details,
-                        path_str: format!("PathTalent;{};{};{}", name, source, idx),
+                        path_str: ModifierPathNode::PathTalent {
+                            name: name.to_string(),
+                            source: source.to_string(),
+                            idx,
+                        },
                     })
                     .collect()
             }
@@ -78,7 +189,11 @@ impl FullModifier {
                     .enumerate()
                     .map(|(idx, mod_details)| Self {
                         mod_details,
-                        path_str: format!("MagicTalent;{};{};{}", name, tradition_name, idx),
+                        path_str: ModifierPathNode::MagicTalent {
+                            name: name.to_string(),
+                            tradition: tradition_name.to_string(),
+                            idx,
+                        },
                     })
                     .collect()
             }

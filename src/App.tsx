@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Layout } from './components/layout/layout';
 import { Home } from './components/pages/home';
 import { ThemeProvider } from './components/providers/theme-provider';
-import { CharacterPage } from './components/pages/characters';
+import { CharacterPage } from './components/pages/character';
 import { Tome } from './components/pages/tome';
 import { TraditionPage } from './components/pages/tome/tradition-page';
 import { TooltipProvider } from './components/ui/neo/tooltip';

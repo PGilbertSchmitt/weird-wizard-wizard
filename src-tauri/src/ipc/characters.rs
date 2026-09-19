@@ -29,3 +29,15 @@ pub async fn get_full_character(app: AppHandle<Wry>, id: i64) -> WWResult<FullCh
     let db_state = db_state.lock().await;
     Ok(characters::get(&db_state.pool, id).await?)
 }
+
+#[command]
+pub async fn update_character_health(
+    app: AppHandle<Wry>,
+    id: i64,
+    health: i64,
+    damage: i64,
+) -> WWResult<()> {
+    let db_state = get_database(&app)?;
+    let db_state = db_state.lock().await;
+    Ok(characters::update_health(&db_state.pool, id, health, damage).await?)
+}

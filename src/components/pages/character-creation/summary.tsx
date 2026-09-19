@@ -32,7 +32,9 @@ export const Summary = ({
 
       <Separator />
 
-      <div className={cn('bg-secondary-background text-foreground')}>
+      <div
+        className={cn('bg-secondary-background text-foreground rounded-b-base')}
+      >
         <table className="w-full">
           <tbody>
             <tr>

@@ -308,14 +308,6 @@ Choices fall into 3 categories of distinct selection:
 - Options for ability scores are uniq within a single selection (Pick 2 scores -> You must take different scores this time, but if taking another score selection later, the same scores can be picked again)
 - Options for languages, professions, or from a table are universally distinct (If an option from a table is picked, it cannot be picked again).
 
-For table selections, the default behavior can be overriden; if options in a table selection can be picked a second time, then instead of `SELECT=`, you can use `SELECT_AGAIN=`:
-
-```
-PERM.CHOOSE.SELECT_AGAIN=Some table ;
-```
-
-(I'm not actually sure this is needed for the official talents, but it doesn't seem too difficult to support for homebrew)
-
 ## APPLY
 
 The APPLY MOD performs a single action which immediately affects the PC. Any choice or cast that exhibits an APPLY. The common form of this is healing:

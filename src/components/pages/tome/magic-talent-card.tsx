@@ -70,7 +70,7 @@ export const MagicTalentCard = ({ talent }: MagicTalentCardProps) => {
 
       <Separator />
 
-      <div className="bg-secondary-background text-foreground p-4">
+      <div className="bg-secondary-background text-foreground p-4 rounded-b-base">
         <Paragraph size="sm">{talent.description}</Paragraph>
 
         {talent.option_block && (

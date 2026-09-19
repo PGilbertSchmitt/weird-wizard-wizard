@@ -264,6 +264,8 @@ impl Losses {
 }
 
 // This function is totally nuts.
+// If it becomes unmanagable, it might not be a bad idea to re-create this functionality
+// using simply serial patterns, rather than trying to be as efficient as possible.
 pub async fn collect_from_modifier_tree(
     db: Pool<Sqlite>,
     modifier: &FullModifier,

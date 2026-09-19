@@ -80,7 +80,11 @@ export const PathsByCategory = ({
               <>
                 <Separator />
 
-                <div className={cn('bg-secondary-background text-foreground')}>
+                <div
+                  className={cn(
+                    'bg-secondary-background text-foreground rounded-b-base',
+                  )}
+                >
                   {typeof selectedId === 'number' && selectedId !== item.id && (
                     <div className={cn('flex justify-center pt-2')}>
                       <Button

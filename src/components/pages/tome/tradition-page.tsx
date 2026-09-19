@@ -24,7 +24,7 @@ export const TraditionPage = () => {
   }
 
   return (
-    <div className={cn('flex flex-col gap-6 w-200')}>
+    <div className={cn('flex flex-col gap-6 w-250 px-4')}>
       <div className={cn('text-center')}>
         <h1>{traditionData.name}</h1>
         <b>{traditionData.blurb}</b>

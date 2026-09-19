@@ -20,7 +20,7 @@ use crate::{
         speed_traits::FullSpeedTrait,
     },
     mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod},
-    modifiers::FullModifier,
+    modifiers::{FullModifier, ModifierPathNode},
     WWResult,
 };
 
@@ -360,7 +360,10 @@ impl CumulativeFields {
         if level.lang_choices > 0 {
             let target = ChooseTarget::Language(level.lang_choices as u32);
             self.choices.push(level_choice(
-                format!("Language;{};lvl{};", path_name, level.level),
+                ModifierPathNode::LevelLanguage {
+                    path_name: path_name.to_string(),
+                    level_id: level.id,
+                },
                 target,
             ));
         }
@@ -368,7 +371,10 @@ impl CumulativeFields {
         if level.trad_choices > 0 {
             let target = ChooseTarget::Tradition(level.trad_choices as u32);
             self.choices.push(level_choice(
-                format!("Tradition;{};lvl{};", path_name, level.level),
+                ModifierPathNode::LevelTradition {
+                    path_name: path_name.to_string(),
+                    level_id: level.id,
+                },
                 target,
             ));
         }
@@ -376,7 +382,10 @@ impl CumulativeFields {
         if level.novice_spells > 0 {
             let target = ChooseTarget::NoviceSpell(level.novice_spells as u32);
             self.choices.push(level_choice(
-                format!("NoviceSpell;{};lvl{};", path_name, level.level),
+                ModifierPathNode::LevelNoviceSpell {
+                    path_name: path_name.to_string(),
+                    level_id: level.id,
+                },
                 target,
             ));
         }
@@ -384,7 +393,10 @@ impl CumulativeFields {
         if level.expert_spells > 0 {
             let target = ChooseTarget::ExpertSpell(level.expert_spells as u32);
             self.choices.push(level_choice(
-                format!("ExpertSpell;{};lvl{};", path_name, level.level),
+                ModifierPathNode::LevelExpertSpell {
+                    path_name: path_name.to_string(),
+                    level_id: level.id,
+                },
                 target,
             ));
         }
@@ -392,7 +404,10 @@ impl CumulativeFields {
         if level.master_spells > 0 {
             let target = ChooseTarget::MasterSpell(level.master_spells as u32);
             self.choices.push(level_choice(
-                format!("MasterSpell;{};lvl{};", path_name, level.level),
+                ModifierPathNode::LevelMasterSpell {
+                    path_name: path_name.to_string(),
+                    level_id: level.id,
+                },
                 target,
             ));
         }
@@ -414,7 +429,7 @@ fn clamp(value: i64, min: i64, max: i64) -> i64 {
     }
 }
 
-fn level_choice(path_str: String, choose_target: ChooseTarget) -> FullModifier {
+fn level_choice(path_str: ModifierPathNode, choose_target: ChooseTarget) -> FullModifier {
     let target_strs = choose_target.choice_strings();
     FullModifier {
         path_str,
@@ -424,4 +439,17 @@ fn level_choice(path_str: String, choose_target: ChooseTarget) -> FullModifier {
             condition: Condition::None,
         },
     }
+}
+
+pub async fn update_health(db: &Pool<Sqlite>, id: i64, health: i64, damage: i64) -> WWResult<()> {
+    sqlx::query!(
+        "UPDATE characters SET health = ?, damage = ? WHERE id = ?",
+        health,
+        damage,
+        id
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
 }

@@ -5,14 +5,15 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use crate::{
     import::{ChoiceSelectionRow, NameToId},
     mod_dsl::parser::parse_mods,
-    modifiers::{FullModifier, HasModifiers},
+    modifiers::{FullModifier, HasModifiers, ModifierPathNode},
     WWError, WWResult,
 };
 
 #[derive(Debug)]
 pub struct RawChoice {
     id: i64,
-    label: Option<String>,
+    name: String,          // Name of the set of choice selections
+    label: Option<String>, // Name of the individual choice
     description: String,
     mod_str: Option<String>,
 }
@@ -86,14 +87,15 @@ pub async fn _get_choice_table(db: &Pool<Sqlite>, id: i64) -> WWResult<ChoiceTab
 
     let choices = sqlx::query_as!(
         RawChoice,
-        "SELECT id, label, description, mod_str FROM choice_selections WHERE choice_table_id = ?",
+        "SELECT id, label, description, mod_str, '' as name FROM choice_selections WHERE choice_table_id = ?",
         id
     )
     .fetch_all(db)
     .await?;
 
     let mut full_choices = Vec::with_capacity(choices.len());
-    for raw_choice in choices {
+    for mut raw_choice in choices {
+        raw_choice.name = name.clone();
         let full_choice = convert_choice(raw_choice)?;
         full_choices.push(full_choice)
     }
@@ -108,7 +110,10 @@ pub async fn _get_choice_table(db: &Pool<Sqlite>, id: i64) -> WWResult<ChoiceTab
 async fn get_full_choice_selection(db: &Pool<Sqlite>, id: i64) -> WWResult<FullChoice> {
     let raw_choice = sqlx::query_as!(
         RawChoice,
-        "SELECT id, label, description, mod_str FROM choice_selections WHERE id = ?",
+        "SELECT cs.id, cs.label, cs.description, cs.mod_str, ct.name
+        FROM choice_selections cs
+        JOIN choice_tables ct ON cs.choice_table_id = ct.id
+        WHERE cs.id = ?",
         id,
     )
     .fetch_one(db)
@@ -118,22 +123,26 @@ async fn get_full_choice_selection(db: &Pool<Sqlite>, id: i64) -> WWResult<FullC
 }
 
 fn convert_choice(raw_choice: RawChoice) -> WWResult<FullChoice> {
-    let choice_path_str = format!(
-        "Choice;{}",
-        raw_choice
-            .label
-            .clone()
-            .unwrap_or(raw_choice.id.to_string())
-    );
     let modifiers = raw_choice
         .mod_str
         .map(|mod_str| {
             parse_mods(&mod_str).map(|base_modifiers| {
                 base_modifiers
                     .into_iter()
-                    .map(|mod_details| FullModifier {
-                        path_str: choice_path_str.clone(),
-                        mod_details,
+                    .enumerate()
+                    .map(|(idx, mod_details)| {
+                        let choice_path_str = ModifierPathNode::ChoiceSelection {
+                            name: raw_choice.name.clone(),
+                            label: raw_choice
+                                .label
+                                .clone()
+                                .unwrap_or(raw_choice.id.to_string()),
+                            idx,
+                        };
+                        FullModifier {
+                            path_str: choice_path_str,
+                            mod_details,
+                        }
                     })
                     .collect()
             })

@@ -5,7 +5,7 @@ import { ControlledCounter } from '@/components/ui/controlled-counter';
 import { Paragraph } from '@/components/ui/paragraph';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { max, toPairs } from 'ramda';
+import { max, min, toPairs } from 'ramda';
 import { useEffect, useMemo, useState } from 'react';
 
 interface ChooseScoresProps {
@@ -13,7 +13,6 @@ interface ChooseScoresProps {
   onConfirm: (scores: Scores) => void;
 }
 
-// type FourTuple = [number, number, number, number];
 export interface Scores {
   strength: number;
   agility: number;
@@ -66,6 +65,8 @@ export const ChooseScores = ({
   const currentSumScore =
     scores.strength + scores.agility + scores.intellect + scores.will;
 
+  const pointsRemaining = highestSumScore - currentSumScore;
+
   return (
     <div className="flex flex-col align-middle w-150">
       <StaticCard className={cn('my-4 p-0')}>
@@ -95,11 +96,11 @@ export const ChooseScores = ({
 
         <div
           className={cn(
-            'bg-secondary-background text-foreground flex flex-col items-center',
+            'bg-secondary-background text-foreground rounded-b-base flex flex-col items-center',
           )}
         >
           <div className={cn('px-6 py-2')}>
-            <p>Points remaining: {highestSumScore - currentSumScore}</p>
+            <p>Points remaining: {pointsRemaining}</p>
           </div>
 
           <div className={cn('flex flex-row')}>
@@ -124,11 +125,10 @@ export const ChooseScores = ({
                         [ability]: value - 1,
                       })
                     }
-                    subtractDisabled={value <= 1}
-                    addDisabled={
-                      value >= highestSingleScore ||
-                      currentSumScore >= highestSumScore
-                    }
+                    range={[
+                      1,
+                      min(highestSingleScore, value + pointsRemaining),
+                    ]}
                   />
                 </div>
               );

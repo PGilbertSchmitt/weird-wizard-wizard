@@ -36,3 +36,21 @@ export const useCharacter = (id: number) =>
     queryFn: () => invoke<FullCharacter>('get_full_character', { id }),
     enabled: id >= 0,
   });
+
+interface UpdateCharacterHealthParams {
+  health: number;
+  damage: number;
+}
+
+export const useUpdateCharacterHealth = (id: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ health, damage }: UpdateCharacterHealthParams) =>
+      invoke<void>('update_character_health', { id, health, damage }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: CHARACTER_KEYS.character(id),
+      });
+    },
+  });
+};

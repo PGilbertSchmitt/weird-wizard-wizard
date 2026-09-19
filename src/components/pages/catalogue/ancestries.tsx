@@ -4,7 +4,7 @@ import { StaticCard } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCollapseState } from '@/hooks/use-collapse-state';
 import { cn } from '@/lib/utils';
-import { AncestrySense, FullAncestry } from '@/types/path';
+import { FullAncestry } from '@/types/path';
 import {
   ChevronDown,
   ChevronUp,
@@ -12,7 +12,7 @@ import {
   ListChevronsUpDown,
 } from 'lucide-react';
 import { useMemo } from 'react';
-import { FullSpeedTrait } from '@/types/other_info';
+import { FullSense, FullSpeedTrait } from '@/types/other_info';
 import { TalentCard } from './talent-card';
 
 interface AncestriesProps {
@@ -70,7 +70,11 @@ export const Ancestries = ({ selectedId, onSelect }: AncestriesProps) => {
             {!collapsed && (
               <>
                 <Separator />
-                <div className={cn('bg-secondary-background text-foreground')}>
+                <div
+                  className={cn(
+                    'bg-secondary-background text-foreground rounded-b-base',
+                  )}
+                >
                   {typeof selectedId === 'number' && selectedId !== item.id && (
                     <div className={cn('flex justify-center pt-2')}>
                       <Button
@@ -209,7 +213,7 @@ const speedAttrString = (speed: number, traits: FullSpeedTrait[]) => {
   }
 };
 
-const senseAttrString = (senses: AncestrySense[]) => {
+const senseAttrString = (senses: FullSense[]) => {
   if (senses.length === 0) {
     return null;
   }

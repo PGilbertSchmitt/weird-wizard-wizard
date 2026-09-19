@@ -48,6 +48,7 @@ pub fn run() {
             ipc::get_character_index,
             ipc::create_character,
             ipc::get_full_character,
+            ipc::update_character_health,
             // Not used yet:
             ipc::get_full_talent,
             ipc::get_ancestry_talents,
