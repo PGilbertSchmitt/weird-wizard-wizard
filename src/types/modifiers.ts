@@ -24,7 +24,6 @@ export type ChooseTarget =
   | { MasterSpell: number }
   | { MasterSpellFrom: [number, Array<string>] }
   | { Select: [number, string] }
-  | { SelectAgain: [number, string] }
   | { Score: number }
   | { Slots: ChooseSlotTarget }
   | { MagicTalent: [number, string] };
@@ -39,7 +38,10 @@ export type ExprOp = 'Lt' | 'Gt' | 'LtEq' | 'GtEq' | 'Eq' | 'Div';
 export type ExprValue =
   'Health' | 'Dmg' | 'Level' | 'Defense' | { Number: number };
 
-export type FullModifier = { path_str: string; mod_details: Modifier };
+export type FullModifier = {
+  path_str: ModifierPathNode;
+  mod_details: Modifier;
+};
 
 export type GrantTarget =
   | { Int: number }
@@ -53,9 +55,9 @@ export type GrantTarget =
   | { BonusDamage: number }
   | { Language: Array<string> }
   | { Tradition: Array<string> }
-  | { Sense: Array<string> }
   | { Immunity: Array<string> }
-  | { SpeedTrait: Array<string> }
+  | { Sense: Array<[string, string | null]> }
+  | { SpeedTrait: Array<[string, string | null]> }
   | { Talent: [string, string] }
   | { MagicTalent: [string, string] };
 
@@ -68,6 +70,18 @@ export type LoseTarget =
   { Talent: [string, string] } | { MagicTalent: [string, string] };
 
 export type Modifier = { when: WhenMod; target: Target; condition: Condition };
+
+export type ModifierPathNode =
+  | { LevelLanguage: { path_name: string; level: number } }
+  | { LevelTradition: { path_name: string; level: number } }
+  | { LevelMagicTalent: { path_name: string; level: number } }
+  | { LevelNoviceSpell: { path_name: string; level: number } }
+  | { LevelExpertSpell: { path_name: string; level: number } }
+  | { LevelMasterSpell: { path_name: string; level: number } }
+  | { PathTalent: { name: string; source: string; idx: number } }
+  | { MagicTalent: { name: string; tradition: string; idx: number } }
+  | { Spell: { name: string; tradition: string; idx: number } }
+  | { ChoiceSelection: { name: string; label: string; idx: number } };
 
 export type OverrideTarget =
   | { Speed: number }

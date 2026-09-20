@@ -56,7 +56,10 @@ pub async fn insert_all(
     let mut ancestry_map = NameToId::new("ancestry");
 
     for row in rows {
+        let add_health = row.add_health.unwrap_or(0);
+        let add_nat_def = row.add_nat_def.unwrap_or(0);
         let label = row.ancestry.clone();
+
         let record = sqlx::query!(
             "INSERT INTO ancestries (
                 name,
@@ -70,8 +73,8 @@ pub async fn insert_all(
             row.descriptor,
             row.base_size,
             row.base_speed,
-            row.add_health,
-            row.add_nat_def
+            add_health,
+            add_nat_def
         )
         .execute(&mut *tx)
         .await

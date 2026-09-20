@@ -88,16 +88,24 @@ pub async fn get_for_ancestry(db: &Pool<Sqlite>, ancestry_id: i64) -> WWResult<V
     Ok(convert_languages(languages))
 }
 
-pub async fn get_for_ids(db: &Pool<Sqlite>, mut ids: Vec<i64>) -> WWResult<Vec<Language>> {
-    ids.sort();
-    ids.dedup();
-    let q_mark_string = ids.iter().map(|_| "?").collect::<Vec<&str>>().join(",");
-    let query = format!("SELECT * FROM languages WHERE id in ({q_mark_string})");
-    let mut language_query = sqlx::query_as::<_, RawLanguage>(&query);
-    for id in ids {
-        language_query = language_query.bind(id);
-    }
-    let languages = language_query.fetch_all(db).await;
+pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<Language>> {
+    let languages = sqlx::query_as!(
+        RawLanguage,
+        "SELECT l.* FROM languages as l
+        JOIN level_languages l_l ON l_l.language_id = l.id
+        WHERE l_l.level_id = ?",
+        level_id,
+    )
+    .fetch_all(db)
+    .await?;
 
-    Ok(convert_languages(languages?))
+    Ok(convert_languages(languages))
+}
+
+pub async fn get_all(db: &Pool<Sqlite>) -> WWResult<Vec<Language>> {
+    let languages = sqlx::query_as!(RawLanguage, "SELECT * FROM languages",)
+        .fetch_all(db)
+        .await?;
+
+    Ok(convert_languages(languages))
 }

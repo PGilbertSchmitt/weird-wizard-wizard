@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS ancestries (
     descriptor  TEXT,
     size        TEXT CHECK (size IN ('sm', 'md', 'lg')) NOT NULL,
     speed       INTEGER NOT NULL,
-    add_health  INTEGER DEFAULT 0,
-    add_nat_def INTEGER DEFAULT 0
+    add_health  INTEGER NOT NULL,
+    add_nat_def INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ancestry_languages (
@@ -102,15 +102,15 @@ CREATE TABLE IF NOT EXISTS levels (
     path_id       INTEGER REFERENCES paths(id) NOT NULL,
     level         INTEGER NOT NULL,
     add_health    INTEGER NOT NULL,
-    add_nat_def   INTEGER DEFAULT 0,
-    add_arm_def   INTEGER DEFAULT 0,
-    add_bonus_dmg INTEGER DEFAULT 0,
-    add_speed     INTEGER DEFAULT 0,
-    trad_choices  INTEGER DEFAULT 0,
-    lang_choices  INTEGER DEFAULT 0,
-    novice_spells INTEGER DEFAULT 0,
-    expert_spells INTEGER DEFAULT 0,
-    master_spells INTEGER DEFAULT 0,
+    add_nat_def   INTEGER NOT NULL,
+    add_arm_def   INTEGER NOT NULL,
+    add_bonus_dmg INTEGER NOT NULL,
+    add_speed     INTEGER NOT NULL,
+    trad_choices  INTEGER NOT NULL,
+    lang_choices  INTEGER NOT NULL,
+    novice_spells INTEGER NOT NULL,
+    expert_spells INTEGER NOT NULL,
+    master_spells INTEGER NOT NULL,
     size          TEXT CHECK (size IN ('sm', 'md', 'lg')) -- Only used officially for Pollywog level 5
 );
 

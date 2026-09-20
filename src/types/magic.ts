@@ -32,6 +32,7 @@ export type FullSpell = {
   ritual: boolean;
   info_table: FullInfoTable | null;
   option_block: FullOptionBlock | null;
+  modifiers: Array<FullModifier>;
 };
 
 export type FullTradition = {

@@ -1,5 +1,5 @@
 import { AttributeRows, AttributeTable } from '@/components/ui/attribute-table';
-import { Badge } from '@/components/ui/badge';
+import { DiskWithTooltip } from '@/components/ui/disk';
 import { StaticCard } from '@/components/ui/card';
 import { InfoTable } from '@/components/ui/info-table';
 import { OptionBlock } from '@/components/ui/option-block';
@@ -41,9 +41,9 @@ export const SpellCard = ({ spell }: SpellCardProps) => {
           <h2 className={cn('text-lg w-fit pt-1')}>{spell.name}</h2>
           <div className={cn('flex gap-2')}>
             {spell.ritual && (
-              <Badge label="Ritual - Takes 10 minutes to cast">
+              <DiskWithTooltip label="Ritual - Takes 10 minutes to cast">
                 <Waypoints size="14px" strokeWidth="1px" />
-              </Badge>
+              </DiskWithTooltip>
             )}
           </div>
         </div>

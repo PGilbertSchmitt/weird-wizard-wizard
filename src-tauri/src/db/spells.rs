@@ -10,11 +10,12 @@ use crate::{
         option_blocks::{self, FullOptionBlock},
     },
     import::{MagicSpellRow, NameToId},
+    modifiers::{FullModifier, HasModifiers},
     util::db_boolean,
     WWError, WWResult,
 };
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "magic.ts")]
 pub struct FullSpell {
     id: i64,
@@ -30,6 +31,13 @@ pub struct FullSpell {
     ritual: bool,
     info_table: Option<FullInfoTable>,
     option_block: Option<FullOptionBlock>,
+    modifiers: Vec<FullModifier>,
+}
+
+impl HasModifiers for FullSpell {
+    fn modifiers(&self) -> Vec<FullModifier> {
+        self.modifiers.clone()
+    }
 }
 
 // An intermediary struct for one fewer query
@@ -114,6 +122,9 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullSpell> {
     let info_table = info_tables::get_from_opt(db, spell.info_table_id).await?;
     let option_block = option_blocks::get_from_opt(db, spell.option_block_id).await?;
 
+    let full_modifiers =
+        FullModifier::from_spell(&spell.name, &spell.tradition_name, &spell.mod_str)?;
+
     Ok(FullSpell {
         id,
         tradition_id: spell.tradition_id,
@@ -128,6 +139,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullSpell> {
         ritual: db_boolean(spell.ritual),
         info_table,
         option_block,
+        modifiers: full_modifiers,
     })
 }
 
@@ -137,7 +149,11 @@ pub async fn get_for_tradition(db: &Pool<Sqlite>, tradition_id: i64) -> WWResult
             .fetch_all(db)
             .await?;
 
-    let spells = futures::stream::iter(spell_ids)
+    get_for_ids(db, spell_ids).await
+}
+
+pub async fn get_for_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullSpell>> {
+    let spells = futures::stream::iter(ids)
         .map(|id| async move { get(db, id).await })
         .buffered(10)
         .try_collect()

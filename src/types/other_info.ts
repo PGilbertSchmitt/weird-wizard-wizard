@@ -44,3 +44,10 @@ export type ProfessionCategory = {
   name: string;
   description: string;
 };
+
+export type RawSpeedTrait = {
+  id: number;
+  name: string;
+  description: string;
+  unit: string | null;
+};

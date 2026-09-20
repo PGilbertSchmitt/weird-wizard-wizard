@@ -38,12 +38,12 @@ pub struct FullTradition {
     master_spells: Vec<FullSpell>,
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "magic.ts")]
 pub struct TraditionIndexItem {
-    id: i64,
-    name: String,
-    blurb: String,
+    pub id: i64,
+    pub name: String,
+    pub blurb: String,
 }
 
 pub async fn insert_all(

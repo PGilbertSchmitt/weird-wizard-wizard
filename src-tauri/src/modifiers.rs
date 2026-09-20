@@ -23,23 +23,27 @@ pub struct FullModifier {
 pub enum ModifierPathNode {
     LevelLanguage {
         path_name: String,
-        level_id: i64,
+        level: i64,
     },
     LevelTradition {
         path_name: String,
-        level_id: i64,
+        level: i64,
+    },
+    LevelMagicTalent {
+        path_name: String,
+        level: i64,
     },
     LevelNoviceSpell {
         path_name: String,
-        level_id: i64,
+        level: i64,
     },
     LevelExpertSpell {
         path_name: String,
-        level_id: i64,
+        level: i64,
     },
     LevelMasterSpell {
         path_name: String,
-        level_id: i64,
+        level: i64,
     },
     PathTalent {
         name: String,
@@ -63,38 +67,27 @@ pub enum ModifierPathNode {
     },
 }
 
+// Used to create keys into the character_choices table
 impl Display for ModifierPathNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::LevelLanguage {
-                path_name,
-                level_id,
-            } => {
-                f.write_fmt(format_args!("level_language|{path_name}|{level_id}"))?;
+            Self::LevelLanguage { path_name, level } => {
+                f.write_fmt(format_args!("level_language|{path_name}|{level}"))?;
             }
-            Self::LevelTradition {
-                path_name,
-                level_id,
-            } => {
-                f.write_fmt(format_args!("level_tradition|{path_name}|{level_id}"))?;
+            Self::LevelTradition { path_name, level } => {
+                f.write_fmt(format_args!("level_tradition|{path_name}|{level}"))?;
             }
-            Self::LevelNoviceSpell {
-                path_name,
-                level_id,
-            } => {
-                f.write_fmt(format_args!("level_novice_spell|{path_name}|{level_id}"))?;
+            Self::LevelMagicTalent { path_name, level } => {
+                f.write_fmt(format_args!("level_tradition_talent|{path_name}|{level}"))?;
             }
-            Self::LevelExpertSpell {
-                path_name,
-                level_id,
-            } => {
-                f.write_fmt(format_args!("level_expert_spell|{path_name}|{level_id}"))?;
+            Self::LevelNoviceSpell { path_name, level } => {
+                f.write_fmt(format_args!("level_novice_spell|{path_name}|{level}"))?;
             }
-            Self::LevelMasterSpell {
-                path_name,
-                level_id,
-            } => {
-                f.write_fmt(format_args!("level_master_spell|{path_name}|{level_id}"))?;
+            Self::LevelExpertSpell { path_name, level } => {
+                f.write_fmt(format_args!("level_expert_spell|{path_name}|{level}"))?;
+            }
+            Self::LevelMasterSpell { path_name, level } => {
+                f.write_fmt(format_args!("level_master_spell|{path_name}|{level}"))?;
             }
             Self::PathTalent { name, source, idx } => {
                 f.write_fmt(format_args!("path_talent|{name}|{source}|{idx}"))?;
@@ -118,6 +111,27 @@ impl Display for ModifierPathNode {
             }
         };
         Ok(())
+    }
+}
+
+impl ModifierPathNode {
+    pub fn source_string(&self) -> String {
+        match self {
+            Self::LevelLanguage { path_name, level }
+            | Self::LevelTradition { path_name, level }
+            | Self::LevelMagicTalent { path_name, level }
+            | Self::LevelNoviceSpell { path_name, level }
+            | Self::LevelExpertSpell { path_name, level }
+            | Self::LevelMasterSpell { path_name, level } => format!("{path_name} level {level}"),
+            Self::PathTalent { name, source, .. } => format!("{source} talent {name}"),
+            Self::MagicTalent {
+                name, tradition, ..
+            } => format!("{tradition} talent {name}"),
+            Self::Spell {
+                name, tradition, ..
+            } => format!("{tradition} spell {name}"),
+            Self::ChoiceSelection { name, label, .. } => format!("{label} choice {name}"),
+        }
     }
 }
 
@@ -190,6 +204,33 @@ impl FullModifier {
                     .map(|(idx, mod_details)| Self {
                         mod_details,
                         path_str: ModifierPathNode::MagicTalent {
+                            name: name.to_string(),
+                            tradition: tradition_name.to_string(),
+                            idx,
+                        },
+                    })
+                    .collect()
+            }
+        };
+
+        Ok(modifiers)
+    }
+
+    pub fn from_spell(
+        name: &str,
+        tradition_name: &str,
+        mod_str: &Option<String>,
+    ) -> WWResult<Vec<Self>> {
+        let modifiers = match mod_str {
+            None => Vec::new(),
+            Some(mod_str) => {
+                let raw_modifiers = parse_mods(mod_str).map_err(|err| Generic(err))?;
+                raw_modifiers
+                    .into_iter()
+                    .enumerate()
+                    .map(|(idx, mod_details)| Self {
+                        mod_details,
+                        path_str: ModifierPathNode::Spell {
                             name: name.to_string(),
                             tradition: tradition_name.to_string(),
                             idx,

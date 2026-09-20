@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::SqliteConnection;
+use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-struct Sense {
+pub struct RawSense {
     pub id: i64,
     pub name: String,
     pub description: String,
@@ -49,4 +49,11 @@ pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<SenseRow>) -> WWRe
     }
 
     Ok(name_to_id)
+}
+
+pub async fn get_all(db: &Pool<Sqlite>) -> WWResult<Vec<RawSense>> {
+    let senses = sqlx::query_as!(RawSense, "SELECT * FROM senses",)
+        .fetch_all(db)
+        .await?;
+    Ok(senses)
 }

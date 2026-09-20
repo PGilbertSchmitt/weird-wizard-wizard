@@ -11,16 +11,20 @@ use crate::{
         ancestries::{self, FullAncestry},
         character_choices::{self, collect_from_modifier_tree, ModifierSelections, SlotMod},
         etc::Size,
-        immunities::Immunity,
         languages::{self, Language},
         levels::FullLevel,
+        magic_talents::FullMagicTalent,
+        path_talents::FullPathTalent,
         paths::{self, FullPath},
         professions::{self, Profession},
-        senses::FullSense,
-        speed_traits::FullSpeedTrait,
+        senses::{self, FullSense},
+        speed_traits::{self, FullSpeedTrait},
+        spells::FullSpell,
+        traditions::{self, TraditionIndexItem},
     },
     mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod},
     modifiers::{FullModifier, ModifierPathNode},
+    WWError::Generic,
     WWResult,
 };
 
@@ -81,20 +85,18 @@ pub struct FullCharacter {
     arm_def: i64,
     speed: i64,
     bonus_dmg: i64,
-    speed_traits: Vec<FullSpeedTrait>,
-    senses: Vec<FullSense>,
-    immunities: Vec<Immunity>,
-    languages: Vec<Language>,
+    traditions: Vec<(TraditionIndexItem, String)>,
+    speed_traits: Vec<(FullSpeedTrait, String)>,
+    senses: Vec<(FullSense, String)>,
+    immunities: Vec<(String, String)>, // Immunities are so simple, we probably don't even need a table
+    languages: Vec<(Language, String)>,
     size: Size,
 
-    // Extra fields derived only from choices
-    gained_traditions: Vec<String>,
-    gained_speed_traits: Vec<String>,
-    gained_languages: Vec<String>,
-    gained_senses: Vec<String>,
-    gained_immunities: Vec<String>,
-    modified_slots: Vec<SlotMod>,
+    path_talents: Vec<(FullPathTalent, String)>,
+    magic_talents: Vec<(FullMagicTalent, String)>,
+    spells: Vec<(FullSpell, String)>,
 
+    modified_slots: Vec<SlotMod>,
     required_choices: Vec<FullModifier>,
 }
 
@@ -148,7 +150,7 @@ pub async fn create_character(db: &Pool<Sqlite>, character_info: CreateCharacter
         .fetch_one(db),
     );
 
-    let init_health = path_health? + ancestry_health?.unwrap_or(0);
+    let init_health = path_health? + ancestry_health?;
 
     let record = sqlx::query!(
         "INSERT INTO characters (
@@ -167,7 +169,7 @@ pub async fn create_character(db: &Pool<Sqlite>, character_info: CreateCharacter
         character_info.name,
         1,
         init_health,
-        init_health,
+        0,
         character_info.strength,
         character_info.agility,
         character_info.intellect,
@@ -192,17 +194,36 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     let raw_character = raw_character?;
     let saved_character_choices = Arc::new(all_character_choices?);
 
-    let (profession, ancestry, novice_path, expert_path, master_path) = futures::join!(
+    let (
+        profession,
+        ancestry,
+        novice_path,
+        expert_path,
+        master_path,
+        all_languages,
+        all_speed_traits,
+        all_senses,
+        all_traditions,
+    ) = futures::join!(
         professions::get(db, raw_character.profession_id),
         ancestries::get(db, raw_character.ancestry_id),
         paths::get(db, raw_character.novice_path_id),
         paths::get_from_opt(db, raw_character.expert_path_id),
         paths::get_from_opt(db, raw_character.master_path_id),
+        languages::get_all(db),
+        speed_traits::get_all(db),
+        senses::get_all(db),
+        traditions::get_index(db),
     );
 
     let profession = profession?;
     let ancestry = ancestry?;
     let novice_path = novice_path?;
+
+    let all_languages = all_languages?;
+    let all_speed_traits = all_speed_traits?;
+    let all_senses = all_senses?;
+    let all_traditions = all_traditions?;
 
     let mut fields = CumulativeFields::from_ancestry(&ancestry)?;
 
@@ -257,20 +278,90 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
 
     // Prune and flatten selections
     let all_losses = selections.collect_losses();
-    let selections = selections.collect(&all_losses);
+    let mut selections = selections.collect(&all_losses);
 
-    // Final collection of selected fields:
-    let (gained_languages, _) = futures::join!(
-        languages::get_for_ids(db, selections.gained_language_ids.clone()),
-        languages::get_for_ids(db, selections.gained_language_ids),
-    );
+    // In the following code, you will see linear searches. Normally, this would give me stomach ulcers,
+    // but the vecs containing the search spaces are so small that it's probably more efficient than
+    // building HashMaps with a fast hash function. Maybe for fun, I'll benchmark for Traditions which
+    // has 33 official options.
 
-    fields.languages.append(&mut gained_languages?);
+    for (name, source) in selections.gained_languages {
+        if let Some(language) = all_languages.iter().find(|lang| lang.name == name) {
+            fields.languages.push((language.clone(), source));
+        } else {
+            return Err(Generic(format!("Cannot find language with name {name}")));
+        }
+    }
+
+    for (id, source) in selections.gained_language_ids {
+        if let Some(language) = all_languages.iter().find(|lang| lang.id == id) {
+            fields.languages.push((language.clone(), source));
+        } else {
+            return Err(Generic(format!("Cannot find language with id {id}")));
+        }
+    }
+
+    for (name, amount, source) in selections.gained_speed_traits {
+        if let Some(raw_trait) = all_speed_traits.iter().find(|st| st.name == name) {
+            let speed_trait = FullSpeedTrait {
+                id: raw_trait.id,
+                name: name.clone(),
+                description: raw_trait.description.clone(),
+                unit: raw_trait.unit.clone(),
+                amount: amount,
+            };
+            fields.speed_traits.push((speed_trait, source));
+        } else {
+            return Err(Generic(format!("Cannot find speed trait with name {name}")));
+        }
+    }
+
+    for (name, amount, source) in selections.gained_senses {
+        if let Some(raw_trait) = all_senses.iter().find(|st| st.name == name) {
+            let speed_trait = FullSpeedTrait {
+                id: raw_trait.id,
+                name: name.clone(),
+                description: raw_trait.description.clone(),
+                unit: raw_trait.unit.clone(),
+                amount: amount,
+            };
+            fields.speed_traits.push((speed_trait, source));
+        } else {
+            return Err(Generic(format!("Cannot find sense with name {name}")));
+        }
+    }
+
+    for (name, source) in selections.gained_traditions {
+        if let Some(tradition) = all_traditions.iter().find(|trad| trad.name == name) {
+            fields.traditions.push((tradition.clone(), source));
+        } else {
+            return Err(Generic(format!("Cannot find tradition with name {name}")));
+        }
+    }
+
+    for (id, source) in selections.gained_tradition_ids {
+        if let Some(tradition) = all_traditions.iter().find(|trad| trad.id == id) {
+            fields.traditions.push((tradition.clone(), source));
+        } else {
+            return Err(Generic(format!("Cannot find tradition with id {id}")));
+        }
+    }
+
+    for (talent, _, source) in selections.gained_talents {
+        fields.path_talents.push((talent, source));
+    }
+
+    let mut magic_talents = Vec::new();
+    for (talent, _, source) in selections.gained_magic_talents {
+        magic_talents.push((talent, source));
+    }
+
+    fields.immunities.append(&mut selections.gained_immunities);
 
     println!("Took {}ms", start.elapsed().unwrap().as_millis());
 
     Ok(FullCharacter {
-        id,
+        id: raw_character.id,
         name: raw_character.name,
         level: raw_character.level,
         health: health,
@@ -286,26 +377,24 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         master_path: master_path,
         created_at: raw_character.created_at.to_string(),
 
-        // Fields derived from ancestries, paths, and choices
+        // Fields derived from ancestries, paths, grants, and choices
         max_health: fields.max_health + selections.health,
         nat_def: fields.nat_def + selections.nat_def,
         arm_def: fields.arm_def + selections.defense, // Is this right?
         speed: fields.speed + selections.speed,
         bonus_dmg: fields.bonus_dmg + selections.bonus_damage,
+        traditions: fields.traditions,
         speed_traits: fields.speed_traits,
         senses: fields.senses,
         immunities: fields.immunities,
         languages: fields.languages,
         size: fields.size,
 
-        // Fields derived from grants/choices
-        gained_traditions: selections.gained_traditions,
-        gained_speed_traits: selections.gained_speed_traits,
-        gained_languages: selections.gained_languages,
-        gained_senses: selections.gained_senses,
-        gained_immunities: selections.gained_immunities,
-        modified_slots: selections.modified_slots,
+        path_talents: fields.path_talents,
+        magic_talents,
+        spells: selections.gained_spells,
 
+        modified_slots: selections.modified_slots,
         required_choices: selections.required_choices,
     })
 }
@@ -316,10 +405,12 @@ struct CumulativeFields {
     arm_def: i64,
     speed: i64,
     bonus_dmg: i64,
-    speed_traits: Vec<FullSpeedTrait>,
-    senses: Vec<FullSense>,
-    immunities: Vec<Immunity>,
-    languages: Vec<Language>,
+    traditions: Vec<(TraditionIndexItem, String)>,
+    speed_traits: Vec<(FullSpeedTrait, String)>,
+    senses: Vec<(FullSense, String)>,
+    immunities: Vec<(String, String)>,
+    languages: Vec<(Language, String)>,
+    path_talents: Vec<(FullPathTalent, String)>,
     size: Size,
     choices: Vec<FullModifier>,
 }
@@ -331,17 +422,40 @@ impl CumulativeFields {
             choices.append(&mut talent.modifiers.clone());
         }
 
+        let ancestry_source = format!("{} Ancestry", ancestry.name);
         Ok(Self {
             max_health: ancestry.add_health,
             nat_def: ancestry.add_nat_def,
             speed: ancestry.speed,
-            speed_traits: ancestry.speed_traits.clone(),
-            senses: ancestry.senses.clone(),
-            immunities: ancestry.immunities.clone(),
-            languages: ancestry.languages.clone(),
+            speed_traits: ancestry
+                .speed_traits
+                .clone()
+                .into_iter()
+                .map(|tr| (tr, ancestry_source.clone()))
+                .collect(),
+            senses: ancestry
+                .senses
+                .clone()
+                .into_iter()
+                .map(|sense| (sense, ancestry_source.clone()))
+                .collect(),
+            immunities: ancestry
+                .immunities
+                .clone()
+                .into_iter()
+                .map(|imm| (imm.name, ancestry_source.clone()))
+                .collect(),
+            languages: ancestry
+                .languages
+                .clone()
+                .into_iter()
+                .map(|lang| (lang, ancestry_source.clone()))
+                .collect(),
             size: ancestry.size.clone(),
             arm_def: 0,
             bonus_dmg: 0,
+            traditions: Vec::new(),
+            path_talents: Vec::new(),
             choices,
         })
     }
@@ -352,17 +466,56 @@ impl CumulativeFields {
         self.arm_def += level.add_arm_def;
         self.speed += level.add_speed;
         self.bonus_dmg += level.add_bonus_dmg;
-        self.speed_traits.append(&mut level.speed_traits.clone());
+
+        let level_source = format!("{path_name} level {}", level.level);
+        self.speed_traits.append(
+            &mut level
+                .speed_traits
+                .clone()
+                .into_iter()
+                .map(|tr| (tr, level_source.clone()))
+                .collect(),
+        );
+
         if let Some(size) = level.size.clone() {
             self.size = size
         };
+
+        for language in &level.languages {
+            self.languages
+                .push((language.clone(), level_source.clone()));
+        }
+
+        for speed_trait in &level.speed_traits {
+            self.speed_traits
+                .push((speed_trait.clone(), level_source.clone()));
+        }
+
+        for tradition in &level.traditions {
+            self.traditions
+                .push((tradition.clone(), level_source.clone()));
+            let target = ChooseTarget::MagicTalent(1, tradition.name.clone());
+            self.choices.push(level_choice(
+                ModifierPathNode::LevelMagicTalent {
+                    path_name: path_name.to_string(),
+                    level: level.level,
+                },
+                target,
+            ));
+        }
+
+        for talent in &level.path_talents {
+            self.choices.append(&mut talent.modifiers.clone());
+            self.path_talents
+                .push((talent.clone(), level_source.clone()));
+        }
 
         if level.lang_choices > 0 {
             let target = ChooseTarget::Language(level.lang_choices as u32);
             self.choices.push(level_choice(
                 ModifierPathNode::LevelLanguage {
                     path_name: path_name.to_string(),
-                    level_id: level.id,
+                    level: level.level,
                 },
                 target,
             ));
@@ -373,7 +526,7 @@ impl CumulativeFields {
             self.choices.push(level_choice(
                 ModifierPathNode::LevelTradition {
                     path_name: path_name.to_string(),
-                    level_id: level.id,
+                    level: level.level,
                 },
                 target,
             ));
@@ -384,7 +537,7 @@ impl CumulativeFields {
             self.choices.push(level_choice(
                 ModifierPathNode::LevelNoviceSpell {
                     path_name: path_name.to_string(),
-                    level_id: level.id,
+                    level: level.level,
                 },
                 target,
             ));
@@ -395,7 +548,7 @@ impl CumulativeFields {
             self.choices.push(level_choice(
                 ModifierPathNode::LevelExpertSpell {
                     path_name: path_name.to_string(),
-                    level_id: level.id,
+                    level: level.level,
                 },
                 target,
             ));
@@ -406,15 +559,12 @@ impl CumulativeFields {
             self.choices.push(level_choice(
                 ModifierPathNode::LevelMasterSpell {
                     path_name: path_name.to_string(),
-                    level_id: level.id,
+                    level: level.level,
                 },
                 target,
             ));
         }
 
-        for talent in &level.path_talents {
-            self.choices.append(&mut talent.modifiers.clone());
-        }
         Ok(())
     }
 }

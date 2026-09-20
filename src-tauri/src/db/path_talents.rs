@@ -129,7 +129,7 @@ async fn extend_raw_path_talent(
         option_blocks::get_from_opt(db, raw_talent.option_block_id),
     );
 
-    let full_modifier =
+    let full_modifiers =
         FullModifier::from_path_talent(&raw_talent.name, &raw_talent.source, &raw_talent.mod_str)?;
 
     Ok(FullPathTalent {
@@ -143,7 +143,7 @@ async fn extend_raw_path_talent(
         description: raw_talent.description,
         info_table: info_table?,
         option_block: option_block?,
-        modifiers: full_modifier,
+        modifiers: full_modifiers,
         cluster: raw_talent.cluster,
     })
 }

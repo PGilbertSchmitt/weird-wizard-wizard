@@ -175,7 +175,7 @@ fn parse_grant_target(tokens: &mut Tokens) -> Result<GrantTarget, String> {
         }
         Token::Sense => {
             eat_dot(tokens)?;
-            Ok(GrantTarget::Sense(parse_comma_list(tokens)?))
+            Ok(GrantTarget::Sense(parse_comma_list_with_amounts(tokens)?))
         }
         Token::Immunity => {
             eat_dot(tokens)?;
@@ -183,7 +183,9 @@ fn parse_grant_target(tokens: &mut Tokens) -> Result<GrantTarget, String> {
         }
         Token::SpeedTrait => {
             eat_dot(tokens)?;
-            Ok(GrantTarget::SpeedTrait(parse_comma_list(tokens)?))
+            Ok(GrantTarget::SpeedTrait(parse_comma_list_with_amounts(
+                tokens,
+            )?))
         }
 
         // Targets with a sub-category
@@ -290,11 +292,6 @@ fn parse_choose_target(tokens: &mut Tokens) -> Result<ChooseTarget, String> {
         Token::Select => {
             eat_equal_sign(tokens)?;
             Ok(ChooseTarget::Select(multiplier, parse_ident(tokens)?))
-        }
-
-        Token::SelectAgain => {
-            eat_equal_sign(tokens)?;
-            Ok(ChooseTarget::SelectAgain(multiplier, parse_ident(tokens)?))
         }
 
         Token::Score => Ok(ChooseTarget::Score(multiplier)),
@@ -424,6 +421,59 @@ fn parse_comma_list(tokens: &mut Tokens) -> Result<Vec<String>, String> {
     }
 
     Ok(identifiers)
+}
+
+fn parse_comma_list_with_amounts(
+    tokens: &mut Tokens,
+) -> Result<Vec<(String, Option<String>)>, String> {
+    let mut identifiers = Vec::new();
+
+    identifiers.push(parse_ident_with_amount(tokens)?);
+
+    while let Some(Ok(Token::Comma)) = tokens.peek().as_ref() {
+        tokens.next();
+        identifiers.push(parse_ident_with_amount(tokens)?);
+    }
+
+    Ok(identifiers)
+}
+
+fn parse_ident_with_amount(tokens: &mut Tokens) -> Result<(String, Option<String>), String> {
+    let ident = parse_ident(tokens)?;
+    let amount = parse_amount(tokens)?;
+    Ok((ident, amount))
+}
+
+fn parse_amount(tokens: &mut Tokens) -> Result<Option<String>, String> {
+    match tokens.peek().as_ref() {
+        Some(&Err(())) => Err(String::from(
+            "Unexpected issue parsing token, invalid grammar",
+        )),
+        Some(&Ok(Token::OpenParen)) => {
+            tokens.next();
+            let mut amount_string = String::new();
+            loop {
+                match ut(tokens.next())? {
+                    Token::Number(x) => {
+                        amount_string.push_str(&x.to_string());
+                    }
+                    Token::Slash => {
+                        amount_string.push('/');
+                    }
+                    Token::CloseParen => {
+                        break;
+                    }
+                    other_token => {
+                        return Err(format!(
+                            "Expected quantity, instead found '{other_token:?}'"
+                        ))
+                    }
+                }
+            }
+            Ok(Some(amount_string))
+        }
+        _ => Ok(None),
+    }
 }
 
 fn parse_multiplier(tokens: &mut Tokens) -> Result<i32, String> {
