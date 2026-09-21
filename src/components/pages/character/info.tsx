@@ -6,7 +6,9 @@ import { FullCharacter } from '@/types/character';
 import { HealthAndDamage } from './health-info';
 import { AttributeRows, AttributeTable } from '@/components/ui/attribute-table';
 import { useMemo } from 'react';
-import { BadgeWithTooltip } from '@/components/ui/badge';
+import { TooltipText } from '@/components/ui/tooltip-text';
+import { init, last, toPairs, values } from 'ramda';
+import { Language } from '@/types/other_info';
 
 interface CharacterInfoProps {
   character: FullCharacter;
@@ -19,6 +21,10 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
         label: 'Defense',
         // Will need to handle armored defense when equipment is implemented
         value: character.nat_def,
+      },
+      {
+        label: 'Speed',
+        value: `${character.speed}`,
       },
       {
         label: 'Bonus Damage',
@@ -45,33 +51,132 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
   );
 
   const traits = useMemo(() => {
-    const allTraits: AttributeRows = [
-      {
-        label: 'Speed',
-        value: `${character.speed}`,
-      },
-    ];
+    const allTraits: AttributeRows = [];
 
     const speedTraits = character.speed_traits.map(([trait, source]) => (
-      <BadgeWithTooltip
+      <TooltipText
         key={trait.id}
         label={
-          <div>
-            <p>{trait.description}</p>
-            <p>
-              <i>From {source}</i>
-            </p>
-          </div>
+          <TooltipWindow>
+            <>
+              <p className="mb-5">{trait.description}</p>
+              <p>
+                <i>From {source}</i>
+              </p>
+            </>
+          </TooltipWindow>
         }
       >
         {`${trait.name} ${trait.amount || ''} ${trait.unit || ''}`.trim()}
-      </BadgeWithTooltip>
+      </TooltipText>
     ));
 
     if (speedTraits.length > 0) {
       allTraits.push({
         label: 'Speed Traits',
-        value: speedTraits,
+        value: <CommaSeparated elements={speedTraits} />,
+      });
+    }
+
+    const senses = character.senses.map(([sense, source]) => (
+      <TooltipText
+        key={sense.id}
+        label={
+          <TooltipWindow>
+            <>
+              <div className="w-100">
+                <p className="mb-5">{sense.description}</p>
+                <p>
+                  <i>From {source}</i>
+                </p>
+              </div>
+            </>
+          </TooltipWindow>
+        }
+      >
+        {`${sense.name} ${sense.amount || ''} ${sense.unit || ''}`.trim()}
+      </TooltipText>
+    ));
+
+    if (senses.length > 0) {
+      allTraits.push({
+        label: 'Senses',
+        value: <CommaSeparated elements={senses} />,
+      });
+    }
+
+    const collapsedLanguages = character.languages.reduce(
+      (
+        acc: Record<number, { language: Language; sources: string[] }>,
+        [language, source],
+      ) => {
+        acc[language.id] ||= {
+          language,
+          sources: [],
+        };
+        acc[language.id].sources.push(source);
+        return acc;
+      },
+      {},
+    );
+
+    const languages = values(collapsedLanguages).map(
+      ({ language, sources }) => (
+        <TooltipText
+          key={language.id}
+          label={
+            <TooltipWindow>
+              <>
+                <p className="mb-5">{language.description}</p>
+                <p>
+                  <i>From {human_comma_string(sources)}</i>
+                </p>
+              </>
+            </TooltipWindow>
+          }
+        >
+          {language.name}
+        </TooltipText>
+      ),
+    );
+
+    if (languages.length > 0) {
+      allTraits.push({
+        label: 'Languages',
+        value: <CommaSeparated elements={languages} />,
+      });
+    }
+
+    const collapsedImmunities = character.immunities.reduce(
+      (acc: Record<string, string[]>, [immunity, source]) => {
+        acc[immunity] ||= [];
+        acc[immunity].push(source);
+        return acc;
+      },
+      {},
+    );
+
+    const immunities = toPairs(collapsedImmunities).map(
+      ([immunity, sources]) => (
+        <TooltipText
+          key={immunity}
+          label={
+            <TooltipWindow>
+              <p>
+                <i>From {human_comma_string(sources)}</i>
+              </p>
+            </TooltipWindow>
+          }
+        >
+          {immunity}
+        </TooltipText>
+      ),
+    );
+
+    if (immunities.length > 0) {
+      allTraits.push({
+        label: 'Immunities',
+        value: <CommaSeparated elements={immunities} />,
       });
     }
 
@@ -88,22 +193,29 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
         <Separator />
 
         <div className={cn('bg-secondary-background text-foreground p-4')}>
-          <div className={cn('flex flex-row')}>
+          <div className={cn('flex flex-row gap-4')}>
+            <div>
+              <AttributeTable rows={attributes} />
+            </div>
+
+            <div>
+              <AttributeTable rows={traits} />
+            </div>
+
             <HealthAndDamage
               characterId={character.id}
               maxHealth={character.max_health}
               curHealth={character.health}
               curDamage={character.damage}
             />
-
-            <div className={cn('border border-border')}>
-              <AttributeTable rows={attributes} />
-            </div>
-
-            <div className={cn('border border-border')}>
-              <AttributeTable rows={traits} />
-            </div>
           </div>
+        </div>
+
+        <Separator />
+
+        <div className={cn('bg-secondary-background text-foreground p-4')}>
+          <h2>Profession: {character.profession.name}</h2><span>({character.profession.category})</span>
+          <p>{character.profession.description}</p>
         </div>
       </StaticCard>
 
@@ -114,3 +226,37 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
     </div>
   );
 };
+
+interface CommaSeparatedProps {
+  elements: Array<React.ReactNode>;
+}
+
+const CommaSeparated = ({ elements }: CommaSeparatedProps) => {
+  const [first, ...rest] = elements;
+  return (
+    <span>
+      {first}
+      {rest.map((other) => (
+        <>, {other}</>
+      ))}
+    </span>
+  );
+};
+
+const human_comma_string = (parts: string[]) => {
+  switch (parts.length) {
+    case 0:
+      return '';
+    case 1:
+      return parts[0];
+    case 2:
+      return `${parts[0]} and ${parts[1]}`;
+    default: {
+      return `${init(parts).join(', ')}, and ${last(parts)}`;
+    }
+  }
+};
+
+const TooltipWindow = ({ children }: { children: React.ReactElement }) => (
+  <div className="max-w-150">{children}</div>
+);

@@ -418,11 +418,15 @@ struct CumulativeFields {
 impl CumulativeFields {
     fn from_ancestry(ancestry: &FullAncestry) -> WWResult<Self> {
         let mut choices = Vec::new();
+        let mut path_talents = Vec::new();
+        let ancestry_source = format!("{} Ancestry", ancestry.name);
+
         for talent in &ancestry.talents {
             choices.append(&mut talent.modifiers.clone());
+            path_talents
+                .push((talent.clone(), ancestry_source.clone()));
         }
 
-        let ancestry_source = format!("{} Ancestry", ancestry.name);
         Ok(Self {
             max_health: ancestry.add_health,
             nat_def: ancestry.add_nat_def,
@@ -455,7 +459,7 @@ impl CumulativeFields {
             arm_def: 0,
             bonus_dmg: 0,
             traditions: Vec::new(),
-            path_talents: Vec::new(),
+            path_talents,
             choices,
         })
     }

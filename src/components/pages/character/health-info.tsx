@@ -49,7 +49,7 @@ export const HealthAndDamage = ({
   return (
     <div
       className={cn(
-        'flex flex-col items-center border border-border w-fit p-4 gap-4',
+        'flex flex-col items-center w-fit p-4 gap-4',
       )}
     >
       <div className={cn('flex flex-row items-center text-center')}>
@@ -75,32 +75,32 @@ export const HealthAndDamage = ({
         <div className={cn('flex flex-row')}>
           <Button
             pressStyle={false}
-            onClick={() => onUpdate(curHealth, curDamage + parseAmount(amount))}
+            onClick={() => onUpdate(curHealth, curDamage - parseAmount(amount))}
             className={cn(
               'rounded-none rounded-tl-base border-b border-t-2 border-r border-l-2 p-1 w-full',
             )}
           >
-            Take Damage
+            Heal Damage
           </Button>
           <Button
             pressStyle={false}
-            onClick={() => onUpdate(curHealth, curDamage - parseAmount(amount))}
+            onClick={() => onUpdate(curHealth + parseAmount(amount), curDamage)}
             className={cn(
               'rounded-none rounded-tr-base border-b border-t-2 border-l border-r-2 p-1 w-full',
             )}
           >
-            Heal Damage
+            Restore Health
           </Button>
         </div>
         <div className={cn('flex flex-row')}>
           <Button
             pressStyle={false}
-            onClick={() => onUpdate(curHealth + parseAmount(amount), curDamage)}
+            onClick={() => onUpdate(curHealth, curDamage + parseAmount(amount))}
             className={cn(
               'rounded-none rounded-bl-base border-t border-b-2 border-r border-l-2 p-1 w-full',
             )}
           >
-            Restore Health
+            Take Damage
           </Button>
           <Button
             pressStyle={false}

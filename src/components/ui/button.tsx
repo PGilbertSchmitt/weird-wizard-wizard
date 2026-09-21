@@ -10,16 +10,15 @@ interface ButtonProps extends BaseButtonProps {
   pressStyle?: boolean;
 }
 
-export const Button = (props: ButtonProps) => {
+export const Button = ({pressStyle: pressStyleProp, ...props}: ButtonProps) => {
   const adjustedPressStyle =
-    (props.pressStyle ?? true) ? pressStyle : 'shadow-0 shadow-none';
+    (pressStyleProp ?? true) ? pressStyle : 'shadow-0 shadow-none';
   return (
     <button
       {...props}
       className={cn(
         cardStyle,
         props.disabled ? 'saturate-0' : adjustedPressStyle,
-        adjustedPressStyle,
         'cursor-pointer',
         props.className,
       )}
