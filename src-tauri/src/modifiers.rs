@@ -12,14 +12,15 @@ use crate::{
 #[derive(TS, Debug, Serialize, Deserialize, Clone)]
 #[ts(export, export_to = "modifiers.ts")]
 pub struct FullModifier {
-    pub path_str: ModifierPathNode,
+    pub path_node: ModifierPathNode,
     pub mod_details: Modifier,
 }
 
 // This identifies a single leg of a modifier path. There's one kind per source of a Modifier.
 // The idx is needed because a single mod_str can have multiple Modifiers.
 #[derive(TS, Debug, Serialize, Deserialize, Clone)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum ModifierPathNode {
     LevelLanguage {
         path_name: String,
@@ -43,6 +44,9 @@ pub enum ModifierPathNode {
     },
     LevelMasterSpell {
         path_name: String,
+        level: i64,
+    },
+    LevelScore {
         level: i64,
     },
     PathTalent {
@@ -89,6 +93,9 @@ impl Display for ModifierPathNode {
             Self::LevelMasterSpell { path_name, level } => {
                 f.write_fmt(format_args!("level_master_spell|{path_name}|{level}"))?;
             }
+            Self::LevelScore { level } => {
+                f.write_fmt(format_args!("score_gain|{level}"))?;
+            }
             Self::PathTalent { name, source, idx } => {
                 f.write_fmt(format_args!("path_talent|{name}|{source}|{idx}"))?;
             }
@@ -123,6 +130,7 @@ impl ModifierPathNode {
             | Self::LevelNoviceSpell { path_name, level }
             | Self::LevelExpertSpell { path_name, level }
             | Self::LevelMasterSpell { path_name, level } => format!("{path_name} level {level}"),
+            Self::LevelScore { level } => format!("Level {level} score gain"),
             Self::PathTalent { name, source, .. } => format!("{source} talent {name}"),
             Self::MagicTalent {
                 name, tradition, ..
@@ -152,7 +160,7 @@ impl FullModifier {
             .map(|choice_str| {
                 (
                     choice_str.clone(),
-                    format!("{}=>{}", self.path_str, choice_str),
+                    format!("{}=>{}", self.path_node, choice_str),
                 )
             })
             .collect()
@@ -176,7 +184,7 @@ impl FullModifier {
                     .enumerate()
                     .map(|(idx, mod_details)| Self {
                         mod_details,
-                        path_str: ModifierPathNode::PathTalent {
+                        path_node: ModifierPathNode::PathTalent {
                             name: name.to_string(),
                             source: source.to_string(),
                             idx,
@@ -203,7 +211,7 @@ impl FullModifier {
                     .enumerate()
                     .map(|(idx, mod_details)| Self {
                         mod_details,
-                        path_str: ModifierPathNode::MagicTalent {
+                        path_node: ModifierPathNode::MagicTalent {
                             name: name.to_string(),
                             tradition: tradition_name.to_string(),
                             idx,
@@ -230,7 +238,7 @@ impl FullModifier {
                     .enumerate()
                     .map(|(idx, mod_details)| Self {
                         mod_details,
-                        path_str: ModifierPathNode::Spell {
+                        path_node: ModifierPathNode::Spell {
                             name: name.to_string(),
                             tradition: tradition_name.to_string(),
                             idx,

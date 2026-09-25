@@ -140,7 +140,7 @@ fn convert_choice(raw_choice: RawChoice) -> WWResult<FullChoice> {
                             idx,
                         };
                         FullModifier {
-                            path_str: choice_path_str,
+                            path_node: choice_path_str,
                             mod_details,
                         }
                     })

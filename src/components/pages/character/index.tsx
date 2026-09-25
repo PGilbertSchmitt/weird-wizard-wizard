@@ -8,6 +8,7 @@ import {
   TabsContent,
 } from '@/components/ui/neo/tabs';
 import { CharacterInfo } from './info';
+import { CharacterChoices } from './character-choices';
 
 export const CharacterPage = () => {
   const params = useParams();
@@ -43,7 +44,7 @@ export const CharacterPage = () => {
           <TabsTrigger value="Spells">Spells</TabsTrigger>
           <TabsTrigger value="Choices">Choices</TabsTrigger>
         </TabsList>
-        <div className={cn('gap-6 w-250 px-4')}>
+        <div className={cn('gap-6 w-250 p-4 flex flex-col items-center')}>
           <TabsContent value="Info">
             <CharacterInfo character={character} />
           </TabsContent>
@@ -54,7 +55,10 @@ export const CharacterPage = () => {
             <p>value="Spells"</p>
           </TabsContent>
           <TabsContent value="Choices">
-            <p>value="Choices"</p>
+            <CharacterChoices
+              characterId={character.id}
+              choices={character.required_choices}
+            />
           </TabsContent>
         </div>
       </Tabs>

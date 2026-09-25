@@ -423,8 +423,7 @@ impl CumulativeFields {
 
         for talent in &ancestry.talents {
             choices.append(&mut talent.modifiers.clone());
-            path_talents
-                .push((talent.clone(), ancestry_source.clone()));
+            path_talents.push((talent.clone(), ancestry_source.clone()));
         }
 
         Ok(Self {
@@ -470,6 +469,22 @@ impl CumulativeFields {
         self.arm_def += level.add_arm_def;
         self.speed += level.add_speed;
         self.bonus_dmg += level.add_bonus_dmg;
+
+        // All paths at level 3 get 2 score increases
+        if level.level == 3 {
+            self.choices.push(level_choice(
+                ModifierPathNode::LevelScore { level: level.level },
+                ChooseTarget::Score(2),
+            ))
+        }
+
+        // All paths at level 7 get 3 score increases
+        if level.level == 7 {
+            self.choices.push(level_choice(
+                ModifierPathNode::LevelScore { level: level.level },
+                ChooseTarget::Score(3),
+            ))
+        }
 
         let level_source = format!("{path_name} level {}", level.level);
         self.speed_traits.append(
@@ -586,7 +601,7 @@ fn clamp(value: i64, min: i64, max: i64) -> i64 {
 fn level_choice(path_str: ModifierPathNode, choose_target: ChooseTarget) -> FullModifier {
     let target_strs = choose_target.choice_strings();
     FullModifier {
-        path_str,
+        path_node: path_str,
         mod_details: Modifier {
             when: WhenMod::Permanent,
             target: Target::Choose(choose_target, target_strs),

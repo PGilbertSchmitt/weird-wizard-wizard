@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { FullCharacter } from '@/types/character';
 import { HealthAndDamage } from './health-info';
 import { AttributeRows, AttributeTable } from '@/components/ui/attribute-table';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { TooltipText } from '@/components/ui/tooltip-text';
 import { init, last, toPairs, values } from 'ramda';
 import { Language } from '@/types/other_info';
@@ -185,7 +185,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
 
   return (
     <div className={cn('flex flex-col items-center')}>
-      <StaticCard className={cn('my-4 p-0 w-full')}>
+      <StaticCard className={cn('p-0 w-full')}>
         <div className={cn('flex flex-row justify-center p-2')}>
           <h2>Basic Info</h2>
         </div>
@@ -214,7 +214,8 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
         <Separator />
 
         <div className={cn('bg-secondary-background text-foreground p-4')}>
-          <h2>Profession: {character.profession.name}</h2><span>({character.profession.category})</span>
+          <h2>Profession: {character.profession.name}</h2>
+          <span>({character.profession.category})</span>
           <p>{character.profession.description}</p>
         </div>
       </StaticCard>
@@ -236,8 +237,8 @@ const CommaSeparated = ({ elements }: CommaSeparatedProps) => {
   return (
     <span>
       {first}
-      {rest.map((other) => (
-        <>, {other}</>
+      {rest.map((other, i) => (
+        <Fragment key={i}>, {other}</Fragment>
       ))}
     </span>
   );

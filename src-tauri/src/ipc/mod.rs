@@ -1,5 +1,6 @@
 mod ancestries;
 mod characters;
+mod choices;
 mod import;
 mod magic;
 mod path_talents;
@@ -10,6 +11,7 @@ mod tables;
 
 pub use ancestries::*;
 pub use characters::*;
+pub use choices::*;
 pub use import::*;
 pub use magic::*;
 pub use path_talents::*;

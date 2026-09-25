@@ -8,7 +8,7 @@ import {
 } from '../ui/neo/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useContext } from 'react';
-import { ThemeProviderContext } from '@/contexts/theme-context';
+import { ALL_COLORS, ThemeProviderContext } from '@/contexts/theme-context';
 
 const triggerStyle =
   'bg-main border-border border-t-2 border-b-2 p-2 transition-color cursor-pointer hover:brightness-90';
@@ -30,15 +30,17 @@ export const ThemeSelector = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent className={cn('m-4')}>
           <DropdownMenuGroup>
-            <DropdownMenuItem onSelect={() => setColor('red')}>
-              Red
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setColor('cyan')}>
-              Cyan
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setColor('amber')}>
-              Amber
-            </DropdownMenuItem>
+            {ALL_COLORS.map((color) => (
+              <DropdownMenuItem
+                key={color}
+                onSelect={() => {
+                  console.log('may I set a color?', color);
+                  setColor(color);
+                }}
+              >
+                {color}
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>

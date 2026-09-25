@@ -1,4 +1,4 @@
-import { ThemeProviderContext } from '@/contexts/theme-context';
+import { ALL_COLORS, ThemeProviderContext } from '@/contexts/theme-context';
 import {
   ThemeColor,
   ThemeContextState,
@@ -14,10 +14,9 @@ interface ThemeData {
 }
 const DEFAULT_THEME: ThemeData = { light: 'light', color: 'red' };
 const THEME_LIGHTS: ThemeLight[] = ['light', 'dark'];
-const THEME_COLORS: ThemeColor[] = ['red', 'cyan', 'amber'];
 const ALL_THEMES: Array<ThemeLight | ThemeColor> = [
   ...THEME_LIGHTS,
-  ...THEME_COLORS,
+  ...ALL_COLORS,
 ];
 
 const isLight = (s: string): s is ThemeLight => {
@@ -25,7 +24,7 @@ const isLight = (s: string): s is ThemeLight => {
 };
 
 const isColor = (s: string): s is ThemeColor => {
-  return (THEME_COLORS as string[]).includes(s);
+  return (ALL_COLORS as string[]).includes(s);
 };
 
 const parseThemeString = (theme: string | null): ThemeData => {

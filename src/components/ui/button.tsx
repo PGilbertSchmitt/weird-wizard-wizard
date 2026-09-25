@@ -10,7 +10,10 @@ interface ButtonProps extends BaseButtonProps {
   pressStyle?: boolean;
 }
 
-export const Button = ({pressStyle: pressStyleProp, ...props}: ButtonProps) => {
+export const Button = ({
+  pressStyle: pressStyleProp,
+  ...props
+}: ButtonProps) => {
   const adjustedPressStyle =
     (pressStyleProp ?? true) ? pressStyle : 'shadow-0 shadow-none';
   return (

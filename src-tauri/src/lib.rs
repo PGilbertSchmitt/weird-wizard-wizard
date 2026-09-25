@@ -50,6 +50,7 @@ pub fn run() {
             ipc::get_full_character,
             ipc::update_character_health,
             // Not used yet:
+            ipc::save_choice,
             ipc::get_full_talent,
             ipc::get_ancestry_talents,
             ipc::get_table,

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { StaticCard } from '@/components/ui/card';
 import { ControlledCounter } from '@/components/ui/controlled-counter';
 import { Paragraph } from '@/components/ui/paragraph';
+import { ScoreForm, Scores } from '@/components/ui/score-form';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { max, min, toPairs } from 'ramda';
@@ -11,13 +12,6 @@ import { useEffect, useMemo, useState } from 'react';
 interface ChooseScoresProps {
   novicePathId: number;
   onConfirm: (scores: Scores) => void;
-}
-
-export interface Scores {
-  strength: number;
-  agility: number;
-  intellect: number;
-  will: number;
 }
 
 export const ChooseScores = ({
@@ -66,6 +60,18 @@ export const ChooseScores = ({
     scores.strength + scores.agility + scores.intellect + scores.will;
 
   const pointsRemaining = highestSumScore - currentSumScore;
+  const minScores: Scores = {
+    strength: 1,
+    agility: 1,
+    intellect: 1,
+    will: 1,
+  };
+  const maxScores: Scores = {
+    strength: min(highestSingleScore, scores.strength + pointsRemaining),
+    agility: min(highestSingleScore, scores.agility + pointsRemaining),
+    intellect: min(highestSingleScore, scores.intellect + pointsRemaining),
+    will: min(highestSingleScore, scores.will + pointsRemaining),
+  };
 
   return (
     <div className="flex flex-col align-middle w-150">
@@ -104,35 +110,12 @@ export const ChooseScores = ({
           </div>
 
           <div className={cn('flex flex-row')}>
-            {toPairs(scores).map(([ability, value]) => {
-              return (
-                <div
-                  key={ability}
-                  className={cn('flex flex-col items-center m-4')}
-                >
-                  {fixCase(ability)}
-                  <ControlledCounter
-                    value={value}
-                    onAdd={() =>
-                      setScores({
-                        ...scores,
-                        [ability]: value + 1,
-                      })
-                    }
-                    onSubtract={() =>
-                      setScores({
-                        ...scores,
-                        [ability]: value - 1,
-                      })
-                    }
-                    range={[
-                      1,
-                      min(highestSingleScore, value + pointsRemaining),
-                    ]}
-                  />
-                </div>
-              );
-            })}
+            <ScoreForm
+              scores={scores}
+              setScores={setScores}
+              minScores={minScores}
+              maxScores={maxScores}
+            />
           </div>
 
           <Button className={cn('p-2 mb-4')} onClick={() => onConfirm(scores)}>
@@ -143,5 +126,3 @@ export const ChooseScores = ({
     </div>
   );
 };
-
-const fixCase = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`;

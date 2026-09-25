@@ -291,7 +291,7 @@ pub async fn collect_from_modifier_tree(
     let mut new_choice_selections: Vec<i64> = Vec::new();
     let mut new_magic_spells: Vec<i64> = Vec::new();
 
-    let source_string = modifier.path_str.source_string();
+    let source_string = modifier.path_node.source_string();
 
     match modifier.mod_details.target.clone() {
         Target::Grant(grant_target) => handle_grant_target(
@@ -326,6 +326,7 @@ pub async fn collect_from_modifier_tree(
 
         Target::Choose(choose_target, _) => match choose_target {
             ChooseTarget::Score(_) => {
+                println!("Processing score choice");
                 handle_choice(
                     &modifier,
                     saved_choices.clone(),
@@ -340,10 +341,11 @@ pub async fn collect_from_modifier_tree(
                     &mut selections,
                     parse_id_choice,
                 )?
-                .map(|id| {
+                .into_iter()
+                .for_each(|id| {
                     selections
                         .gained_language_ids
-                        .push((id, modifier.path_str.source_string()))
+                        .push((id, modifier.path_node.source_string()))
                 });
             }
             ChooseTarget::NoviceSpell(_)
@@ -358,7 +360,8 @@ pub async fn collect_from_modifier_tree(
                     &mut selections,
                     parse_id_choice,
                 )?
-                .map(|id| new_magic_spells.push(id));
+                .into_iter()
+                .for_each(|id| new_magic_spells.push(id));
             }
             ChooseTarget::Profession(_) => {
                 handle_choice(
@@ -367,7 +370,8 @@ pub async fn collect_from_modifier_tree(
                     &mut selections,
                     parse_id_choice,
                 )?
-                .map(|id| selections.gained_profession_ids.push(id));
+                .into_iter()
+                .for_each(|id| selections.gained_profession_ids.push(id));
             }
             ChooseTarget::Select(_, _) => {
                 handle_choice(
@@ -376,7 +380,8 @@ pub async fn collect_from_modifier_tree(
                     &mut selections,
                     parse_id_choice,
                 )?
-                .map(|id| {
+                .into_iter()
+                .for_each(|id| {
                     new_choice_selections.push(id);
                 });
             }
@@ -388,7 +393,8 @@ pub async fn collect_from_modifier_tree(
                     &mut selections,
                     parse_twin_id_choice,
                 )?
-                .map(|(trad_id, talent_id)| {
+                .into_iter()
+                .for_each(|(trad_id, talent_id)| {
                     selections
                         .gained_tradition_ids
                         .push((trad_id, source_string.clone()));
@@ -402,7 +408,8 @@ pub async fn collect_from_modifier_tree(
                     &mut selections,
                     parse_id_choice,
                 )?
-                .map(|talent_id| {
+                .into_iter()
+                .for_each(|talent_id| {
                     new_magic_talent_ids.push(talent_id);
                 });
             }
@@ -414,7 +421,8 @@ pub async fn collect_from_modifier_tree(
                     &mut selections,
                     parse_slots_choice,
                 )?
-                .map(|slot| {
+                .into_iter()
+                .for_each(|slot| {
                     selections.modified_slots.push(slot);
                 });
             }
@@ -545,7 +553,7 @@ fn handle_grant_target(
     new_path_talents: &mut Vec<(String, String)>,
     new_magic_talents: &mut Vec<(String, String)>,
 ) {
-    let source_string = modifier.path_str.source_string();
+    let source_string = modifier.path_node.source_string();
     match grant_target {
         GrantTarget::Str(x) => {
             selections.strength += x as i64;
@@ -587,7 +595,7 @@ fn handle_grant_target(
                 let choose_target = ChooseTarget::MagicTalent(1, item.clone());
                 let choice_strings = choose_target.choice_strings();
                 new_choice_mods.push(FullModifier {
-                    path_str: modifier.path_str.to_owned(),
+                    path_node: modifier.path_node.to_owned(),
                     mod_details: Modifier {
                         when: modifier.mod_details.when,
                         condition: modifier.mod_details.condition.clone(),
@@ -634,15 +642,16 @@ fn handle_choice<F, T>(
     saved_choices: Arc<HashMap<String, CharacterChoice>>,
     mut selections: &mut ModifierSelections,
     mut on_selection: F,
-) -> WWResult<Option<T>>
+) -> WWResult<Vec<T>>
 where
     F: FnMut(&str, &mut ModifierSelections) -> WWResult<T>,
 {
     let mut required_choice_strings = Vec::new();
+    let mut results = Vec::new();
     for (choice_key, full_key) in modifier.keys() {
         match saved_choices.get(&full_key) {
             Some(ch) => {
-                return Ok(Some(on_selection(&ch.selection, &mut selections)?));
+                results.push(on_selection(&ch.selection, &mut selections)?);
             }
             None => {
                 if modifier.required() {
@@ -657,15 +666,15 @@ where
         selections.required_choices.push(new_modifier);
     }
 
-    Ok(None)
+    Ok(results)
 }
 
 fn parse_score_choice(entry: &str, selections: &mut ModifierSelections) -> WWResult<()> {
     match entry {
-        "Strength" => selections.strength += 1,
-        "Agility" => selections.agility += 1,
-        "Intellect" => selections.intellect += 1,
-        "Will" => selections.will += 1,
+        "strength" => selections.strength += 1,
+        "agility" => selections.agility += 1,
+        "intellect" => selections.intellect += 1,
+        "will" => selections.will += 1,
         _ => {
             return Err(Generic(format!(
                 "Failed to parse Score choice selection '{entry}'"
@@ -784,4 +793,41 @@ where
             .await?;
 
     Ok((has_mods, sub_trees, source))
+}
+
+pub async fn save_choices(
+    db: &Pool<Sqlite>,
+    character_id: i64,
+    modifier: FullModifier,
+    values: Vec<String>,
+) -> WWResult<()> {
+    let choice_keys = modifier.keys();
+    if choice_keys.len() != values.len() {
+        return Err(Generic(format!("Choice could not be saved, number of saved values does not match the number of choice keys")));
+    }
+    // println!("Our keys: {choice_keys:?}");
+    // println!("Our values: {values:?}");
+
+    let (dismissable, duration) = modifier.mod_details.when.to_choice_data();
+    for ((_, key), value) in choice_keys.into_iter().zip(values.into_iter()) {
+        sqlx::query!(
+            "INSERT INTO character_choices (
+                character_id,
+                choice_key,
+                selection,
+                dismissable,
+                duration
+            ) VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT(character_id, choice_key) DO UPDATE SET selection = $3",
+            character_id,
+            key,
+            value,
+            dismissable,
+            duration // modifier.
+        )
+        .execute(db)
+        .await?;
+    }
+
+    Ok(())
 }

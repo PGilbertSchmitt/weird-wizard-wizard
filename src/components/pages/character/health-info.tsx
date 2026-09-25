@@ -47,11 +47,7 @@ export const HealthAndDamage = ({
   };
 
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center w-fit p-4 gap-4',
-      )}
-    >
+    <div className={cn('flex flex-col items-center w-fit p-4 gap-4')}>
       <div className={cn('flex flex-row items-center text-center')}>
         <div className={cn('border border-border w-24 p-2 mr-2')}>
           <h3>Damage</h3>

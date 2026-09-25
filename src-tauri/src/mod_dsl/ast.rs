@@ -12,7 +12,8 @@ pub struct Modifier {
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum Target {
     Grant(GrantTarget),
     Lose(LoseTarget),
@@ -40,7 +41,8 @@ impl Target {
 }
 
 #[derive(TS, Debug, Clone, Copy, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum WhenDuration {
     OneMinute,
     OneHour,
@@ -50,8 +52,22 @@ pub enum WhenDuration {
     Rest,
 }
 
+impl WhenDuration {
+    pub fn to_string(&self) -> String {
+        match self {
+            Self::OneMinute => String::from("OneMinute"),
+            Self::OneHour => String::from("OneHour"),
+            Self::FourHours => String::from("FourHours"),
+            Self::EightHours => String::from("EightHours"),
+            Self::OneDay => String::from("OneDay"),
+            Self::Rest => String::from("Rest"),
+        }
+    }
+}
+
 #[derive(TS, Debug, Clone, Copy, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum WhenMod {
     Permanent,
     CastOnce,
@@ -66,11 +82,22 @@ impl WhenMod {
             _ => false,
         }
     }
+
+    /* Returns (dismissable, Option<duration>) */
+    pub fn to_choice_data(&self) -> (bool, Option<String>) {
+        match self {
+            Self::CastOnce => (true, None),
+            Self::Permanent => (false, None),
+            Self::CastTime(when) => (false, Some(when.to_string())),
+            Self::CastTimeDismiss(when) => (true, Some(when.to_string())),
+        }
+    }
 }
 
 // Grant - Everything except StatBlock, Heal, and Slots
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum GrantTarget {
     Int(i32),
     Str(i32),
@@ -93,7 +120,8 @@ pub enum GrantTarget {
 
 // Lose - Only Talent and MagicTalent
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum LoseTarget {
     Talent(String, String),
     MagicTalent(String, String),
@@ -101,7 +129,8 @@ pub enum LoseTarget {
 
 // Override - Only Speed, Defense, the unique StatBlock target, and the unique MergeStatBlock target
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum OverrideTarget {
     Speed(i32),
     Defense(i32),
@@ -111,7 +140,8 @@ pub enum OverrideTarget {
 
 // Choose - This MOD uses its own targets, which don't overlap with any of the others
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum ChooseTarget {
     Language(u32),
     Profession(u32),
@@ -163,7 +193,8 @@ fn repeat_id(s: &str, count: u32) -> Vec<String> {
 
 // Apply - Only Heal, Health, and Slots
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum ApplyTarget {
     Heal(HealAmount),
     Health(HealAmount),
@@ -171,7 +202,8 @@ pub enum ApplyTarget {
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum HealAmount {
     Number(i32),
     Expr(SimpleExpr),
@@ -180,7 +212,8 @@ pub enum HealAmount {
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum ChooseSlotTarget {
     Plus(u32),
     Times(u32),
@@ -202,7 +235,8 @@ impl Display for ChooseSlotTarget {
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum ApplySlotsTarget {
     AnySpell(u32),
     NoviceSpell(u32),
@@ -220,7 +254,8 @@ pub struct Dice {
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum HasCategory {
     SpeedTrait(String),
     Sense(String),
@@ -234,7 +269,8 @@ pub struct SimpleExpr {
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum ExprValue {
     Health,
     Dmg,
@@ -256,7 +292,8 @@ impl Display for ExprValue {
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum ExprOp {
     Lt,
     Gt,
@@ -280,7 +317,8 @@ impl Display for ExprOp {
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
-#[ts(export, export_to = "modifiers.ts")]
+#[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
+#[serde(tag = "type", content = "data")]
 pub enum Condition {
     None,
     HasNot,

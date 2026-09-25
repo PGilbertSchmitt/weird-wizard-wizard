@@ -1,7 +1,9 @@
 import { createContext } from 'react';
 
 export type ThemeLight = 'light' | 'dark';
-export type ThemeColor = 'red' | 'cyan' | 'amber';
+export type ThemeColor = 'red' | 'cyan' | 'amber' | 'green';
+
+export const ALL_COLORS: ThemeColor[] = ['red', 'amber', 'green', 'cyan'];
 
 export interface ThemeContextState {
   light: ThemeLight;
@@ -17,5 +19,4 @@ const initialState: ThemeContextState = {
   setColor: (_) => null,
 };
 
-export const ThemeProviderContext =
-  createContext<ThemeContextState>(initialState);
+export const ThemeProviderContext = createContext(initialState);

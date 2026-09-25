@@ -3,6 +3,7 @@ import {
   CreateCharacter,
   FullCharacter,
 } from '@/types/character';
+import { FullModifier } from '@/types/modifiers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -50,6 +51,28 @@ export const useUpdateCharacterHealth = (id: number) => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: CHARACTER_KEYS.character(id),
+      });
+    },
+  });
+};
+
+interface SaveChoiceParams {
+  modifier: FullModifier;
+  values: Array<string>;
+}
+
+export const useSaveChoice = (characterId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ modifier, values }: SaveChoiceParams) =>
+      invoke('save_choice', {
+        characterId: characterId,
+        modifier,
+        values,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: CHARACTER_KEYS.character(characterId),
       });
     },
   });

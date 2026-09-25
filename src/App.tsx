@@ -11,6 +11,7 @@ import { TraditionPage } from './components/pages/tome/tradition-page';
 import { TooltipProvider } from './components/ui/neo/tooltip';
 import { Catalogue } from './components/pages/catalogue';
 import { CharacterCreationPage } from './components/pages/character-creation';
+import { ModalProvider } from './components/providers/modal-provider';
 // import { Tome } from './components/pages/tome/tradition-index';
 // import { TraditionPage } from './components/pages/tome/tradition-page';
 // import { SeedDropzone } from "./dropzone";
@@ -21,24 +22,26 @@ const App = () => (
   <QueryClientProvider client={client}>
     <BrowserRouter>
       <ThemeProvider>
-        <TooltipProvider>
-          <Layout>
-            <Routes>
-              <Route path="/" Component={Home} />
-              <Route path="/character/:id" Component={CharacterPage} />
-              <Route
-                path="/character-creation"
-                Component={CharacterCreationPage}
-              />
-              <Route path="/tome">
-                <Route index Component={Tome} />
-                <Route path=":traditionId" Component={TraditionPage} />
-              </Route>
-              <Route path="/Catalogue" Component={Catalogue} />
-              <Route path="/import" Component={ImportSeed} />
-            </Routes>
-          </Layout>
-        </TooltipProvider>
+        <ModalProvider>
+          <TooltipProvider>
+            <Layout>
+              <Routes>
+                <Route path="/" Component={Home} />
+                <Route path="/character/:id" Component={CharacterPage} />
+                <Route
+                  path="/character-creation"
+                  Component={CharacterCreationPage}
+                />
+                <Route path="/tome">
+                  <Route index Component={Tome} />
+                  <Route path=":traditionId" Component={TraditionPage} />
+                </Route>
+                <Route path="/Catalogue" Component={Catalogue} />
+                <Route path="/import" Component={ImportSeed} />
+              </Routes>
+            </Layout>
+          </TooltipProvider>
+        </ModalProvider>
       </ThemeProvider>
     </BrowserRouter>
   </QueryClientProvider>

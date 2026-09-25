@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router';
 import { User, WandSparkles, Swords, FileUp } from 'lucide-react';
 import { ThemeSelector } from './theme-selector';
+import { Modals } from '../modals';
 
 type IconType = typeof WandSparkles;
 
@@ -88,6 +89,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       </div>
       <ThemeSelector />
       <div className="w-fit h-fit pb-5 m-auto">{children}</div>
+
+      <Modals />
     </main>
   );
 };
