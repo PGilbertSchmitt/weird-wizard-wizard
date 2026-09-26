@@ -41,3 +41,14 @@ pub async fn update_character_health(
     let db_state = db_state.lock().await;
     Ok(characters::update_health(&db_state.pool, id, health, damage).await?)
 }
+
+#[command]
+pub async fn update_character_level(
+    app: AppHandle<Wry>,
+    id: i64,
+    level: i64,
+) -> WWResult<()> {
+    let db_state = get_database(&app)?;
+    let db_state = db_state.lock().await;
+    Ok(characters::update_level(&db_state.pool, id, level).await?)
+}

@@ -56,6 +56,19 @@ export const useUpdateCharacterHealth = (id: number) => {
   });
 };
 
+export const useUpdateCharacterLevel = (id: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (level: number) =>
+      invoke<void>('update_character_level', { id, level }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: CHARACTER_KEYS.character(id),
+      });
+    },
+  });
+}
+
 interface SaveChoiceParams {
   modifier: FullModifier;
   values: Array<string>;

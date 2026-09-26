@@ -9,12 +9,15 @@ import { Fragment, useMemo } from 'react';
 import { TooltipText } from '@/components/ui/tooltip-text';
 import { init, last, toPairs, values } from 'ramda';
 import { Language } from '@/types/other_info';
+import { useUpdateCharacterLevel } from '@/api/characters';
 
 interface CharacterInfoProps {
   character: FullCharacter;
 }
 
 export const CharacterInfo = ({ character }: CharacterInfoProps) => {
+  const { mutateAsync: updateLevel } = useUpdateCharacterLevel(character.id);
+
   const attributes: AttributeRows = useMemo(
     () => [
       {
@@ -221,8 +224,22 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
       </StaticCard>
 
       <div>
-        <Button className="m-2">Level Up</Button>
-        <Button className="m-2">Level Down</Button>
+        {character.level > 1 && (
+          <Button
+            className="m-2"
+            onClick={() => updateLevel(character.level - 1)}
+          >
+            Level Down
+          </Button>
+        )}
+        {character.level < 10 && (
+          <Button
+            className="m-2"
+            onClick={() => updateLevel(character.level + 1)}
+          >
+            Level Up
+          </Button>
+        )}
       </div>
     </div>
   );
