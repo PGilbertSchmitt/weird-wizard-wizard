@@ -10,12 +10,14 @@ import { TalentRestore } from '@/types/etc';
 import { FullMagicTalent, MagicTalentCharges } from '@/types/magic';
 import { Sparkles, Waypoints } from 'lucide-react';
 import { useMemo } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface MagicTalentCardProps {
   talent: FullMagicTalent;
+  onSelect?: (id: number, name: string) => void;
 }
 
-export const MagicTalentCard = ({ talent }: MagicTalentCardProps) => {
+export const MagicTalentCard = ({ talent, onSelect }: MagicTalentCardProps) => {
   const attributeRows = useMemo(() => {
     const staticAttributes: AttributeRows = [
       {
@@ -49,7 +51,12 @@ export const MagicTalentCard = ({ talent }: MagicTalentCardProps) => {
   return (
     <StaticCard className="p-0">
       <div className={cn('p-2')}>
-        <div className={cn('flex justify-between gap-2 my-1')}>
+        <div className={cn('flex justify-start gap-5 my-1')}>
+          {onSelect && (
+            <Button pressStyle={false} className={cn('px-5 py-1')} onClick={() => onSelect(talent.id, talent.name)}>
+              Pick
+            </Button>
+          )}
           <h2 className={cn('text-lg w-fit pt-1')}>{talent.name}</h2>
           <div className={cn('flex gap-2')}>
             {talent.activate.includes('Ritual') && (

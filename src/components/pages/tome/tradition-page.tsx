@@ -17,8 +17,6 @@ export const TraditionPage = () => {
 
   const { data: traditionData } = useFullTradition(traditionId);
 
-  console.log('Tradition:', traditionData);
-
   if (!traditionData) {
     return null;
   }

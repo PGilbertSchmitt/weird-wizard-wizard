@@ -1,4 +1,9 @@
-import { FullTradition, TraditionIndexItem } from '@/types/magic';
+import {
+  FullMagicTalent,
+  FullSpell,
+  FullTradition,
+  TraditionIndexItem,
+} from '@/types/magic';
 import { useQuery } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -12,4 +17,20 @@ export const useFullTradition = (id: number) =>
   useQuery({
     queryKey: ['tradition', id],
     queryFn: () => invoke<FullTradition>('get_tradition', { id }),
+  });
+
+export const useMagicTalents = (traditionId: number) =>
+  useQuery({
+    queryKey: ['magic_talents', traditionId],
+    queryFn: () =>
+      invoke<Array<FullMagicTalent>>('get_magic_talents_for_tradition', {
+        traditionId,
+      }),
+  });
+
+export const useSpellsForTradition = (traditionId: number) =>
+  useQuery({
+    queryKey: ['spells', traditionId],
+    queryFn: () =>
+      invoke<Array<FullSpell>>('get_spells_for_tradition', { traditionId }),
   });

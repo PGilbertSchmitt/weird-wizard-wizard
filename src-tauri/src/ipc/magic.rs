@@ -32,8 +32,22 @@ pub async fn get_spell(app: AppHandle<Wry>, id: i64) -> WWResult<FullSpell> {
 }
 
 #[command]
+pub async fn get_spells_for_tradition(app: AppHandle<Wry>, tradition_id: i64) -> WWResult<Vec<FullSpell>> {
+    let db_state = get_database(&app)?;
+    let db_state = db_state.lock().await;
+    Ok(spells::get_for_tradition(&db_state.pool, tradition_id).await?)
+}
+
+#[command]
 pub async fn get_magic_talent(app: AppHandle<Wry>, id: i64) -> WWResult<FullMagicTalent> {
     let db_state = get_database(&app)?;
     let db_state = db_state.lock().await;
     Ok(magic_talents::get(&db_state.pool, id).await?)
+}
+
+#[command]
+pub async fn get_magic_talents_for_tradition(app: AppHandle<Wry>, tradition_id: i64) -> WWResult<Vec<FullMagicTalent>> {
+    let db_state = get_database(&app)?;
+    let db_state = db_state.lock().await;
+    Ok(magic_talents::get_for_tradition(&db_state.pool, tradition_id).await?)
 }

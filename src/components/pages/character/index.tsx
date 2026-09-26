@@ -15,7 +15,7 @@ export const CharacterPage = () => {
   const id = parseInt(params['id'] || '-1');
   const { data: character } = useCharacter(id);
 
-  console.log(character);
+  console.log('Character', character);
 
   if (character === undefined) {
     return null;

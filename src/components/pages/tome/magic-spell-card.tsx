@@ -9,12 +9,14 @@ import { cn } from '@/lib/utils';
 import { FullSpell } from '@/types/magic';
 import { Waypoints } from 'lucide-react';
 import { useMemo } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface SpellCardProps {
   spell: FullSpell;
+  onSelect?: (id: number, name: string) => void;
 }
 
-export const SpellCard = ({ spell }: SpellCardProps) => {
+export const SpellCard = ({ spell, onSelect }: SpellCardProps) => {
   const attributeRows: AttributeRows = useMemo(() => {
     return [
       {
@@ -32,12 +34,15 @@ export const SpellCard = ({ spell }: SpellCardProps) => {
     ];
   }, [spell.id]);
 
-  console.log('Spell', spell);
-
   return (
     <StaticCard className="p-0">
       <div className="p-2">
-        <div className={cn('flex justify-between gap-2 my-1')}>
+        <div className={cn('flex justify-start gap-5 my-1')}>
+          {onSelect && (
+            <Button pressStyle={false} className={cn('px-5 py-1')} onClick={() => onSelect(spell.id, spell.name)}>
+              Pick
+            </Button>
+          )}
           <h2 className={cn('text-lg w-fit pt-1')}>{spell.name}</h2>
           <div className={cn('flex gap-2')}>
             {spell.ritual && (

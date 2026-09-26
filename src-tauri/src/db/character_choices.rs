@@ -391,14 +391,18 @@ pub async fn collect_from_modifier_tree(
                     &modifier,
                     saved_choices.clone(),
                     &mut selections,
-                    parse_twin_id_choice,
+                    parse_tradition_ids_choice,
                 )?
                 .into_iter()
-                .for_each(|(trad_id, talent_id)| {
+                .for_each(|(trad_id, kind, item_id)| {
                     selections
                         .gained_tradition_ids
                         .push((trad_id, source_string.clone()));
-                    new_magic_talent_ids.push(talent_id);
+                    if kind == "t" {
+                        new_magic_talent_ids.push(item_id);
+                    } else {
+                        new_magic_spells.push(item_id);
+                    }
                 });
             }
             ChooseTarget::MagicTalent(_, _) => {
@@ -691,24 +695,27 @@ fn parse_id_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<i64> {
         .map_err(|_| Generic(format!("Failed to parse ID value '{entry}'. {DISCLAIMER}")))?)
 }
 
-fn parse_twin_id_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<(i64, i64)> {
+fn parse_tradition_ids_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<(i64, String, i64)> {
+    let make_error = || {
+        Generic(format!(
+            "Failed to parse tradition decision '{entry}'. {DISCLAIMER}"
+        ))
+    };
+
     let mut twin_ids = entry.split('|');
     let trad_id = twin_ids
         .next()
-        .ok_or_else(|| Generic(format!("Blank twin ID value '{entry}'. {DISCLAIMER}")))?
+        .ok_or_else(make_error)?
         .parse()
         .map_err(|_| Generic(format!("Failed to parse ID value '{entry}'. {DISCLAIMER}")))?;
-    let talent_id = twin_ids
+    let kind = twin_ids.next().ok_or_else(make_error)?.to_string();
+    let item_id = twin_ids
         .next()
-        .ok_or_else(|| {
-            Generic(format!(
-                "Failed to parse twin ID value '{entry}'. {DISCLAIMER}"
-            ))
-        })?
+        .ok_or_else(make_error)?
         .parse()
         .map_err(|_| Generic(format!("Failed to parse ID value '{entry}'. {DISCLAIMER}")))?;
 
-    Ok((trad_id, talent_id))
+    Ok((trad_id, kind, item_id))
 }
 
 fn parse_slots_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<SlotMod> {

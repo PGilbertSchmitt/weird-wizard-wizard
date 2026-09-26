@@ -326,7 +326,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character
 -- The interpretation of the character_choices `selection` column depends on the mod target:
 -- Language        => id, foreign key to languages table
 -- Profession      => id, foreign key to professions table
--- Tradition       => id|id, foreign key to traditions table and foreign key to magic_talents table
+-- Tradition       => id|t|id, foreign key to traditions table and foreign key to magic_talents table
+--              or => id|s|id, foreign key to traditions table and foreign key to spells table
 -- NoviceSpell     => id, foreign key to spells table
 -- NoviceSpellFrom => id, foreign key to spells table
 -- ExpertSpell     => id, foreign key to spells table
@@ -335,7 +336,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character
 -- MasterSpellFrom => id, foreign key to spells table
 -- Select          => id, foreign key to choice_selections table
 -- SelectAgain     => id, foreign key to choice_selections table
--- Score           => [Ability], where Ability is one of Strength, Agility, Intellect, and Will
+-- Score           => [ability], where ability is one of strength, agility, intellect, and will (lowercase)
 -- Slots           => [plus|times]|[integer]|id, where id is a foreign key to spells table
 --   Tradition, all pure spell IDs, and Select/SelectAgain can trigger additional mods.
 --   The rest are terminal and won't affect the character further.

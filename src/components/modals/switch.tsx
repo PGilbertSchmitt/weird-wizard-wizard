@@ -1,11 +1,20 @@
 import { cn } from '@/lib/utils';
-import { ModalData, ModalTypes } from './type';
+import { FullChoiceModifier, ModalData, ModalTypes } from './type';
 import { ChooseScores } from './screens/choose-scores';
 import { StaticCard } from '../ui/card';
 import { WithCharacter } from '../providers/character-provider';
+import { ChooseTraditionFlow } from './screens/tradition-flow/choose-tradition-flow';
+import { FullCharacter } from '@/types/character';
+import { ChooseSpellFlow } from './screens/spell-flow/choose-spell-flow';
 
 interface ModalSwitchProps {
   modalData: ModalData;
+}
+
+export interface ModalChoiceProps {
+  character: FullCharacter;
+  modifier: FullChoiceModifier;
+  keys: string[];
 }
 
 export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
@@ -24,19 +33,42 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
       <WithCharacter
         characterId={modalData.characterId}
         onRender={(character) => {
+          const choiceProps: ModalChoiceProps = {
+            character: character,
+            keys: keys,
+            modifier: modalData.modifier,
+          };
+
           switch (chooseTarget.type) {
             case 'Score': {
+              return <ChooseScores {...choiceProps} />;
+            }
+            case 'NoviceSpell': {
               return (
-                <ChooseScores
-                  character={character}
-                  keys={keys}
-                  source={modalData.source}
-                  modifier={modalData.modifier}
+                <ChooseSpellFlow
+                  {...choiceProps}
+                  maxKind='Novice'
+                />
+              );
+            }
+            case 'ExpertSpell': {
+              return (
+                <ChooseSpellFlow
+                  {...choiceProps}
+                  maxKind='Expert'
+                />
+              );
+            }
+            case 'MasterSpell': {
+              return (
+                <ChooseSpellFlow
+                  {...choiceProps}
+                  maxKind='Master'
                 />
               );
             }
             case 'Tradition': {
-              return <h2>Pick a tradition</h2>;
+              return <ChooseTraditionFlow {...choiceProps} />;
             }
           }
         }}

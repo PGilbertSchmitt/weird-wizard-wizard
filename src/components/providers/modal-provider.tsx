@@ -9,8 +9,6 @@ import { ModalData } from '../modals/type';
 export const ModalProvider = ({ children }: { children: React.ReactNode }) => {
   const [modalStack, setModalStack] = useState<ModalData[]>([]);
 
-  console.log('Modals:', modalStack);
-
   const state: ModalContextState = {
     modalStack,
     pushModal: (modal) => setModalStack([...modalStack, modal]),

@@ -49,6 +49,8 @@ pub fn run() {
             ipc::create_character,
             ipc::get_full_character,
             ipc::update_character_health,
+            ipc::get_magic_talents_for_tradition,
+            ipc::get_spells_for_tradition,
             // Not used yet:
             ipc::save_choice,
             ipc::get_full_talent,

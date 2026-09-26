@@ -1,27 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { ScoreForm, Scores } from '@/components/ui/score-form';
 import { cn } from '@/lib/utils';
-import { FullCharacter } from '@/types/character';
-import { invoke } from '@tauri-apps/api/core';
 import { min, toPairs } from 'ramda';
 import { useState } from 'react';
-import { FullChoiceModifier } from '../type';
 import { useModal } from '@/hooks/modal';
 import { useSaveChoice } from '@/api/characters';
-
-interface ChooseScoresProps {
-  character: FullCharacter;
-  source: string;
-  keys: string[];
-  modifier: FullChoiceModifier;
-}
+import { ModalChoiceProps } from '../switch';
 
 export const ChooseScores = ({
   keys,
   character,
-  source,
   modifier,
-}: ChooseScoresProps) => {
+}: ModalChoiceProps) => {
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
 
   const amount = keys.length;
@@ -104,9 +94,6 @@ export const ChooseScores = ({
       <h1>
         {header} for {character.name}
       </h1>
-      <p>
-        <i>Triggered by {source}</i>
-      </p>
 
       <div className={cn('px-6 py-2')}>
         <p>Points remaining: {pointsRemaining}</p>

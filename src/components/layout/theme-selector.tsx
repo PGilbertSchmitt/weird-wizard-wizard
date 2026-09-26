@@ -33,10 +33,7 @@ export const ThemeSelector = () => {
             {ALL_COLORS.map((color) => (
               <DropdownMenuItem
                 key={color}
-                onSelect={() => {
-                  console.log('may I set a color?', color);
-                  setColor(color);
-                }}
+                onSelect={() => setColor(color)}
               >
                 {color}
               </DropdownMenuItem>

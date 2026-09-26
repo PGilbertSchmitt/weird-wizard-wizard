@@ -49,26 +49,16 @@ export const ImportSeed = () => {
                   const payload = unwrapIpcResult(event.payload);
                   switch (payload.type) {
                     case 'Ready': {
-                      console.log(
-                        'Records waiting to be seeded:',
-                        payload.data,
-                      );
                       dispatch(receiveReadyAction(payload.data));
                       break;
                     }
                     case 'Progress': {
-                      // console.log(
-                      //   `Progress update: ${payload.data[0]} out of ${payload.data[1]}`,
-                      // );
                       dispatch(receiveProgressAction(payload.data));
                       break;
                     }
                     case 'Done': {
                       dispatch(receiveDoneAction());
                       break;
-                    }
-                    default: {
-                      console.log('Unknown:', payload);
                     }
                   }
                 } catch (err) {
@@ -79,7 +69,6 @@ export const ImportSeed = () => {
             );
 
             unlistenPromise.then(() => {
-              console.log(`Invoking "init_seed" signal with ${data}`);
               initSeed(data).catch((err) => {
                 console.error(err);
                 dispatch(cancelAction());
@@ -186,7 +175,6 @@ export const ImportSeed = () => {
             importState.status === ImportStatuses.IMPORTING
           }
           onFilePath={async (filepath) => {
-            console.log('Dispatch send-file');
             dispatch(sendFileAction(filepath));
           }}
         />
