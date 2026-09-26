@@ -221,6 +221,30 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
           <span>({character.profession.category})</span>
           <p>{character.profession.description}</p>
         </div>
+
+        {character.expert_path && (
+          <>
+            <Separator />
+
+            <div className={cn('bg-secondary-background text-foreground p-4')}>
+              <h2>Novice Path: {character.expert_path.name}</h2>
+              <span>({character.expert_path.category})</span>
+              <p>{character.expert_path.description}</p>
+            </div>
+          </>
+        )}
+
+        {character.master_path && (
+          <>
+            <Separator />
+
+            <div className={cn('bg-secondary-background text-foreground p-4')}>
+              <h2>Profession: {character.master_path.name}</h2>
+              <span>({character.master_path.category})</span>
+              <p>{character.master_path.description}</p>
+            </div>
+          </>
+        )}
       </StaticCard>
 
       <div>

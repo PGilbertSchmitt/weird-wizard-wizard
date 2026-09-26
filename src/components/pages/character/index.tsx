@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/neo/tabs';
 import { CharacterInfo } from './info';
 import { CharacterChoices } from './character-choices';
+import { CharacterTalents } from './character-talents';
+import { CharacterSpells } from './character-spells';
 
 export const CharacterPage = () => {
   const params = useParams();
@@ -42,17 +44,17 @@ export const CharacterPage = () => {
           <TabsTrigger value="Info">Info</TabsTrigger>
           <TabsTrigger value="Talents">Talents</TabsTrigger>
           <TabsTrigger value="Spells">Spells</TabsTrigger>
-          <TabsTrigger value="Choices">Choices</TabsTrigger>
+          <TabsTrigger value="Choices">Choices ({character.required_choices.length})</TabsTrigger>
         </TabsList>
         <div className={cn('gap-6 w-250 p-4 flex flex-col items-center')}>
           <TabsContent value="Info">
             <CharacterInfo character={character} />
           </TabsContent>
           <TabsContent value="Talents">
-            <p>value="Talents"</p>
+            <CharacterTalents character={character} />
           </TabsContent>
           <TabsContent value="Spells">
-            <p>value="Spells"</p>
+            <CharacterSpells spells={character.spells.map(s => s[0])} />
           </TabsContent>
           <TabsContent value="Choices">
             <CharacterChoices
