@@ -20,7 +20,7 @@ export const ChooseSpellFlow = ({
   maxKind,
   keys,
 }: ChooseSpellFlowProps) => {
-  const { popModal } = useModal();
+  const { popNonErrorModal, pushError } = useModal();
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
   const [state, dispatch] = useReducer<FormState, [FormAction]>(
     reducer,
@@ -86,8 +86,12 @@ export const ChooseSpellFlow = ({
                 values: state.map(
                   (choice) => choice.spellId!.toString(),
                 ),
+              })
+              .then(popNonErrorModal)
+              .catch((err) => {
+                popNonErrorModal();
+                pushError(err.toString());
               });
-              popModal();
             }}
           >
             Confirm

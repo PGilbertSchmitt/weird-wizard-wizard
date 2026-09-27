@@ -47,14 +47,16 @@ export const PathTalentCard = ({ talent }: PathTalentCardProps) => {
   }, [talent.id]);
 
   return (
-    <StaticCard className="p-0">
+    <StaticCard className="p-0 w-full">
       <div className={cn('p-2')}>
         <div className={cn('flex justify-start gap-5 my-1')}>
           <h2 className={cn('text-lg w-fit pt-1')}>{talent.name}</h2>
           <div className={cn('flex gap-2')}>
-            <DiskWithTooltip label="This talent is considered Magical">
-              <Sparkles size="14px" strokeWidth="1px" />
-            </DiskWithTooltip>
+            {talent.magical && (
+              <DiskWithTooltip label="This talent is considered Magical">
+                <Sparkles size="14px" strokeWidth="1px" />
+              </DiskWithTooltip>
+            )}
           </div>
         </div>
 

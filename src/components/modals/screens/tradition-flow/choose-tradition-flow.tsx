@@ -14,7 +14,7 @@ export const ChooseTraditionFlow = ({
   modifier,
   keys,
 }: ModalChoiceProps) => {
-  const { popModal } = useModal();
+  const { popNonErrorModal, pushError } = useModal();
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
   const [state, dispatch] = useReducer<FormState, [FormAction]>(
     reducer,
@@ -84,8 +84,12 @@ export const ChooseTraditionFlow = ({
                   (choice) =>
                     `${choice.traditionId}|${choice.kind === 'talent' ? 't' : 's'}|${choice.itemId}`,
                 ),
+              })
+              .then(popNonErrorModal)
+              .catch((err) => {
+                popNonErrorModal();
+                pushError(err.toString());
               });
-              popModal();
             }}
           >
             Confirm

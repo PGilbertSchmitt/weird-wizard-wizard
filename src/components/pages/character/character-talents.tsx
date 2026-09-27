@@ -46,7 +46,7 @@ export const CharacterTalents = ({ character }: CharacterTalentsProps) => {
 
   if (talentsBySource.length === 0 && talentsByTradition.length === 0) {
     return (
-      <p>There's nothing here.</p>
+      <p>No talents.</p>
     )
   }
 
@@ -56,7 +56,7 @@ export const CharacterTalents = ({ character }: CharacterTalentsProps) => {
 
   return (
     <Tabs defaultValue={defaultValue} className={cn('flex flex-col items-center')}>
-      <TabsList>
+      <TabsList className={cn('flex flex-wrap h-fit gap-x-5')}>
         {talentsBySource.map(([source, _]) => {
           const key = sourceKey(source);
           return (
@@ -77,30 +77,26 @@ export const CharacterTalents = ({ character }: CharacterTalentsProps) => {
       {talentsBySource.map(([source, talents]) => {
         const key = sourceKey(source);
         return (
-          <TabsContent key={key} value={key}>
-            <div className={cn('flex flex-col gap-4')}>
-              {talents.map((talent) => (
-                <PathTalentCard
-                  key={talent.id}
-                  talent={talent}
-                />
-              ))}
-            </div>
+          <TabsContent key={key} value={key} className={cn('flex flex-col gap-4 w-full')}>
+            {talents.map((talent) => (
+              <PathTalentCard
+                key={talent.id}
+                talent={talent}
+              />
+            ))}
           </TabsContent>
         );
       })}
       {talentsByTradition.map(([tradition, talents]) => {
         const key = traditionKey(tradition);
         return (
-          <TabsContent key={key} value={key}>
-            <div className={cn('flex flex-col gap-4')}>
-              {talents.map((talent) => (
-                <MagicTalentCard
-                  key={talent.id}
-                  talent={talent}
-                />
-              ))}
-            </div>
+          <TabsContent key={key} value={key} className={cn('flex flex-col gap-4 w-full')}>
+            {talents.map((talent) => (
+              <MagicTalentCard
+                key={talent.id}
+                talent={talent}
+              />
+            ))}
           </TabsContent>
         );
       })}

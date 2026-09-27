@@ -52,6 +52,7 @@ pub fn run() {
             ipc::update_character_level,
             ipc::get_magic_talents_for_tradition,
             ipc::get_spells_for_tradition,
+            ipc::get_non_secret_languages,
             // Not used yet:
             ipc::save_choice,
             ipc::get_full_talent,

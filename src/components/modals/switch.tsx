@@ -6,6 +6,9 @@ import { WithCharacter } from '../providers/character-provider';
 import { ChooseTraditionFlow } from './screens/tradition-flow/choose-tradition-flow';
 import { FullCharacter } from '@/types/character';
 import { ChooseSpellFlow } from './screens/spell-flow/choose-spell-flow';
+import { ChooseLanguage } from './screens/choose-language';
+import { Button } from '../ui/button';
+import { useModal } from '@/hooks/modal';
 
 interface ModalSwitchProps {
   modalData: ModalData;
@@ -18,11 +21,15 @@ export interface ModalChoiceProps {
 }
 
 export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
+  const { popModal } = useModal();
+  
   if (modalData.type === ModalTypes.ERROR) {
     return (
-      <div className={cn('border-border bg-main text-main-foreground p-5')}>
-        <p>{modalData.error}</p>
-      </div>
+      <StaticCard className={cn('bg-secondary-background text-foreground py-10 px-20 w-max-300')}>
+        <h2>ERROR</h2>
+        <p className={cn('my-4')}>{modalData.error}</p>
+        <Button onClick={popModal}>Aw, ok...</Button>
+      </StaticCard>
     );
   }
 
@@ -69,6 +76,14 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
             }
             case 'Tradition': {
               return <ChooseTraditionFlow {...choiceProps} />;
+            }
+            case 'Language': {
+              return <ChooseLanguage {...choiceProps} />
+            }
+            case 'NoviceSpellFrom':
+            case 'ExpertSpellFrom':
+            case 'MasterSpellFrom': {
+              return (<h1>TODO</h1>);
             }
           }
         }}

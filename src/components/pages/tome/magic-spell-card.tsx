@@ -13,10 +13,11 @@ import { Button } from '@/components/ui/button';
 
 interface SpellCardProps {
   spell: FullSpell;
+  count?: number;
   onSelect?: (id: number, name: string) => void;
 }
 
-export const SpellCard = ({ spell, onSelect }: SpellCardProps) => {
+export const SpellCard = ({ spell, onSelect, count }: SpellCardProps) => {
   const attributeRows: AttributeRows = useMemo(() => {
     return [
       {
@@ -43,7 +44,7 @@ export const SpellCard = ({ spell, onSelect }: SpellCardProps) => {
               Pick
             </Button>
           )}
-          <h2 className={cn('text-lg w-fit pt-1')}>{spell.name}</h2>
+          <h2 className={cn('text-lg w-fit pt-1')}>{spell.name} {count && `x${count}`}</h2>
           <div className={cn('flex gap-2')}>
             {spell.ritual && (
               <DiskWithTooltip label="Ritual - Takes 10 minutes to cast">

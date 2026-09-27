@@ -3,9 +3,7 @@ use sqlx::{sqlite::SqliteRow, FromRow, Pool, Row, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    import::{is_affirmative, LanguageRow, NameToId},
-    util::db_boolean,
-    WWError, WWResult,
+    WWError::self, WWResult, import::{LanguageRow, NameToId, is_affirmative}, util::db_boolean,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -104,6 +102,14 @@ pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<Lan
 
 pub async fn get_all(db: &Pool<Sqlite>) -> WWResult<Vec<Language>> {
     let languages = sqlx::query_as!(RawLanguage, "SELECT * FROM languages",)
+        .fetch_all(db)
+        .await?;
+
+    Ok(convert_languages(languages))
+}
+
+pub async fn get_all_non_secret(db: &Pool<Sqlite>) -> WWResult<Vec<Language>> {
+    let languages = sqlx::query_as!(RawLanguage, "SELECT * FROM languages WHERE secret = false",)
         .fetch_all(db)
         .await?;
 

@@ -4,7 +4,7 @@ import { useContext } from 'react';
 import { ModalSwitch } from './switch';
 
 export const Modals = () => {
-  const { modalStack, popModal } = useContext(ModalProviderContext);
+  const { modalStack } = useContext(ModalProviderContext);
 
   const activeModal = last(modalStack);
   if (activeModal === undefined) {
@@ -20,7 +20,7 @@ export const Modals = () => {
           <ModalSwitch modalData={inactiveModal} />
         </div>
       ))}
-      <div className="modal-filter" onClick={popModal} />
+      <div className="modal-filter" />
       <div className="modal-box">
         <ModalSwitch modalData={activeModal} />
       </div>

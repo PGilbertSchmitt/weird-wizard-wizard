@@ -36,7 +36,7 @@ export interface CharacterChoiceModalData {
 // For errors during the import process
 export interface ErrorModalData {
   type: typeof ModalTypes.ERROR;
-  error: string;
+  error: React.ReactNode;
 }
 
 // Might have non-CharacterChoice-based modals

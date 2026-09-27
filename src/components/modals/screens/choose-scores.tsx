@@ -21,7 +21,7 @@ export const ChooseScores = ({
     intellect: character.intellect,
     will: character.will,
   });
-  const { popModal, pushModal } = useModal();
+  const { popNonErrorModal, pushError } = useModal();
 
   const highestSumScore =
     character.strength +
@@ -79,13 +79,10 @@ export const ChooseScores = ({
       modifier,
       values: incrementedScores,
     })
-      .then(popModal)
+      .then(popNonErrorModal)
       .catch((err) => {
-        popModal();
-        pushModal({
-          type: 'Error',
-          error: err,
-        });
+        popNonErrorModal();
+        pushError(err.toString());
       });
   };
 

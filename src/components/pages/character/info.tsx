@@ -217,6 +217,12 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
         <Separator />
 
         <div className={cn('bg-secondary-background text-foreground p-4')}>
+          <h2>Ancestry: {character.ancestry.name}</h2>
+        </div>
+
+        <Separator />
+
+        <div className={cn('bg-secondary-background text-foreground p-4')}>
           <h2>Profession: {character.profession.name}</h2>
           <span>({character.profession.category})</span>
           <p>{character.profession.description}</p>
