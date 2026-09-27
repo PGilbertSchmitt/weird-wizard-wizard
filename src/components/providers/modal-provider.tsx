@@ -11,10 +11,14 @@ export const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && modalStack.length > 0 && modalStack[0].type !== 'Error') {
+      if (
+        e.key === 'Escape' &&
+        modalStack.length > 0 &&
+        modalStack[0].type !== 'Error'
+      ) {
         setModalStack(init(modalStack));
       }
-    }
+    };
     document.addEventListener('keydown', handler);
 
     return () => document.removeEventListener('keydown', handler);

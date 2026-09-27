@@ -3,7 +3,9 @@ use sqlx::{sqlite::SqliteRow, FromRow, Pool, Row, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError::self, WWResult, import::{LanguageRow, NameToId, is_affirmative}, util::db_boolean,
+    import::{is_affirmative, LanguageRow, NameToId},
+    util::db_boolean,
+    WWError, WWResult,
 };
 
 #[derive(Serialize, Deserialize)]

@@ -67,7 +67,7 @@ export const useUpdateCharacterLevel = (id: number) => {
       });
     },
   });
-}
+};
 
 interface SaveChoiceParams {
   modifier: FullModifier;

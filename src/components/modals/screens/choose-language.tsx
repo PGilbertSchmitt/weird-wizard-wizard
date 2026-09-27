@@ -26,10 +26,7 @@ export const ChooseLanguage = ({
 
     const ownedLanguages = character.languages.map((l) => l[0].id);
 
-    return languages.filter(
-      (l) =>
-        !ownedLanguages.includes(l.id),
-    );
+    return languages.filter((l) => !ownedLanguages.includes(l.id));
   }, [character.languages, languages, selected]);
 
   if (availableLanguages === null) {
@@ -47,7 +44,7 @@ export const ChooseLanguage = ({
       <div className={cn('w-full max-w-200')}>
         {availableLanguages.map((lang) => (
           <Button
-            className={cn("m-2 w-full")}
+            className={cn('m-2 w-full')}
             key={lang.id}
             disabled={selectedLangugages.includes(lang.id)}
             onClick={() => setSelected([...selected, lang])}
@@ -60,11 +57,11 @@ export const ChooseLanguage = ({
     </div>
   ) : (
     <div className={cn('w-40')}>
-      <h3 className='mb-4'>Selections:</h3>
+      <h3 className="mb-4">Selections:</h3>
 
       <ul>
         {selected.map((lang) => (
-          <li key={lang.id} >- {lang.name}</li>
+          <li key={lang.id}>- {lang.name}</li>
         ))}
       </ul>
 
@@ -74,10 +71,12 @@ export const ChooseLanguage = ({
           saveChoice({
             modifier,
             values: selected.map((lang) => lang.id.toString()),
-          }).then(popNonErrorModal).catch(err => {
+          })
+            .then(popNonErrorModal)
+            .catch((err) => {
               popNonErrorModal();
               pushError(err.toString());
-          });
+            });
         }}
       >
         Confirm

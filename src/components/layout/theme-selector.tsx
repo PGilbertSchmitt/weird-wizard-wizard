@@ -31,10 +31,7 @@ export const ThemeSelector = () => {
         <DropdownMenuContent className={cn('m-4')}>
           <DropdownMenuGroup>
             {ALL_COLORS.map((color) => (
-              <DropdownMenuItem
-                key={color}
-                onSelect={() => setColor(color)}
-              >
+              <DropdownMenuItem key={color} onSelect={() => setColor(color)}>
                 {color}
               </DropdownMenuItem>
             ))}

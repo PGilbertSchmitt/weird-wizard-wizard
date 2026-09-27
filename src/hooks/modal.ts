@@ -5,10 +5,11 @@ import { useContext } from 'react';
 export const useModal = () => {
   const { pushModal, popModal, modalStack } = useContext(ModalProviderContext);
 
-  const pushError = (error: React.ReactNode) => pushModal({
-    type: 'Error',
-    error,
-  });
+  const pushError = (error: React.ReactNode) =>
+    pushModal({
+      type: 'Error',
+      error,
+    });
 
   const popNonErrorModal = () => {
     const lastModal = last(modalStack);
@@ -16,7 +17,7 @@ export const useModal = () => {
       popModal();
     }
   };
-  
+
   return {
     modalStack,
     pushModal,

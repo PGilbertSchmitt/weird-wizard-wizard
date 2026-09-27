@@ -612,9 +612,13 @@ fn level_choice(path_str: ModifierPathNode, choose_target: ChooseTarget) -> Full
 
 pub async fn update_level(db: &Pool<Sqlite>, id: i64, level: i64) -> WWResult<()> {
     let clamped_level = clamp(level, 1, 10);
-    sqlx::query!("UPDATE characters SET level = ? WHERE id = ?", clamped_level, id)
-        .execute(db)
-        .await?;
+    sqlx::query!(
+        "UPDATE characters SET level = ? WHERE id = ?",
+        clamped_level,
+        id
+    )
+    .execute(db)
+    .await?;
 
     Ok(())
 }

@@ -1,6 +1,10 @@
 use tauri::{command, AppHandle, Wry};
 
-use crate::{WWResult, db::languages::{self, Language}, store::get_database};
+use crate::{
+    db::languages::{self, Language},
+    store::get_database,
+    WWResult,
+};
 
 #[command]
 pub async fn get_non_secret_languages(app: AppHandle<Wry>) -> WWResult<Vec<Language>> {

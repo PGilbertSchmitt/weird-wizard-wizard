@@ -52,7 +52,7 @@ export const ChooseSpells = ({
   }
 
   const traditionName = availableSpells.Novice[0].tradition_name;
-  const sortedKinds = sortBy(kind => KindValues[kind], keys(availableSpells));
+  const sortedKinds = sortBy((kind) => KindValues[kind], keys(availableSpells));
 
   return (
     <>
@@ -74,13 +74,18 @@ export const ChooseSpells = ({
           </div>
         </>
       ) : (
-        <Tabs defaultValue={maxKind} className={cn('flex flex-col items-center')}>
+        <Tabs
+          defaultValue={maxKind}
+          className={cn('flex flex-col items-center')}
+        >
           <TabsList>
-            {sortedKinds.map(kind => (
-              <TabsTrigger key={kind} value={kind}>{kind}</TabsTrigger>
+            {sortedKinds.map((kind) => (
+              <TabsTrigger key={kind} value={kind}>
+                {kind}
+              </TabsTrigger>
             ))}
           </TabsList>
-          {sortedKinds.map(kind => (
+          {sortedKinds.map((kind) => (
             <div className={cn('w-full max-w-400 mx-2 flex flex-col gap-4')}>
               <TabsContent key={kind} value={kind}>
                 {availableSpells[kind].map((spell) => (

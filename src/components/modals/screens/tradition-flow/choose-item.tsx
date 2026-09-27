@@ -48,7 +48,7 @@ export const ChooseItem = ({
     return (
       <ChooseSpells
         traditionId={traditionId}
-        maxKind='Novice'
+        maxKind="Novice"
         showTalentNote
         onSelect={(spellId, spellName) => onSelect(spellId, spellName, 'spell')}
       />

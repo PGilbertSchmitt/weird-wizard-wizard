@@ -22,10 +22,14 @@ export interface ModalChoiceProps {
 
 export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
   const { popModal } = useModal();
-  
+
   if (modalData.type === ModalTypes.ERROR) {
     return (
-      <StaticCard className={cn('bg-secondary-background text-foreground py-10 px-20 w-max-300')}>
+      <StaticCard
+        className={cn(
+          'bg-secondary-background text-foreground py-10 px-20 w-max-300',
+        )}
+      >
         <h2>ERROR</h2>
         <p className={cn('my-4')}>{modalData.error}</p>
         <Button onClick={popModal}>Aw, ok...</Button>
@@ -51,39 +55,24 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
               return <ChooseScores {...choiceProps} />;
             }
             case 'NoviceSpell': {
-              return (
-                <ChooseSpellFlow
-                  {...choiceProps}
-                  maxKind='Novice'
-                />
-              );
+              return <ChooseSpellFlow {...choiceProps} maxKind="Novice" />;
             }
             case 'ExpertSpell': {
-              return (
-                <ChooseSpellFlow
-                  {...choiceProps}
-                  maxKind='Expert'
-                />
-              );
+              return <ChooseSpellFlow {...choiceProps} maxKind="Expert" />;
             }
             case 'MasterSpell': {
-              return (
-                <ChooseSpellFlow
-                  {...choiceProps}
-                  maxKind='Master'
-                />
-              );
+              return <ChooseSpellFlow {...choiceProps} maxKind="Master" />;
             }
             case 'Tradition': {
               return <ChooseTraditionFlow {...choiceProps} />;
             }
             case 'Language': {
-              return <ChooseLanguage {...choiceProps} />
+              return <ChooseLanguage {...choiceProps} />;
             }
             case 'NoviceSpellFrom':
             case 'ExpertSpellFrom':
             case 'MasterSpellFrom': {
-              return (<h1>TODO</h1>);
+              return <h1>TODO</h1>;
             }
           }
         }}

@@ -695,7 +695,10 @@ fn parse_id_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<i64> {
         .map_err(|_| Generic(format!("Failed to parse ID value '{entry}'. {DISCLAIMER}")))?)
 }
 
-fn parse_tradition_ids_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<(i64, String, i64)> {
+fn parse_tradition_ids_choice(
+    entry: &str,
+    _: &mut ModifierSelections,
+) -> WWResult<(i64, String, i64)> {
     let make_error = || {
         Generic(format!(
             "Failed to parse tradition decision '{entry}'. {DISCLAIMER}"

@@ -53,7 +53,11 @@ export const MagicTalentCard = ({ talent, onSelect }: MagicTalentCardProps) => {
       <div className={cn('p-2')}>
         <div className={cn('flex justify-start gap-5 my-1')}>
           {onSelect && (
-            <Button pressStyle={false} className={cn('px-5 py-1')} onClick={() => onSelect(talent.id, talent.name)}>
+            <Button
+              pressStyle={false}
+              className={cn('px-5 py-1')}
+              onClick={() => onSelect(talent.id, talent.name)}
+            >
               Pick
             </Button>
           )}

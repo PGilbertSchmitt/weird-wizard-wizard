@@ -40,11 +40,17 @@ export const SpellCard = ({ spell, onSelect, count }: SpellCardProps) => {
       <div className="p-2">
         <div className={cn('flex justify-start gap-5 my-1')}>
           {onSelect && (
-            <Button pressStyle={false} className={cn('px-5 py-1')} onClick={() => onSelect(spell.id, spell.name)}>
+            <Button
+              pressStyle={false}
+              className={cn('px-5 py-1')}
+              onClick={() => onSelect(spell.id, spell.name)}
+            >
               Pick
             </Button>
           )}
-          <h2 className={cn('text-lg w-fit pt-1')}>{spell.name} {count && `x${count}`}</h2>
+          <h2 className={cn('text-lg w-fit pt-1')}>
+            {spell.name} {count && `x${count}`}
+          </h2>
           <div className={cn('flex gap-2')}>
             {spell.ritual && (
               <DiskWithTooltip label="Ritual - Takes 10 minutes to cast">

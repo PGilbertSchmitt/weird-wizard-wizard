@@ -33,7 +33,7 @@ export const ChooseSpellFlow = ({
     const traditions = character.traditions.map((t) => t[0]);
     return sortBy(
       (t: TraditionIndexItem) => t.id,
-      uniqBy(t => t.id, traditions),
+      uniqBy((t) => t.id, traditions),
     );
   }, [character.traditions]);
 
@@ -74,7 +74,8 @@ export const ChooseSpellFlow = ({
             return (
               <div key={choice.key}>
                 <p>
-                  <b>{choice.spellName}</b> spell from the <b>{choice.traditionName}</b> tradition
+                  <b>{choice.spellName}</b> spell from the{' '}
+                  <b>{choice.traditionName}</b> tradition
                 </p>
               </div>
             );
@@ -83,15 +84,13 @@ export const ChooseSpellFlow = ({
             onClick={() => {
               saveChoice({
                 modifier,
-                values: state.map(
-                  (choice) => choice.spellId!.toString(),
-                ),
+                values: state.map((choice) => choice.spellId!.toString()),
               })
-              .then(popNonErrorModal)
-              .catch((err) => {
-                popNonErrorModal();
-                pushError(err.toString());
-              });
+                .then(popNonErrorModal)
+                .catch((err) => {
+                  popNonErrorModal();
+                  pushError(err.toString());
+                });
             }}
           >
             Confirm

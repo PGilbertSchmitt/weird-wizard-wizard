@@ -45,17 +45,19 @@ export const CharacterTalents = ({ character }: CharacterTalentsProps) => {
   }, [character.magic_talents]);
 
   if (talentsBySource.length === 0 && talentsByTradition.length === 0) {
-    return (
-      <p>No talents.</p>
-    )
+    return <p>No talents.</p>;
   }
 
-  const defaultValue = talentsBySource.length > 0
-    ? sourceKey(talentsBySource[0][0])
-    : traditionKey(talentsByTradition[0][0]);
+  const defaultValue =
+    talentsBySource.length > 0
+      ? sourceKey(talentsBySource[0][0])
+      : traditionKey(talentsByTradition[0][0]);
 
   return (
-    <Tabs defaultValue={defaultValue} className={cn('flex flex-col items-center')}>
+    <Tabs
+      defaultValue={defaultValue}
+      className={cn('flex flex-col items-center')}
+    >
       <TabsList className={cn('flex flex-wrap h-fit gap-x-5')}>
         {talentsBySource.map(([source, _]) => {
           const key = sourceKey(source);
@@ -77,12 +79,13 @@ export const CharacterTalents = ({ character }: CharacterTalentsProps) => {
       {talentsBySource.map(([source, talents]) => {
         const key = sourceKey(source);
         return (
-          <TabsContent key={key} value={key} className={cn('flex flex-col gap-4 w-full')}>
+          <TabsContent
+            key={key}
+            value={key}
+            className={cn('flex flex-col gap-4 w-full')}
+          >
             {talents.map((talent) => (
-              <PathTalentCard
-                key={talent.id}
-                talent={talent}
-              />
+              <PathTalentCard key={talent.id} talent={talent} />
             ))}
           </TabsContent>
         );
@@ -90,12 +93,13 @@ export const CharacterTalents = ({ character }: CharacterTalentsProps) => {
       {talentsByTradition.map(([tradition, talents]) => {
         const key = traditionKey(tradition);
         return (
-          <TabsContent key={key} value={key} className={cn('flex flex-col gap-4 w-full')}>
+          <TabsContent
+            key={key}
+            value={key}
+            className={cn('flex flex-col gap-4 w-full')}
+          >
             {talents.map((talent) => (
-              <MagicTalentCard
-                key={talent.id}
-                talent={talent}
-              />
+              <MagicTalentCard key={talent.id} talent={talent} />
             ))}
           </TabsContent>
         );

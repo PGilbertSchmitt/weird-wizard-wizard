@@ -85,11 +85,11 @@ export const ChooseTraditionFlow = ({
                     `${choice.traditionId}|${choice.kind === 'talent' ? 't' : 's'}|${choice.itemId}`,
                 ),
               })
-              .then(popNonErrorModal)
-              .catch((err) => {
-                popNonErrorModal();
-                pushError(err.toString());
-              });
+                .then(popNonErrorModal)
+                .catch((err) => {
+                  popNonErrorModal();
+                  pushError(err.toString());
+                });
             }}
           >
             Confirm
