@@ -38,7 +38,7 @@ export const ChooseLanguage = ({
   const idxStr = keys.length === 1 ? '' : nth(selected.length);
 
   return pickLanguage ? (
-    <div className={cn('w-fit m')}>
+    <div className={cn('w-fit')}>
       <h1>Pick {idxStr} language</h1>
 
       <div className={cn('w-full max-w-200')}>

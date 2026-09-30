@@ -11,7 +11,8 @@ import { LockedAncestry } from './locked-ancestry';
 import { Summary } from './summary';
 import { useCreateCharacter } from '@/api/characters';
 import { useNavigate } from 'react-router';
-import { ChooseScores, Scores } from './choose-scores';
+import { ChooseScores } from './choose-scores';
+import { Scores } from '@/components/ui/score-form';
 
 const Step = {
   NAME: 0,

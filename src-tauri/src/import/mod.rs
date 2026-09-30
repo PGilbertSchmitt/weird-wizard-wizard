@@ -5,11 +5,13 @@ use std::hash::Hash;
 use std::{collections::HashMap, path::PathBuf};
 use ts_rs::TS;
 
-use crate::mod_dsl::validate_mod_str;
+use crate::mod_dsl::ast::Modifier;
+use crate::mod_dsl::parser;
 use crate::{WWError, WWResult};
 
 mod init_seed;
 mod run_seed;
+mod validate_modifiers;
 
 pub use init_seed::initialize_seed_import;
 pub use run_seed::run_seed_import;
@@ -96,44 +98,83 @@ pub fn validate_mod_strings(
     magic_talents: &Vec<MagicTalentRow>,
     magic_spells: &Vec<MagicSpellRow>,
     path_talents: &Vec<PathTalentRow>,
-) -> WWResult<()> {
+    choice_selections: &Vec<ChoiceSelectionRow>,
+) -> WWResult<Vec<Modifier>> {
+    let mut all_modifiers = Vec::new();
     let mut all_errs = Vec::new();
 
     for row in magic_talents {
-        if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
-            all_errs.push(format!(
-                "Magic talent '{}': {}\n  -> {}",
-                &row.talent_name,
-                &row.mod_str.as_ref().unwrap(),
-                err
-            ));
+        if let Some(mod_str) = row.mod_str.as_deref() {
+            match parser::parse_mods(mod_str) {
+                Ok(mut modifiers) => {
+                    all_modifiers.append(&mut modifiers);
+                }
+                Err(err) => {
+                    all_errs.push(format!(
+                        "Magic talent '{}': {}\n  -> {}",
+                        &row.talent_name,
+                        &row.mod_str.as_ref().unwrap(),
+                        err
+                    ));
+                }
+            }
         }
     }
 
     for row in magic_spells {
-        if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
-            all_errs.push(format!(
-                "Magic spell '{}': {}\n  -> {}",
-                &row.name,
-                &row.mod_str.as_ref().unwrap(),
-                err
-            ));
+        if let Some(mod_str) = row.mod_str.as_deref() {
+            match parser::parse_mods(mod_str) {
+                Ok(mut modifiers) => {
+                    all_modifiers.append(&mut modifiers);
+                }
+                Err(err) => {
+                    all_errs.push(format!(
+                        "Magic spell '{}': {}\n  -> {}",
+                        &row.name,
+                        &row.mod_str.as_ref().unwrap(),
+                        err
+                    ));
+                }
+            }
         }
     }
 
     for row in path_talents {
-        if let Some(err) = validate_mod_str(row.mod_str.as_deref()) {
-            all_errs.push(format!(
-                "Path talent '{}': {}\n  -> {}",
-                &row.name,
-                &row.mod_str.as_ref().unwrap(),
-                err
-            ));
+        if let Some(mod_str) = row.mod_str.as_deref() {
+            match parser::parse_mods(mod_str) {
+                Ok(mut modifiers) => {
+                    all_modifiers.append(&mut modifiers);
+                }
+                Err(err) => {
+                    all_errs.push(format!(
+                        "Path talent '{}': {}\n  -> {}",
+                        &row.name,
+                        &row.mod_str.as_ref().unwrap(),
+                        err
+                    ));
+                }
+            }
+        }
+    }
+
+    for row in choice_selections {
+        match parser::parse_mods(&row.mod_str) {
+            Ok(mut modifiers) => {
+                all_modifiers.append(&mut modifiers);
+            }
+            Err(err) => {
+                all_errs.push(format!(
+                    "Choice selection '{}': {}\n  -> {}",
+                    &row.choice_name,
+                    &row.mod_str,
+                    err,
+                ));
+            }
         }
     }
 
     if all_errs.is_empty() {
-        Ok(())
+        Ok(all_modifiers)
     } else {
         Err(WWError::Generic(format!(
             "Invalid Mod Strings:\n{}",

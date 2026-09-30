@@ -4,7 +4,9 @@ use tauri::{AppHandle, Wry};
 
 use crate::{
     db,
-    import::{pipe_separate, validate_mod_strings, ProgressPayload},
+    import::{
+        pipe_separate, validate_mod_strings, validate_modifiers::validate_modifier, ProgressPayload,
+    },
     ipc::{emit, EmitChannel},
     store::{get_app_data_state, get_database},
     WWError, WWResult,
@@ -26,11 +28,11 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         let pool = &db_state.pool;
         let mut tx = pool.begin().await?;
 
-        validate_mod_strings(
+        let all_modifiers = validate_mod_strings(
             &import_data.magic_talents,
             &import_data.magic_spells,
             &import_data.path_talents,
-            // Include choice_selection mods
+            &import_data.choice_selections,
         )?;
 
         // TODO: Validate that records referenced in Modifiers exist after
@@ -188,13 +190,28 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
         processed_records += summary.choice_selections;
         emit_progress(&app, processed_records, total_record_count)?;
 
+        // Now that all records have been inserted, we can validate the existence of records
+        // referenced by the modifiers:
+        let mut modifier_errors = Vec::new();
+        for modifier in all_modifiers {
+            if let Err(err) = validate_modifier(&mut tx, modifier).await {
+                modifier_errors.push(err);
+            };
+        }
+
+        if modifier_errors.len() > 0 {
+            return Err(WWError::Generic(modifier_errors.join("\n")));
+        }
+
         tx.commit().await?;
 
         emit(&app, EmitChannel::IMPORT, &Ok(ImportEvent::Done).into())?;
 
         Ok(())
     } else {
-        Err(WWError::Generic("No".to_owned()))
+        Err(WWError::Generic(
+            "Unexpected error happened, no import data found".to_owned(),
+        ))
     }
 }
 

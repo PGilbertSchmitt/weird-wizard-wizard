@@ -53,10 +53,9 @@ pub fn run() {
             ipc::get_magic_talents_for_tradition,
             ipc::get_spells_for_tradition,
             ipc::get_non_secret_languages,
-            // Not used yet:
             ipc::save_choice,
-            ipc::get_full_talent,
-            ipc::get_ancestry_talents,
+            ipc::get_choice_table,
+            // Not used yet:
             ipc::get_table,
             ipc::get_option_block,
             ipc::get_spell,

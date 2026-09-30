@@ -34,7 +34,7 @@ pub enum Token {
     #[token("1d]")]
     OneDay,
 
-    #[token("rest]")]
+    #[regex("REST]")]
     Rest,
 
     #[token(".")]
@@ -127,7 +127,7 @@ pub enum Token {
     #[token("Tradition")]
     Tradition,
 
-    #[token("Heal")]
+    #[token("HEAL")]
     Heal,
 
     #[token("SELECT")]
@@ -136,7 +136,7 @@ pub enum Token {
     #[token("SELECT_AGAIN")]
     SelectAgain,
 
-    #[token("Slot")]
+    #[token("SLOT")]
     Slot,
 
     #[token("Calc")]

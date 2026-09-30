@@ -15,10 +15,20 @@ import { CharacterSpells } from './character-spells';
 export const CharacterPage = () => {
   const params = useParams();
   const id = parseInt(params['id'] || '-1');
-  const { data: character } = useCharacter(id);
+  const { data: character, error } = useCharacter(id);
 
   console.log('Character', character);
 
+  if (error) {
+    return (
+      <div className='flex flex-col items-center gap-5'>
+        <h1>Error when rendering character with ID {id}</h1>
+        <p><i>{error.message}</i></p>
+        <h3>Contact your local 'Gilly dah Fish' or other reputable debugger.</h3>
+      </div>
+    )
+  }
+  
   if (character === undefined) {
     return null;
   }

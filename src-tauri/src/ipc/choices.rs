@@ -1,6 +1,21 @@
 use tauri::{command, AppHandle, Wry};
 
-use crate::{db::character_choices, modifiers::FullModifier, store::get_database, WWResult};
+use crate::{
+    db::{
+        character_choices,
+        choice_selections::{self, ChoiceTable},
+    },
+    modifiers::FullModifier,
+    store::get_database,
+    WWResult,
+};
+
+#[command]
+pub async fn get_choice_table(app: AppHandle<Wry>, name: String) -> WWResult<ChoiceTable> {
+    let db_state = get_database(&app)?;
+    let db_state = db_state.lock().await;
+    choice_selections::get_choice_table(&db_state.pool, name).await
+}
 
 #[command]
 pub async fn save_choice(

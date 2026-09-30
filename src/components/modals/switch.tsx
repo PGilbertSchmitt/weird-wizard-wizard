@@ -9,6 +9,7 @@ import { ChooseSpellFlow } from './screens/spell-flow/choose-spell-flow';
 import { ChooseLanguage } from './screens/choose-language';
 import { Button } from '../ui/button';
 import { useModal } from '@/hooks/modal';
+import { ChooseSelection } from './screens/choose-selection';
 
 interface ModalSwitchProps {
   modalData: ModalData;
@@ -68,6 +69,14 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
             }
             case 'Language': {
               return <ChooseLanguage {...choiceProps} />;
+            }
+            case 'Select': {
+              return (
+                <ChooseSelection
+                  {...choiceProps}
+                  selectionName={chooseTarget.data[1]}
+                />
+              );
             }
             case 'NoviceSpellFrom':
             case 'ExpertSpellFrom':

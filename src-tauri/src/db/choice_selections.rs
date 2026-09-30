@@ -1,6 +1,7 @@
 use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
+use ts_rs::TS;
 
 use crate::{
     import::{ChoiceSelectionRow, NameToId},
@@ -18,9 +19,10 @@ pub struct RawChoice {
     mod_str: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
+#[ts(export, export_to = "choice_selections.ts")]
 pub struct FullChoice {
-    id: i64,
+    pub id: i64,
     label: Option<String>,
     description: String,
     modifiers: Vec<FullModifier>,
@@ -32,7 +34,8 @@ impl HasModifiers for FullChoice {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "choice_selections.ts")]
 pub struct ChoiceTable {
     pub id: i64,
     pub name: String,
@@ -80,8 +83,8 @@ pub async fn insert_all(
     Ok(())
 }
 
-pub async fn _get_choice_table(db: &Pool<Sqlite>, id: i64) -> WWResult<ChoiceTable> {
-    let name = sqlx::query_scalar!("SELECT name FROM choice_tables WHERE id = ?", id)
+pub async fn get_choice_table(db: &Pool<Sqlite>, name: String) -> WWResult<ChoiceTable> {
+    let id = sqlx::query_scalar!("SELECT id FROM choice_tables WHERE name = ?", name)
         .fetch_one(db)
         .await?;
 

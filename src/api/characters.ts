@@ -1,3 +1,4 @@
+import { useModal } from '@/hooks/modal';
 import {
   CharacterIndexItem,
   CreateCharacter,
@@ -31,12 +32,15 @@ export const useCreateCharacter = () => {
   });
 };
 
-export const useCharacter = (id: number) =>
-  useQuery({
+export const useCharacter = (id: number) => {
+  const { pushError } = useModal();
+  return useQuery({
     queryKey: CHARACTER_KEYS.character(id),
-    queryFn: () => invoke<FullCharacter>('get_full_character', { id }),
+    queryFn: () => invoke<FullCharacter>('get_full_character', { id }).catch(err => pushError(err.toString())),
     enabled: id >= 0,
+    retry: false,
   });
+}
 
 interface UpdateCharacterHealthParams {
   health: number;

@@ -1,12 +1,11 @@
 import { useFullNovicePath } from '@/api/paths';
 import { Button } from '@/components/ui/button';
 import { StaticCard } from '@/components/ui/card';
-import { ControlledCounter } from '@/components/ui/controlled-counter';
 import { Paragraph } from '@/components/ui/paragraph';
 import { ScoreForm, Scores } from '@/components/ui/score-form';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { max, min, toPairs } from 'ramda';
+import { max, min } from 'ramda';
 import { useEffect, useMemo, useState } from 'react';
 
 interface ChooseScoresProps {

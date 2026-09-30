@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { StaticCard } from '@/components/ui/card';
+import { Scores } from '@/components/ui/score-form';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { Scores } from './choose-scores';
 import { toPairs } from 'ramda';
 
 interface SummaryProps {

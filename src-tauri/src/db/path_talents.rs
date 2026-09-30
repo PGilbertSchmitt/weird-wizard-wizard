@@ -4,15 +4,11 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    db::{
+    WWError::{self, Generic}, WWResult, db::{
         etc::TalentRestore,
         info_tables::{self, FullInfoTable},
         option_blocks::{self, FullOptionBlock},
-    },
-    import::{is_affirmative, NamePairToId, NameToId, PathTalentRow},
-    modifiers::{FullModifier, HasModifiers},
-    util::db_boolean,
-    WWError, WWResult,
+    }, import::{NamePairToId, NameToId, PathTalentRow, is_affirmative}, modifiers::{FullModifier, HasModifiers}, util::db_boolean,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -112,17 +108,18 @@ pub async fn insert_all(
     Ok(talent_map)
 }
 
-pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullPathTalent> {
+async fn get(db: &Pool<Sqlite>, id: i64, source_string: String) -> WWResult<FullPathTalent> {
     let raw_talent = sqlx::query_as!(RawPathTalent, "SELECT * FROM path_talents WHERE id = ?", id)
         .fetch_one(db)
         .await?;
 
-    extend_raw_path_talent(db, raw_talent).await
+    extend_raw_path_talent(db, raw_talent, source_string).await
 }
 
 async fn extend_raw_path_talent(
     db: &Pool<Sqlite>,
     raw_talent: RawPathTalent,
+    source_string: String,
 ) -> WWResult<FullPathTalent> {
     let (info_table, option_block) = futures::join!(
         info_tables::get_from_opt(db, raw_talent.info_table_id),
@@ -130,7 +127,7 @@ async fn extend_raw_path_talent(
     );
 
     let full_modifiers =
-        FullModifier::from_path_talent(&raw_talent.name, &raw_talent.source, &raw_talent.mod_str)?;
+        FullModifier::from_path_talent(&raw_talent.name, &raw_talent.source, source_string, &raw_talent.mod_str)?;
 
     Ok(FullPathTalent {
         id: raw_talent.id,
@@ -148,9 +145,12 @@ async fn extend_raw_path_talent(
     })
 }
 
-async fn get_from_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullPathTalent>> {
+async fn get_from_ids(db: &Pool<Sqlite>, ids: Vec<i64>, source_string: String) -> WWResult<Vec<FullPathTalent>> {
     let path_talents: Vec<FullPathTalent> = futures::stream::iter(ids)
-        .map(|id| async move { get(db, id).await })
+        .map(|id| {
+            let source = source_string.clone();
+            async move { get(db, id, source).await }
+        })
         .buffered(10)
         .try_collect()
         .await?;
@@ -158,6 +158,8 @@ async fn get_from_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullPath
     Ok(path_talents)
 }
 
+// Used to get entries for FullAncestry record, which is used by the FullCharacter `get`,
+// Therefore, these modifiers need source context
 pub async fn get_for_ancestry(
     db: &Pool<Sqlite>,
     ancestry_id: i64,
@@ -168,9 +170,11 @@ pub async fn get_for_ancestry(
     )
     .fetch_all(db)
     .await?;
-    get_from_ids(db, ids).await
+    get_from_ids(db, ids, format!("A({ancestry_id})")).await
 }
 
+// Used to get entries for FullLevel, which eventually is used by the FullCharacter `get`,
+// Therefore, these modifiers need source context
 pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<FullPathTalent>> {
     let ids: Vec<i64> = sqlx::query_scalar!(
         "SELECT path_talent_id FROM level_talents WHERE level_id = ?",
@@ -178,13 +182,14 @@ pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<Ful
     )
     .fetch_all(db)
     .await?;
-    get_from_ids(db, ids).await
+    get_from_ids(db, ids, format!("L({level_id})")).await
 }
 
 async fn get_by_name_and_source(
     db: &Pool<Sqlite>,
     name: &str,
     source: &str,
+    origin: &str,
 ) -> WWResult<FullPathTalent> {
     let raw_talent = sqlx::query_as!(
         RawPathTalent,
@@ -193,22 +198,27 @@ async fn get_by_name_and_source(
         name,
     )
     .fetch_one(db)
-    .await?;
+    .await
+    .map_err(|_| {
+        Generic(format!("Could not find path talent with name '{name}' for source '{source}'"))
+    });
 
-    extend_raw_path_talent(db, raw_talent).await
+    extend_raw_path_talent(db, raw_talent?, origin.to_owned()).await
 }
 
+// Used by character_choices when retrieving talents via GRANT modifiers
 pub async fn get_by_selections(
     db: Pool<Sqlite>,
-    selections: Vec<(String, String)>,
+    selections: Vec<(String, String, String)>,
 ) -> WWResult<Vec<FullPathTalent>> {
-    let talents: Vec<FullPathTalent> = futures::stream::iter(selections.into_iter())
-        .map(|(source, talent_name)| {
+    let talents = futures::stream::iter(selections.into_iter())
+        .map(|(source, talent_name, origin)| {
             let db = db.clone();
-            async move { get_by_name_and_source(&db, &talent_name, &source).await }
+            async move { get_by_name_and_source(&db, &talent_name, &source, &origin).await }
         })
         .buffered(100)
         .try_collect()
-        .await?;
-    Ok(talents)
+        .await;
+
+    Ok(talents?)
 }

@@ -9,7 +9,7 @@ use crate::{
     WWResult,
 };
 
-#[derive(TS, Debug, Serialize, Deserialize, Clone)]
+#[derive(TS, Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "modifiers.ts")]
 pub struct FullModifier {
     pub path_node: ModifierPathNode,
@@ -18,7 +18,7 @@ pub struct FullModifier {
 
 // This identifies a single leg of a modifier path. There's one kind per source of a Modifier.
 // The idx is needed because a single mod_str can have multiple Modifiers.
-#[derive(TS, Debug, Serialize, Deserialize, Clone)]
+#[derive(TS, Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
 #[serde(tag = "type", content = "data")]
 pub enum ModifierPathNode {
@@ -52,6 +52,7 @@ pub enum ModifierPathNode {
     PathTalent {
         name: String,
         source: String,
+        granter: String,
         idx: usize,
     },
     MagicTalent {
@@ -96,8 +97,8 @@ impl Display for ModifierPathNode {
             Self::LevelScore { level } => {
                 f.write_fmt(format_args!("score_gain|{level}"))?;
             }
-            Self::PathTalent { name, source, idx } => {
-                f.write_fmt(format_args!("path_talent|{name}|{source}|{idx}"))?;
+            Self::PathTalent { name, source, granter, idx } => {
+                f.write_fmt(format_args!("path_talent|{name}|{source}|{granter}|{idx}"))?;
             }
             Self::MagicTalent {
                 name,
@@ -172,7 +173,11 @@ impl FullModifier {
 
     pub fn from_path_talent(
         name: &str,
+        // `source` here refers to the `source` column on the paths table
         source: &str,
+        // `source` here refers to the more specific source of the talent, which
+        // is either an ancestry, a path's specific level, or a GRANT modifier.
+        source_string: String,
         mod_str: &Option<String>,
     ) -> WWResult<Vec<Self>> {
         let modifiers = match mod_str {
@@ -187,6 +192,7 @@ impl FullModifier {
                         path_node: ModifierPathNode::PathTalent {
                             name: name.to_string(),
                             source: source.to_string(),
+                            granter: source_string.clone(),
                             idx,
                         },
                     })

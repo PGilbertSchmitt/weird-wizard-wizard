@@ -90,7 +90,7 @@ const calculateAttributes = (level: FullLevel): Attribute[] => {
     });
   }
 
-  const languageString = mixedAttrString(level.lang_choices, level.languages);
+  const languageString = mixedAttrString(level.lang_choices, level.languages.map(l => l.name));
   if (languageString) {
     attrs.push({
       label: 'Languages',

@@ -7,25 +7,9 @@ use sqlx::{types::chrono::NaiveDateTime, Pool, Sqlite};
 use ts_rs::TS;
 
 use crate::{
-    db::{
-        ancestries::{self, FullAncestry},
-        character_choices::{self, collect_from_modifier_tree, ModifierSelections, SlotMod},
-        etc::Size,
-        languages::{self, Language},
-        levels::FullLevel,
-        magic_talents::FullMagicTalent,
-        path_talents::FullPathTalent,
-        paths::{self, FullPath},
-        professions::{self, Profession},
-        senses::{self, FullSense},
-        speed_traits::{self, FullSpeedTrait},
-        spells::FullSpell,
-        traditions::{self, TraditionIndexItem},
-    },
-    mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod},
-    modifiers::{FullModifier, ModifierPathNode},
-    WWError::Generic,
-    WWResult,
+    WWError::Generic, WWResult, db::{
+        ancestries::{self, FullAncestry}, character_choices::{self, ModifierSelections, SlotMod, collect_from_modifier_tree}, choice_selections::FullChoice, etc::Size, languages::{self, Language}, levels::FullLevel, magic_talents::FullMagicTalent, path_talents::FullPathTalent, paths::{self, FullPath}, professions::{self, Profession}, senses::{self, FullSense}, speed_traits::{self, FullSpeedTrait}, spells::FullSpell, traditions::{self, TraditionIndexItem},
+    }, mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod}, modifiers::{FullModifier, ModifierPathNode},
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -98,6 +82,7 @@ pub struct FullCharacter {
 
     modified_slots: Vec<SlotMod>,
     required_choices: Vec<FullModifier>,
+    selected_choices: Vec<(FullModifier, Vec<FullChoice>)>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -185,6 +170,7 @@ pub async fn create_character(db: &Pool<Sqlite>, character_info: CreateCharacter
 }
 
 pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
+    println!("Starting get for character {id}");
     let start = SystemTime::now();
     let (raw_character, all_character_choices) = futures::join!(
         sqlx::query_as!(RawCharacter, "SELECT * FROM characters WHERE id = ?", id).fetch_one(db),
@@ -258,17 +244,17 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     let health = clamp(raw_character.health, 0, fields.max_health);
     let damage = clamp(raw_character.damage, 0, health);
 
-    let dash_set = DashSet::new();
+    let processed_keys = DashSet::new();
     let mut modifier_futures = FuturesUnordered::new();
     for choice in &fields.choices {
         let saved_choices = saved_character_choices.clone();
-        let dash_set = dash_set.clone();
+        let processed_keys = processed_keys.clone();
         let db = db.clone();
         modifier_futures.push(collect_from_modifier_tree(
             db,
             choice,
             saved_choices,
-            dash_set,
+            processed_keys,
         ));
     }
     let mut selections = ModifierSelections::new();
@@ -396,6 +382,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
 
         modified_slots: selections.modified_slots,
         required_choices: selections.required_choices,
+        selected_choices: selections.selected_choices,
     })
 }
 
@@ -513,7 +500,7 @@ impl CumulativeFields {
         for tradition in &level.traditions {
             self.traditions
                 .push((tradition.clone(), level_source.clone()));
-            let target = ChooseTarget::MagicTalent(1, tradition.name.clone());
+            let target = ChooseTarget::MagicTalent(1, vec![tradition.name.clone()]);
             self.choices.push(level_choice(
                 ModifierPathNode::LevelMagicTalent {
                     path_name: path_name.to_string(),
@@ -611,6 +598,8 @@ fn level_choice(path_str: ModifierPathNode, choose_target: ChooseTarget) -> Full
 }
 
 pub async fn update_level(db: &Pool<Sqlite>, id: i64, level: i64) -> WWResult<()> {
+    // let character = sqlx::query_as!(RawCharacter, "SELECT * FROM characters WHERE id = ?", id).fetch_one(db).await?;
+
     let clamped_level = clamp(level, 1, 10);
     sqlx::query!(
         "UPDATE characters SET level = ? WHERE id = ?",

@@ -29,7 +29,7 @@ export type ChooseTarget =
   | { type: 'Select'; data: [number, string] }
   | { type: 'Score'; data: number }
   | { type: 'Slots'; data: ChooseSlotTarget }
-  | { type: 'MagicTalent'; data: [number, string] };
+  | { type: 'MagicTalent'; data: [number, Array<string>] };
 
 export type Condition =
   | { type: 'None' }
@@ -100,7 +100,10 @@ export type ModifierPathNode =
   | { type: 'LevelExpertSpell'; data: { path_name: string; level: number } }
   | { type: 'LevelMasterSpell'; data: { path_name: string; level: number } }
   | { type: 'LevelScore'; data: { level: number } }
-  | { type: 'PathTalent'; data: { name: string; source: string; idx: number } }
+  | {
+      type: 'PathTalent';
+      data: { name: string; source: string; granter: string; idx: number };
+    }
   | {
       type: 'MagicTalent';
       data: { name: string; tradition: string; idx: number };

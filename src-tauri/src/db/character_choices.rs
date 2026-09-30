@@ -12,7 +12,7 @@ use sqlx::{Pool, Sqlite};
 
 use crate::{
     db::{
-        choice_selections,
+        choice_selections::{self, FullChoice},
         etc::ChoiceDuration,
         magic_talents::{self, FullMagicTalent},
         path_talents::{self, FullPathTalent},
@@ -104,6 +104,7 @@ pub struct ModifierSelections {
     // a flat structure, during which time the accumulated "lost" talents can prune the tree.
     pub gained_talents: Vec<(FullPathTalent, Vec<ModifierSelections>, String)>,
     pub gained_magic_talents: Vec<(FullMagicTalent, Vec<ModifierSelections>, String)>,
+    pub selected_choices: Vec<(FullModifier, Vec<FullChoice>)>,
 
     // Much like path/magic talents, spells can have mods, and thus can trigger additional lookups, which
     // means we have to load them during the runtime of `collect_from_modifier_tree`. However, because
@@ -141,6 +142,7 @@ impl ModifierSelections {
             statblock_overrides: Vec::new(),
             lost_talents: Vec::new(),
             lost_magic_talents: Vec::new(),
+            selected_choices: Vec::new(),
             required_choices: Vec::new(),
         }
     }
@@ -178,6 +180,7 @@ impl ModifierSelections {
         self.lost_talents.append(&mut other.lost_talents);
         self.lost_magic_talents
             .append(&mut other.lost_magic_talents);
+        self.selected_choices.append(&mut other.selected_choices);
         self.required_choices.append(&mut other.required_choices);
     }
 
@@ -280,18 +283,21 @@ pub async fn collect_from_modifier_tree(
     saved_choices: Arc<HashMap<String, CharacterChoice>>,
 
     // Read from and written to in equal quantity, so an async-safe sharded HashSet is used
-    processed_keys: DashSet<String>,
+    processed_keys: DashSet<FullModifier>,
 ) -> WWResult<ModifierSelections> {
     let mut selections = ModifierSelections::new();
-    let mut new_choice_mods: Vec<FullModifier> = Vec::new();
+    let source_string = modifier.path_node.source_string();
 
-    let mut new_path_talents: Vec<(String, String)> = Vec::new();
+    if !processed_keys.insert(modifier.clone()) {
+        return Ok(selections);
+    }
+    
+    let mut new_choice_mods: Vec<FullModifier> = Vec::new();
+    let mut new_path_talents: Vec<(String, String, String)> = Vec::new();
     let mut new_magic_talents: Vec<(String, String)> = Vec::new();
     let mut new_magic_talent_ids: Vec<i64> = Vec::new();
-    let mut new_choice_selections: Vec<i64> = Vec::new();
+    let mut new_choice_selections: Vec<(FullModifier, Vec<i64>)> = Vec::new();
     let mut new_magic_spells: Vec<i64> = Vec::new();
-
-    let source_string = modifier.path_node.source_string();
 
     match modifier.mod_details.target.clone() {
         Target::Grant(grant_target) => handle_grant_target(
@@ -326,7 +332,6 @@ pub async fn collect_from_modifier_tree(
 
         Target::Choose(choose_target, _) => match choose_target {
             ChooseTarget::Score(_) => {
-                println!("Processing score choice");
                 handle_choice(
                     &modifier,
                     saved_choices.clone(),
@@ -374,6 +379,7 @@ pub async fn collect_from_modifier_tree(
                 .for_each(|id| selections.gained_profession_ids.push(id));
             }
             ChooseTarget::Select(_, _) => {
+                let mut selected_choice_ids_for_mod = Vec::new();
                 handle_choice(
                     &modifier,
                     saved_choices.clone(),
@@ -382,8 +388,9 @@ pub async fn collect_from_modifier_tree(
                 )?
                 .into_iter()
                 .for_each(|id| {
-                    new_choice_selections.push(id);
+                    selected_choice_ids_for_mod.push(id);
                 });
+                new_choice_selections.push((modifier.clone(), selected_choice_ids_for_mod));
             }
 
             ChooseTarget::Tradition(_) => {
@@ -436,13 +443,18 @@ pub async fn collect_from_modifier_tree(
         _ => {}
     }
 
+    let all_choice_ids = new_choice_selections
+        .iter()
+        .flat_map(|(_, ids)| ids.to_owned())
+        .collect::<Vec<_>>();
+
     // Check any gained talents/choice selections for additional modifiers
     let (path_talents, magic_talents, more_magic_talents, spells, choices) = futures::join!(
         path_talents::get_by_selections(db.clone(), new_path_talents),
         magic_talents::get_by_selections(db.clone(), new_magic_talents),
         magic_talents::get_by_ids(db.clone(), new_magic_talent_ids),
         spells::get_for_ids(&db, new_magic_spells),
-        choice_selections::get_for_choice_ids(&db, new_choice_selections),
+        choice_selections::get_for_choice_ids(&db, all_choice_ids),
     );
 
     let path_talents = path_talents?;
@@ -450,6 +462,19 @@ pub async fn collect_from_modifier_tree(
     magic_talents.append(&mut more_magic_talents?);
     let spells = spells?;
     let choices = choices?;
+
+    for (choice_mod, choice_ids) in new_choice_selections {
+        if choice_ids.len() > 0 {
+            let selected_options = choices
+                .iter()
+                .filter(|choice| choice_ids.contains(&choice.id))
+                .map(|c| c.clone())
+                .collect();
+            selections
+                .selected_choices
+                .push((choice_mod, selected_options));
+        }
+    }
 
     let spells_with_sub_trees = futures::stream::iter(spells)
         .map(|spell| {
@@ -554,7 +579,7 @@ fn handle_grant_target(
     modifier: &FullModifier,
     selections: &mut ModifierSelections,
     new_choice_mods: &mut Vec<FullModifier>,
-    new_path_talents: &mut Vec<(String, String)>,
+    new_path_talents: &mut Vec<(String, String, String)>,
     new_magic_talents: &mut Vec<(String, String)>,
 ) {
     let source_string = modifier.path_node.source_string();
@@ -596,7 +621,7 @@ fn handle_grant_target(
         GrantTarget::Tradition(items) => {
             // Granted Traditions creates a new choice to pick a talent from that tradition
             for item in items {
-                let choose_target = ChooseTarget::MagicTalent(1, item.clone());
+                let choose_target = ChooseTarget::MagicTalent(1, vec![item.clone()]);
                 let choice_strings = choose_target.choice_strings();
                 new_choice_mods.push(FullModifier {
                     path_node: modifier.path_node.to_owned(),
@@ -633,7 +658,7 @@ fn handle_grant_target(
             }
         }
         GrantTarget::Talent(source, talent) => {
-            new_path_talents.push((source, talent));
+            new_path_talents.push((source, talent, modifier.path_node.source_string()));
         }
         GrantTarget::MagicTalent(tradition, talent) => {
             new_magic_talents.push((tradition, talent));
@@ -747,7 +772,7 @@ async fn process_just_modifiers<T>(
     has_mods: T,
     db: Pool<Sqlite>,
     saved_choices: Arc<HashMap<String, CharacterChoice>>,
-    processed_keys: DashSet<String>,
+    processed_keys: DashSet<FullModifier>,
 ) -> WWResult<Vec<ModifierSelections>>
 where
     T: HasModifiers,
@@ -777,7 +802,7 @@ async fn process_with_modifiers<T>(
     has_mods: T,
     db: Pool<Sqlite>,
     saved_choices: Arc<HashMap<String, CharacterChoice>>,
-    processed_keys: DashSet<String>,
+    processed_keys: DashSet<FullModifier>,
     source: String,
 ) -> WWResult<(T, Vec<ModifierSelections>, String)>
 where
@@ -815,9 +840,6 @@ pub async fn save_choices(
     if choice_keys.len() != values.len() {
         return Err(Generic(format!("Choice could not be saved, number of saved values does not match the number of choice keys")));
     }
-    // println!("Our keys: {choice_keys:?}");
-    // println!("Our values: {values:?}");
-
     let (dismissable, duration) = modifier.mod_details.when.to_choice_data();
     for ((_, key), value) in choice_keys.into_iter().zip(values.into_iter()) {
         sqlx::query!(
