@@ -208,7 +208,7 @@ async fn get_by_name_and_source(
 
 // Used by character_choices when retrieving talents via GRANT modifiers
 pub async fn get_by_selections(
-    db: Pool<Sqlite>,
+    db: &Pool<Sqlite>,
     selections: Vec<(String, String, String)>,
 ) -> WWResult<Vec<FullPathTalent>> {
     let talents = futures::stream::iter(selections.into_iter())

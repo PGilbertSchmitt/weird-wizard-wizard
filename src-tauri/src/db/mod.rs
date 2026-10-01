@@ -1,6 +1,6 @@
 use crate::WWResult;
 use sqlx::{Pool, Sqlite, SqlitePool};
-use std::{fs, path::PathBuf};
+use std::fs;
 use tauri::{AppHandle, Manager};
 
 pub mod ancestries;
@@ -26,7 +26,6 @@ pub mod traditions;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,
-    pub path: PathBuf,
 }
 
 impl Database {
@@ -53,14 +52,10 @@ impl Database {
 
         sqlx::migrate!("./migrations").run(&pool).await?;
 
-        Ok(Self {
-            pool,
-            path: db_path,
-        })
+        Ok(Self { pool })
     }
 }
 
 pub struct DatabaseState {
     pub pool: Pool<Sqlite>,
-    pub path: PathBuf,
 }

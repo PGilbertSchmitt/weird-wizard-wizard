@@ -41,7 +41,7 @@ pub struct CharacterChoice {
 }
 
 pub async fn get_for_character(
-    db: Pool<Sqlite>,
+    db: &Pool<Sqlite>,
     id: i64,
 ) -> WWResult<HashMap<String, CharacterChoice>> {
     let choices = sqlx::query_as!(
@@ -50,7 +50,7 @@ pub async fn get_for_character(
         FROM character_choices WHERE character_id = ?",
         id
     )
-    .fetch_all(&db)
+    .fetch_all(db)
     .await?;
 
     let mut choice_map = HashMap::new();
@@ -273,7 +273,7 @@ impl Losses {
 // If it becomes unmanagable, it might not be a bad idea to re-create this functionality
 // using simply serial patterns, rather than trying to be as efficient as possible.
 pub async fn collect_from_modifier_tree(
-    db: Pool<Sqlite>,
+    db: &Pool<Sqlite>,
     modifier: &FullModifier,
 
     // Only read from, never written to, so an Arc over a sync HashMap is enough
@@ -447,9 +447,9 @@ pub async fn collect_from_modifier_tree(
 
     // Check any gained talents/choice selections for additional modifiers
     let (path_talents, magic_talents, more_magic_talents, spells, choices) = futures::join!(
-        path_talents::get_by_selections(db.clone(), new_path_talents),
-        magic_talents::get_by_selections(db.clone(), new_magic_talents),
-        magic_talents::get_by_ids(db.clone(), new_magic_talent_ids),
+        path_talents::get_by_selections(db, new_path_talents),
+        magic_talents::get_by_selections(db, new_magic_talents),
+        magic_talents::get_by_ids(db, new_magic_talent_ids),
         spells::get_for_ids(&db, new_magic_spells),
         choice_selections::get_for_choice_ids(&db, all_choice_ids),
     );
@@ -462,7 +462,6 @@ pub async fn collect_from_modifier_tree(
 
     let spells_with_sub_trees = futures::stream::iter(spells)
         .map(|spell| {
-            let db = db.clone();
             let saved_choices = saved_choices.clone();
             let processed_keys = processed_keys.clone();
             let source_string = source_string.clone();
@@ -476,7 +475,6 @@ pub async fn collect_from_modifier_tree(
 
     let path_talents_with_sub_trees = futures::stream::iter(path_talents)
         .map(|talent| {
-            let db = db.clone();
             let saved_choices = saved_choices.clone();
             let processed_keys = processed_keys.clone();
             let source_string = source_string.clone();
@@ -490,7 +488,6 @@ pub async fn collect_from_modifier_tree(
 
     let magic_talents_with_sub_trees = futures::stream::iter(magic_talents)
         .map(|talent| {
-            let db = db.clone();
             let saved_choices = saved_choices.clone();
             let processed_keys = processed_keys.clone();
             let source_string = source_string.clone();
@@ -506,7 +503,6 @@ pub async fn collect_from_modifier_tree(
         .map(|modifier| {
             let saved_choices_clone = saved_choices.clone();
             let processed_keys_clone = processed_keys.clone();
-            let db = db.clone();
             async move {
                 collect_from_modifier_tree(db, &modifier, saved_choices_clone, processed_keys_clone)
                     .await
@@ -517,7 +513,6 @@ pub async fn collect_from_modifier_tree(
 
     let choice_selection_sub_trees = futures::stream::iter(choices)
         .map(|choice| {
-            let db = db.clone();
             let saved_choices = saved_choices.clone();
             let processed_keys = processed_keys.clone();
             async move { process_just_modifiers(choice, db, saved_choices, processed_keys).await }
@@ -758,14 +753,13 @@ fn parse_slots_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<SlotM
 
 async fn process_just_modifiers<T>(
     has_mods: T,
-    db: Pool<Sqlite>,
+    db: &Pool<Sqlite>,
     saved_choices: Arc<HashMap<String, CharacterChoice>>,
     processed_keys: DashSet<FullModifier>,
 ) -> WWResult<Vec<ModifierSelections>>
 where
     T: HasModifiers,
 {
-    let db = db.clone();
     let saved_choices = saved_choices.clone();
     let modifiers = has_mods.modifiers();
 
@@ -774,7 +768,6 @@ where
             .map(|modifier| {
                 let saved_choices = saved_choices.clone();
                 let processed_keys = processed_keys.clone();
-                let db = db.clone();
                 async move {
                     collect_from_modifier_tree(db, &modifier, saved_choices, processed_keys).await
                 }
@@ -788,7 +781,7 @@ where
 
 async fn process_with_modifiers<T>(
     has_mods: T,
-    db: Pool<Sqlite>,
+    db: &Pool<Sqlite>,
     saved_choices: Arc<HashMap<String, CharacterChoice>>,
     processed_keys: DashSet<FullModifier>,
     source: String,
@@ -797,7 +790,6 @@ where
     T: HasModifiers + Clone,
 {
     let has_mods = has_mods.clone();
-    let db = db.clone();
     let saved_choices = saved_choices.clone();
     let modifiers = has_mods.modifiers();
 
@@ -806,7 +798,6 @@ where
             .map(|modifier| {
                 let saved_choices = saved_choices.clone();
                 let processed_keys = processed_keys.clone();
-                let db = db.clone();
                 async move {
                     collect_from_modifier_tree(db, &modifier, saved_choices, processed_keys).await
                 }

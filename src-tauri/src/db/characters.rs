@@ -8,7 +8,7 @@ use ts_rs::TS;
 
 use crate::{
     WWError::Generic, WWResult, db::{
-        ancestries::{self, FullAncestry}, character_choices::{self, CharacterChoice, ModifierSelections, SlotMod, collect_from_modifier_tree}, choice_selections::FullChoice, etc::{PathKind, Size}, languages::{self, Language}, levels::FullLevel, magic_talents::FullMagicTalent, path_talents::FullPathTalent, paths::{self, FullPath}, professions::{self, Profession}, senses::{self, FullSense}, speed_traits::{self, FullSpeedTrait}, spells::FullSpell, traditions::{self, TraditionIndexItem},
+        ancestries::{self, FullAncestry}, character_choices::{self, CharacterChoice, ModifierSelections, SlotMod, collect_from_modifier_tree}, etc::{PathKind, Size}, languages::{self, Language}, levels::FullLevel, magic_talents::FullMagicTalent, path_talents::FullPathTalent, paths::{self, FullPath}, professions::{self, Profession}, senses::{self, FullSense}, speed_traits::{self, FullSpeedTrait}, spells::FullSpell, traditions::{self, TraditionIndexItem},
     }, mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod}, modifiers::{FullModifier, ModifierPathNode},
 };
 
@@ -174,7 +174,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     let start = SystemTime::now();
     let (raw_character, all_character_choices) = futures::join!(
         sqlx::query_as!(RawCharacter, "SELECT * FROM characters WHERE id = ?", id).fetch_one(db),
-        character_choices::get_for_character(db.clone(), id),
+        character_choices::get_for_character(db, id),
     );
 
     let raw_character = raw_character?;
@@ -249,7 +249,6 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     for choice in &fields.choices {
         let saved_choices = saved_character_choices.clone();
         let processed_keys = processed_keys.clone();
-        let db = db.clone();
         modifier_futures.push(collect_from_modifier_tree(
             db,
             choice,

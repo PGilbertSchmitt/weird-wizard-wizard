@@ -196,7 +196,7 @@ async fn get_by_name_and_tradition(
 }
 
 pub async fn get_by_selections(
-    db: Pool<Sqlite>,
+    db: &Pool<Sqlite>,
     selections: Vec<(String, String)>,
 ) -> WWResult<Vec<FullMagicTalent>> {
     let talents: Vec<FullMagicTalent> = futures::stream::iter(selections.into_iter())
@@ -210,7 +210,7 @@ pub async fn get_by_selections(
     Ok(talents)
 }
 
-pub async fn get_by_ids(db: Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullMagicTalent>> {
+pub async fn get_by_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullMagicTalent>> {
     let talents: Vec<FullMagicTalent> = futures::stream::iter(ids.into_iter())
         .map(|id| {
             let db = db.clone();

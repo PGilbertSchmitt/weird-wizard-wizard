@@ -28,7 +28,6 @@ pub fn run() {
 
                 app.manage(Mutex::new(db::DatabaseState {
                     pool: database.pool,
-                    path: database.path,
                 }));
             });
             Ok(())
