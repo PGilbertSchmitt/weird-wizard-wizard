@@ -11,6 +11,7 @@ import { CharacterInfo } from './info';
 import { CharacterChoices } from './character-choices';
 import { CharacterTalents } from './character-talents';
 import { CharacterSpells } from './character-spells';
+import { CharacterSelections } from './character-selections';
 
 export const CharacterPage = () => {
   const params = useParams();
@@ -21,14 +22,18 @@ export const CharacterPage = () => {
 
   if (error) {
     return (
-      <div className='flex flex-col items-center gap-5'>
+      <div className="flex flex-col items-center gap-5">
         <h1>Error when rendering character with ID {id}</h1>
-        <p><i>{error.message}</i></p>
-        <h3>Contact your local 'Gilly dah Fish' or other reputable debugger.</h3>
+        <p>
+          <i>{error.message}</i>
+        </p>
+        <h3>
+          Contact your local 'Gilly dah Fish' or other reputable debugger.
+        </h3>
       </div>
-    )
+    );
   }
-  
+
   if (character === undefined) {
     return null;
   }
@@ -39,6 +44,12 @@ export const CharacterPage = () => {
     character.ancestry.name === highestPath.name
       ? character.ancestry.name
       : `${character.ancestry.name} ${highestPath.name}`;
+
+  const pickExpertPath = !character.expert_path && character.level >= 3;
+  const pickMasterPath = !character.master_path && character.level >= 7;
+  let choiceCount = character.required_choices.length;
+  pickExpertPath && choiceCount++;
+  pickMasterPath && choiceCount++;
 
   return (
     <div>
@@ -54,9 +65,8 @@ export const CharacterPage = () => {
           <TabsTrigger value="Info">Info</TabsTrigger>
           <TabsTrigger value="Talents">Talents</TabsTrigger>
           <TabsTrigger value="Spells">Spells</TabsTrigger>
-          <TabsTrigger value="Choices">
-            Choices ({character.required_choices.length})
-          </TabsTrigger>
+          <TabsTrigger value="Pending Choices">Pending Choices ({choiceCount})</TabsTrigger>
+          <TabsTrigger value="Selected Choices">Selected Choices</TabsTrigger>
         </TabsList>
         <div className={cn('gap-6 w-250 p-4 flex flex-col items-center')}>
           <TabsContent value="Info">
@@ -68,10 +78,14 @@ export const CharacterPage = () => {
           <TabsContent value="Spells">
             <CharacterSpells spells={character.spells.map((s) => s[0])} />
           </TabsContent>
-          <TabsContent value="Choices">
+          <TabsContent value="Pending Choices">
             <CharacterChoices
-              characterId={character.id}
-              choices={character.required_choices}
+              character={character}
+            />
+          </TabsContent>
+          <TabsContent value="Selected Choices">
+            <CharacterSelections
+              character={character}
             />
           </TabsContent>
         </div>

@@ -315,3 +315,14 @@ pub async fn get_path_index(db: &Pool<Sqlite>) -> WWResult<Vec<PathIndexItem>> {
 
     Ok(paths)
 }
+
+pub async fn get_categories_by_path(db: &Pool<Sqlite>, kind: String) -> WWResult<Vec<String>> {
+    let categories = sqlx::query_scalar!(
+        "SELECT DISTINCT(category) FROM paths WHERE path_kind = ?",
+        kind,
+    )
+    .fetch_all(db)
+    .await?;
+
+    Ok(categories)
+}

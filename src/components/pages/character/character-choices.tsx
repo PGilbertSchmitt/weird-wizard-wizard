@@ -2,27 +2,25 @@ import { FullChoiceModifier, ModalTypes } from '@/components/modals/type';
 import { Button } from '@/components/ui/button';
 import { useModal } from '@/hooks/modal';
 import { cn } from '@/lib/utils';
+import { FullCharacter } from '@/types/character';
 import {
   ChooseTarget,
-  FullModifier,
   ModifierPathNode,
 } from '@/types/modifiers';
 import { init, last } from 'ramda';
 import { useMemo } from 'react';
 
 interface CharacterChoicesProps {
-  characterId: number;
-  choices: Array<FullModifier>;
+  character: FullCharacter;
 }
 
 export const CharacterChoices = ({
-  characterId,
-  choices,
+  character,
 }: CharacterChoicesProps) => {
   const { pushModal } = useModal();
 
   const choiceItems = useMemo(() => {
-    return choices.flatMap((choice) => {
+    return character.required_choices.flatMap((choice) => {
       const target = choice.mod_details.target;
       if (target.type !== 'Choose') {
         return [];
@@ -47,21 +45,54 @@ export const CharacterChoices = ({
         sourceLabel,
       };
     });
-  }, [characterId, choices]);
+  }, [character]);
 
-  if (choiceItems.length === 0) {
+  const pickExpertPath = !character.expert_path && character.level >= 3;
+  const pickMasterPath = !character.master_path && character.level >= 7;
+
+  if (choiceItems.length === 0 && !pickExpertPath && !pickMasterPath) {
     return <p>All decisions have been made.</p>;
   }
 
   return (
     <div className={cn('flex flex-row flex-wrap gap-4 justify-center')}>
+      {pickExpertPath && (
+        <Button
+          key="pick expert path"
+          onClick={() =>
+            pushModal({
+              type: ModalTypes.CHOOSE_PATH,
+              character,
+              kind: 'Expert',
+            })
+          }
+        >
+          <p>Pick Expert Path</p>
+          <p><i>From reaching level 3</i></p>
+        </Button>
+      )}
+      {pickMasterPath && (
+        <Button
+          key="pick master path"
+          onClick={() =>
+            pushModal({
+              type: ModalTypes.CHOOSE_PATH,
+              character,
+              kind: 'Master',
+            })
+          }
+        >
+          <p>Pick Master Path</p>
+          <p><i>From reaching level 7</i></p>
+        </Button>
+      )}
       {choiceItems.map((item, idx) => (
         <Button
           key={idx}
           onClick={() =>
             pushModal({
               type: ModalTypes.CHOOSE,
-              characterId,
+              character,
               source: item.sourceLabel,
               modifier: item.modifier,
             })

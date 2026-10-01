@@ -43,8 +43,12 @@ export const PathsByCategory = ({
     useCollapseState(ids);
 
   if (!isFetched) {
-    return null;
+    return (
+      <div className={cn('w-full')} />
+    );
   }
+
+  console.log('Have onselect?', onSelect);
 
   return (
     <div className={cn('w-dvw max-w-250 px-4')}>

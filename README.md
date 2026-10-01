@@ -47,6 +47,25 @@ $ pnpm build-types
 
 The `#[ts(export, ...)]` macro defines the path to the type file in the TypeScript code where the types will be ported.
 
+## Feature TODO List
+
+- [x] **DB Import**
+- [x] **Magic Tome page** _(shows all imported traditions, magic talents, and spells)_
+- [x] **Catalogue page** _(shows all ancestries and paths, including level-up traits)_
+- [x] **Character Creation** _(Novice path, Ancestry, Starting ability scores, Profession)_
+- [ ] **Character Choices**
+  - [x] **Pick Ability Score Increases**
+  - [x] **Pick Languages**
+  - [x] **Pick Choice Table Options**
+  - [x] **Pick Profession**
+  - [x] **Pick Traditions & Magic Talents**
+  - [x] **Pick Spells from own Traditions**
+  - [ ] **Pick Spells from specific Traditions**
+- [ ] **Manual Choice Dismissal**
+- [ ] **Spell Casting / Talent Casting / Spell Slots**
+- [ ] **Time Progression** _(to manage time-based choices and spell slot restoration)_
+- [ ] **Character Override handling**
+
 ## Did I use AI to create this?
 
 First of all, _**ew**_. I do not trust AI to write code for me. I think I'm better than any clanker in terms of quality and understanding requirements. And more than that, I _like_ programming. Why would I ever want to delegate my hobby to a machine? I may as well ask an LLM to enjoy life in my place. Not one single line of code was written by anything but my silly little fingers (Rust Macros don't count, they write themselves!). I promise you that within this repo, you will find only the finest handcrafted brain-to-table codeslop.

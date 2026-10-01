@@ -93,7 +93,7 @@ impl From<Option<String>> for TalentRestore {
     }
 }
 
-#[derive(TS, Debug, Serialize, Deserialize, sqlx::Type)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize, sqlx::Type)]
 #[ts(export, export_to = "etc.ts")]
 #[sqlx(type_name = "TEXT")]
 pub enum ChoiceDuration {

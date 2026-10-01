@@ -10,12 +10,19 @@ export const usePathIndex = () =>
 
 export const usePathsForCategory = (kind: string, category: string) =>
   useQuery({
-    queryKey: ['paths', kind, category],
+    queryKey: ['paths_for_category', kind, category],
     queryFn: () =>
       invoke<FullPath[]>('get_paths_for_kind_and_category', {
         kind,
         category,
       }),
+  });
+
+export const useCategoriesForKind = (kind: string) =>
+  useQuery({
+    queryKey: ['path_categories_for_kind', kind],
+    queryFn: () =>
+      invoke<string[]>('get_path_categories_for_kind', { kind }),
   });
 
 export const useFullNovicePath = (id: number) =>

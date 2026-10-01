@@ -94,3 +94,16 @@ export const useSaveChoice = (characterId: number) => {
     },
   });
 };
+
+export const useSetPath = (id: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (pathId: number) =>
+      invoke('update_character_path', { id, pathId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: CHARACTER_KEYS.character(id),
+      });
+    }
+  });
+}

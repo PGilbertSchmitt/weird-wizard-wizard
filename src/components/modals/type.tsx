@@ -1,3 +1,4 @@
+import { FullCharacter } from '@/types/character';
 import {
   ChooseTarget,
   Condition,
@@ -7,6 +8,7 @@ import {
 
 export const ModalTypes = {
   CHOOSE: 'Choose',
+  CHOOSE_PATH: 'Choose Path',
   ERROR: 'Error',
 } as const;
 // type ModalType = typeof ModalTypes[keyof typeof ModalTypes];
@@ -25,12 +27,19 @@ export interface FullChoiceModifier {
   };
 }
 
-// For self contained decisions made by the player
+// For self contained decisions made by the player mased on modifiers
 export interface CharacterChoiceModalData {
   type: typeof ModalTypes.CHOOSE;
-  characterId: number;
+  character: FullCharacter;
   modifier: FullChoiceModifier;
   source: string;
+}
+
+// For path selection (which don't rely on modifiers)
+export interface CharacterPathModalData {
+  type: typeof ModalTypes.CHOOSE_PATH;
+  character: FullCharacter;
+  kind: 'Expert' | 'Master';
 }
 
 // For errors during the import process
@@ -40,4 +49,4 @@ export interface ErrorModalData {
 }
 
 // Might have non-CharacterChoice-based modals
-export type ModalData = CharacterChoiceModalData | ErrorModalData;
+export type ModalData = CharacterChoiceModalData | CharacterPathModalData | ErrorModalData;

@@ -11,17 +11,13 @@ use dashmap::DashSet;
 use sqlx::{Pool, Sqlite};
 
 use crate::{
-    db::{
-        choice_selections::{self, FullChoice},
+    WWError::Generic, WWResult, db::{
+        choice_selections,
         etc::ChoiceDuration,
         magic_talents::{self, FullMagicTalent},
         path_talents::{self, FullPathTalent},
         spells::{self, FullSpell},
-    },
-    mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target},
-    modifiers::{FullModifier, HasModifiers},
-    WWError::Generic,
-    WWResult,
+    }, mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target}, modifiers::{FullModifier, HasModifiers}, util::db_boolean,
 };
 
 const DISCLAIMER: &'static str = "If you're getting this error, this is a bug with the system. You did nothing wrong (probably).";
@@ -35,11 +31,12 @@ struct RawCharacterChoice {
     duration: ChoiceDuration,
 }
 
-#[derive(Debug)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
 pub struct CharacterChoice {
     id: i64,
     selection: String,
-    dismissable: Option<String>,
+    dismissable: bool,
     duration: ChoiceDuration,
 }
 
@@ -63,7 +60,7 @@ pub async fn get_for_character(
             CharacterChoice {
                 id: choice.id,
                 selection: choice.selection,
-                dismissable: choice.dismissable,
+                dismissable: db_boolean(choice.dismissable),
                 duration: choice.duration,
             },
         );
@@ -104,7 +101,6 @@ pub struct ModifierSelections {
     // a flat structure, during which time the accumulated "lost" talents can prune the tree.
     pub gained_talents: Vec<(FullPathTalent, Vec<ModifierSelections>, String)>,
     pub gained_magic_talents: Vec<(FullMagicTalent, Vec<ModifierSelections>, String)>,
-    pub selected_choices: Vec<(FullModifier, Vec<FullChoice>)>,
 
     // Much like path/magic talents, spells can have mods, and thus can trigger additional lookups, which
     // means we have to load them during the runtime of `collect_from_modifier_tree`. However, because
@@ -113,6 +109,7 @@ pub struct ModifierSelections {
     pub gained_spells: Vec<(FullSpell, String)>,
 
     pub required_choices: Vec<FullModifier>,
+    pub selected_choices: Vec<(FullModifier, Vec<CharacterChoice>)>,
 }
 
 impl ModifierSelections {
@@ -463,19 +460,6 @@ pub async fn collect_from_modifier_tree(
     let spells = spells?;
     let choices = choices?;
 
-    for (choice_mod, choice_ids) in new_choice_selections {
-        if choice_ids.len() > 0 {
-            let selected_options = choices
-                .iter()
-                .filter(|choice| choice_ids.contains(&choice.id))
-                .map(|c| c.clone())
-                .collect();
-            selections
-                .selected_choices
-                .push((choice_mod, selected_options));
-        }
-    }
-
     let spells_with_sub_trees = futures::stream::iter(spells)
         .map(|spell| {
             let db = db.clone();
@@ -676,11 +660,13 @@ where
     F: FnMut(&str, &mut ModifierSelections) -> WWResult<T>,
 {
     let mut required_choice_strings = Vec::new();
+    let mut selected_choices: Vec<CharacterChoice> = Vec::new();
     let mut results = Vec::new();
     for (choice_key, full_key) in modifier.keys() {
         match saved_choices.get(&full_key) {
             Some(ch) => {
                 results.push(on_selection(&ch.selection, &mut selections)?);
+                selected_choices.push(ch.to_owned());
             }
             None => {
                 if modifier.required() {
@@ -689,10 +675,12 @@ where
             }
         }
     }
+    let mut modifier = modifier.clone();
     if required_choice_strings.len() > 0 {
-        let mut new_modifier = modifier.clone();
-        new_modifier.set_choice_strings(required_choice_strings);
-        selections.required_choices.push(new_modifier);
+        modifier.set_choice_strings(required_choice_strings);
+        selections.required_choices.push(modifier);
+    } else {
+        selections.selected_choices.push((modifier, selected_choices))
     }
 
     Ok(results)

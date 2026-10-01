@@ -8,7 +8,7 @@ use ts_rs::TS;
 
 use crate::{
     WWError::Generic, WWResult, db::{
-        ancestries::{self, FullAncestry}, character_choices::{self, ModifierSelections, SlotMod, collect_from_modifier_tree}, choice_selections::FullChoice, etc::Size, languages::{self, Language}, levels::FullLevel, magic_talents::FullMagicTalent, path_talents::FullPathTalent, paths::{self, FullPath}, professions::{self, Profession}, senses::{self, FullSense}, speed_traits::{self, FullSpeedTrait}, spells::FullSpell, traditions::{self, TraditionIndexItem},
+        ancestries::{self, FullAncestry}, character_choices::{self, CharacterChoice, ModifierSelections, SlotMod, collect_from_modifier_tree}, choice_selections::FullChoice, etc::{PathKind, Size}, languages::{self, Language}, levels::FullLevel, magic_talents::FullMagicTalent, path_talents::FullPathTalent, paths::{self, FullPath}, professions::{self, Profession}, senses::{self, FullSense}, speed_traits::{self, FullSpeedTrait}, spells::FullSpell, traditions::{self, TraditionIndexItem},
     }, mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod}, modifiers::{FullModifier, ModifierPathNode},
 };
 
@@ -82,7 +82,7 @@ pub struct FullCharacter {
 
     modified_slots: Vec<SlotMod>,
     required_choices: Vec<FullModifier>,
-    selected_choices: Vec<(FullModifier, Vec<FullChoice>)>,
+    selected_choices: Vec<(FullModifier, Vec<CharacterChoice>)>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -621,6 +621,46 @@ pub async fn update_health(db: &Pool<Sqlite>, id: i64, health: i64, damage: i64)
     )
     .execute(db)
     .await?;
+
+    Ok(())
+}
+
+pub async fn set_path(db: &Pool<Sqlite>, id: i64, path_id: i64) -> WWResult<()> {
+    let path_kind: PathKind =
+        sqlx::query_scalar!("SELECT path_kind FROM paths WHERE id = ?", path_id)
+            .fetch_one(db)
+            .await?
+            .into();
+
+    match path_kind {
+        PathKind::Novice => {
+            sqlx::query!(
+                "UPDATE characters SET novice_path_id = ? WHERE id = ?",
+                path_id,
+                id
+            )
+            .execute(db)
+            .await?;
+        }
+        PathKind::Expert => {
+            sqlx::query!(
+                "UPDATE characters SET expert_path_id = ? WHERE id = ?",
+                path_id,
+                id
+            )
+            .execute(db)
+            .await?;
+        }
+        PathKind::Master => {
+            sqlx::query!(
+                "UPDATE characters SET master_path_id = ? WHERE id = ?",
+                path_id,
+                id
+            )
+            .execute(db)
+            .await?;
+        }
+    }
 
     Ok(())
 }
