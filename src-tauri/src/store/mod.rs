@@ -36,6 +36,6 @@ pub fn get_app_data_state(app: &AppHandle<Wry>) -> WWResult<tauri::State<'_, Mut
     Ok(app.state())
 }
 
-pub fn get_database(app: &AppHandle<Wry>) -> WWResult<tauri::State<'_, Mutex<db::DatabaseState>>> {
+pub fn get_database(app: &AppHandle<Wry>) -> WWResult<tauri::State<'_, db::DatabaseState>> {
     Ok(app.state())
 }

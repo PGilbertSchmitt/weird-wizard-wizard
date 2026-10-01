@@ -19,7 +19,6 @@ pub async fn run_seed_import(app: &AppHandle<Wry>) -> WWResult<()> {
     let import_state = import_state.lock().await;
 
     let db_state = get_database(&app)?;
-    let db_state = db_state.lock().await;
 
     if let Some(import_data) = &import_state.import_data {
         let summary = import_data.summary();

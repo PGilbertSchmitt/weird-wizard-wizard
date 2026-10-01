@@ -26,9 +26,9 @@ pub fn run() {
                     .await
                     .expect("Failed to open database");
 
-                app.manage(Mutex::new(db::DatabaseState {
+                app.manage(db::DatabaseState {
                     pool: database.pool,
-                }));
+                });
             });
             Ok(())
         })

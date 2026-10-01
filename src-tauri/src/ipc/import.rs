@@ -26,6 +26,5 @@ pub async fn run_seed(app: AppHandle<Wry>) {
 #[command]
 pub async fn check_seed(app: AppHandle<Wry>) -> WWResult<bool> {
     let db_state = get_database(&app)?;
-    let db_state = db_state.lock().await;
     Ok(seed_data::is_seeded(&db_state.pool).await?)
 }

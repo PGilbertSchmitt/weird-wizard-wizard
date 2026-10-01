@@ -13,7 +13,6 @@ use crate::{
 #[command]
 pub async fn get_choice_table(app: AppHandle<Wry>, name: String) -> WWResult<ChoiceTable> {
     let db_state = get_database(&app)?;
-    let db_state = db_state.lock().await;
     choice_selections::get_choice_table(&db_state.pool, name).await
 }
 
@@ -25,6 +24,5 @@ pub async fn save_choice(
     values: Vec<String>,
 ) -> WWResult<()> {
     let db_state = get_database(&app)?;
-    let db_state = db_state.lock().await;
     character_choices::save_choices(&db_state.pool, character_id, modifier, values).await
 }
