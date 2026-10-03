@@ -27,7 +27,7 @@ export const CharacterSelections = ({
 
   // Not for controlling the tabs (they're self controlled), but for rendering the dismiss switch
   const [showSwitch, setShowSwitch] = useState(false);
-  
+
   const [dismissableChoices, nonDismissableChoices] = useMemo(() => {
     const dismissable: Selection[] = [];
     const both: Selection[] = [];
@@ -69,7 +69,7 @@ export const CharacterSelections = ({
     <Tabs
       defaultValue="Dismissable"
       className={cn('flex flex-col items-center')}
-      onValueChange={value => setShowSwitch(value === 'Non Dismissable')}
+      onValueChange={(value) => setShowSwitch(value === 'Non Dismissable')}
     >
       <div className={cn('relative')}>
         <TabsList>
@@ -77,9 +77,19 @@ export const CharacterSelections = ({
           <TabsTrigger value="Non Dismissable">Non Dismissable</TabsTrigger>
         </TabsList>
         {showSwitch && (
-          <div className={cn('absolute inset-y-0 -right-45 top-0 flex justify-center items-center')}>
-            <Switch id='allow-dismiss' checked={allowDismiss} onCheckedChange={setAllowDismiss} />
-            <Label htmlFor='allow-dismiss' className='ml-2'>Allow dismissing</Label>
+          <div
+            className={cn(
+              'absolute inset-y-0 -right-45 top-0 flex justify-center items-center',
+            )}
+          >
+            <Switch
+              id="allow-dismiss"
+              checked={allowDismiss}
+              onCheckedChange={setAllowDismiss}
+            />
+            <Label htmlFor="allow-dismiss" className="ml-2">
+              Allow dismissing
+            </Label>
           </div>
         )}
       </div>

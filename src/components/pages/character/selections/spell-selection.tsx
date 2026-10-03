@@ -11,8 +11,10 @@ export const SpellSelection = ({ choices }: SelectionItemProps) => {
   return (
     <ul>
       {spellIds.map((id, i) => (
-        <li key={i}>+ <SpellName id={id} /></li>
+        <li key={i}>
+          + <SpellName id={id} />
+        </li>
       ))}
     </ul>
-  )
+  );
 };

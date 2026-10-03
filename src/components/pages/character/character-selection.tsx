@@ -51,7 +51,9 @@ export const CharacterSelection = ({
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className={cn('m-4')}>
-              <DropdownMenuItem onSelect={() => deleteChoice(modifier)}>Dismiss</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => deleteChoice(modifier)}>
+                Dismiss
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

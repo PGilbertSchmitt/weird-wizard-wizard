@@ -74,9 +74,7 @@ fn convert_language(raw: RawLanguage) -> Language {
 }
 
 fn convert_languages(raw: Vec<RawLanguage>) -> Vec<Language> {
-    raw.into_iter()
-        .map(convert_language)
-        .collect()
+    raw.into_iter().map(convert_language).collect()
 }
 
 pub async fn get_for_ancestry(db: &Pool<Sqlite>, ancestry_id: i64) -> WWResult<Vec<Language>> {

@@ -165,9 +165,7 @@ pub fn validate_mod_strings(
             Err(err) => {
                 all_errs.push(format!(
                     "Choice selection '{}': {}\n  -> {}",
-                    &row.choice_name,
-                    &row.mod_str,
-                    err,
+                    &row.choice_name, &row.mod_str, err,
                 ));
             }
         }

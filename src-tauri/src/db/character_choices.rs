@@ -11,13 +11,18 @@ use dashmap::DashSet;
 use sqlx::{Pool, Sqlite};
 
 use crate::{
-    WWError::Generic, WWResult, db::{
+    db::{
         choice_selections,
         etc::ChoiceDuration,
         magic_talents::{self, FullMagicTalent},
         path_talents::{self, FullPathTalent},
         spells::{self, FullSpell},
-    }, mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target}, modifiers::{FullModifier, HasModifiers}, util::db_boolean,
+    },
+    mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target},
+    modifiers::{FullModifier, HasModifiers},
+    util::db_boolean,
+    WWError::Generic,
+    WWResult,
 };
 
 const DISCLAIMER: &'static str = "If you're getting this error, this is a bug with the system. You did nothing wrong (probably).";
@@ -288,7 +293,7 @@ pub async fn collect_from_modifier_tree(
     if !processed_keys.insert(modifier.clone()) {
         return Ok(selections);
     }
-    
+
     let mut new_choice_mods: Vec<FullModifier> = Vec::new();
     let mut new_path_talents: Vec<(String, String, String)> = Vec::new();
     let mut new_magic_talents: Vec<(String, String)> = Vec::new();
@@ -675,7 +680,9 @@ where
         modifier.set_choice_strings(required_choice_strings);
         selections.required_choices.push(modifier);
     } else {
-        selections.selected_choices.push((modifier, selected_choices))
+        selections
+            .selected_choices
+            .push((modifier, selected_choices))
     }
 
     Ok(results)
@@ -858,7 +865,7 @@ pub async fn delete_choice(
         )
         .execute(db)
         .await?;
-    };
+    }
 
     Ok(())
 }

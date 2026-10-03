@@ -21,8 +21,7 @@ export const usePathsForCategory = (kind: string, category: string) =>
 export const useCategoriesForKind = (kind: string) =>
   useQuery({
     queryKey: ['path_categories_for_kind', kind],
-    queryFn: () =>
-      invoke<string[]>('get_path_categories_for_kind', { kind }),
+    queryFn: () => invoke<string[]>('get_path_categories_for_kind', { kind }),
   });
 
 export const useFullNovicePath = (id: number) =>

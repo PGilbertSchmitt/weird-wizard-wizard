@@ -40,10 +40,12 @@ export const ChoosePath = ({ character, kind }: ChoosePathProps) => {
             kind={kind}
             category={category}
             onSelect={(pathId, _pathName, _ancestryId) => {
-              setPath(pathId).then(popNonErrorModal).catch(err => {
-                popNonErrorModal();
-                pushError(err.toString());
-              })
+              setPath(pathId)
+                .then(popNonErrorModal)
+                .catch((err) => {
+                  popNonErrorModal();
+                  pushError(err.toString());
+                });
             }}
             selectedId={-1}
           />

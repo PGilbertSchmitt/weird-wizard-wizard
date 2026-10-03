@@ -97,7 +97,12 @@ impl Display for ModifierPathNode {
             Self::LevelScore { level } => {
                 f.write_fmt(format_args!("score_gain|{level}"))?;
             }
-            Self::PathTalent { name, source, granter, idx } => {
+            Self::PathTalent {
+                name,
+                source,
+                granter,
+                idx,
+            } => {
                 f.write_fmt(format_args!("path_talent|{name}|{source}|{granter}|{idx}"))?;
             }
             Self::MagicTalent {

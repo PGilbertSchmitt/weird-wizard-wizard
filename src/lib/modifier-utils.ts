@@ -1,8 +1,14 @@
-import { FullChoiceModifier } from "@/components/modals/type";
-import { ChooseTarget, FullModifier, ModifierPathNode } from "@/types/modifiers";
-import { orSeparatedStr } from "./utils";
+import { FullChoiceModifier } from '@/components/modals/type';
+import {
+  ChooseTarget,
+  FullModifier,
+  ModifierPathNode,
+} from '@/types/modifiers';
+import { orSeparatedStr } from './utils';
 
-export const isChoiceMod = (modifier: FullModifier): modifier is FullChoiceModifier => {
+export const isChoiceMod = (
+  modifier: FullModifier,
+): modifier is FullChoiceModifier => {
   return modifier.mod_details.target.type === 'Choose';
 };
 

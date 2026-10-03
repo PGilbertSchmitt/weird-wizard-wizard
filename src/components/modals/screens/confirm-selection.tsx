@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { FullChoiceModifier } from "../type";
-import { useModal } from "@/hooks/modal";
-import { useSaveChoice } from "@/api/characters";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { FullChoiceModifier } from '../type';
+import { useModal } from '@/hooks/modal';
+import { useSaveChoice } from '@/api/characters';
 
 interface ConfirmSelectionProps {
   characterId: number;

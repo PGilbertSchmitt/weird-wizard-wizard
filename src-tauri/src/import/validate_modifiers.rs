@@ -88,7 +88,6 @@ async fn validate_choose_target(
         | ChooseTarget::ExpertSpellFrom(_, items)
         | ChooseTarget::MasterSpellFrom(_, items) => {
             for item in items {
-
                 find_tradition(&mut *tx, item, &target_str).await?;
             }
             Ok(())
@@ -112,7 +111,7 @@ async fn find_tradition(
     target_str: &str,
 ) -> Result<(), String> {
     if name == "ANY" {
-        return Ok(())
+        return Ok(());
     }
 
     sqlx::query!("SELECT id FROM traditions WHERE name = ?", name)

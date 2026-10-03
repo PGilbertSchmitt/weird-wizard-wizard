@@ -1,7 +1,13 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    WWResult, db::{character_choices, characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter}}, modifiers::FullModifier, store::get_database,
+    db::{
+        character_choices,
+        characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter},
+    },
+    modifiers::FullModifier,
+    store::get_database,
+    WWResult,
 };
 
 #[command]

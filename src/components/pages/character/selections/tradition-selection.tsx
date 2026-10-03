@@ -55,7 +55,11 @@ const TraditionName = ({ id }: IdProp) => {
   if (!name) {
     return <Spinner />;
   }
-  return <span><b>{name}</b></span>;
+  return (
+    <span>
+      <b>{name}</b>
+    </span>
+  );
 };
 
 const MagicTalentName = ({ id }: IdProp) => {
@@ -63,7 +67,11 @@ const MagicTalentName = ({ id }: IdProp) => {
   if (!name) {
     return <Spinner />;
   }
-  return <span><b>{name}</b></span>;
+  return (
+    <span>
+      <b>{name}</b>
+    </span>
+  );
 };
 
 export const SpellName = ({ id }: IdProp) => {
@@ -71,5 +79,9 @@ export const SpellName = ({ id }: IdProp) => {
   if (!name) {
     return <Spinner />;
   }
-  return <span><b>{name}</b></span>;
+  return (
+    <span>
+      <b>{name}</b>
+    </span>
+  );
 };

@@ -43,9 +43,7 @@ export const PathsByCategory = ({
     useCollapseState(ids);
 
   if (!isFetched) {
-    return (
-      <div className={cn('w-full')} />
-    );
+    return <div className={cn('w-full')} />;
   }
 
   return (

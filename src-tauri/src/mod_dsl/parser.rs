@@ -291,7 +291,7 @@ fn parse_choose_target(tokens: &mut Tokens) -> Result<ChooseTarget, String> {
         Token::MagicTalent => match parse_choose_spell_subcategory(tokens)? {
             Some(subcats) => Ok(ChooseTarget::MagicTalent(multiplier, subcats)),
             None => Err(format!("MagicTalent choice must have subcategory")),
-        }
+        },
 
         Token::Select => {
             eat_equal_sign(tokens)?;

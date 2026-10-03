@@ -10,9 +10,7 @@ interface CharacterChoicesProps {
   character: FullCharacter;
 }
 
-export const CharacterChoices = ({
-  character,
-}: CharacterChoicesProps) => {
+export const CharacterChoices = ({ character }: CharacterChoicesProps) => {
   const { pushModal } = useModal();
 
   const choiceItems = useMemo(() => {
@@ -64,7 +62,9 @@ export const CharacterChoices = ({
           }
         >
           <p>Pick Expert Path</p>
-          <p><i>From reaching level 3</i></p>
+          <p>
+            <i>From reaching level 3</i>
+          </p>
         </Button>
       )}
       {pickMasterPath && (
@@ -79,7 +79,9 @@ export const CharacterChoices = ({
           }
         >
           <p>Pick Master Path</p>
-          <p><i>From reaching level 7</i></p>
+          <p>
+            <i>From reaching level 7</i>
+          </p>
         </Button>
       )}
       {choiceItems.map((item, idx) => (

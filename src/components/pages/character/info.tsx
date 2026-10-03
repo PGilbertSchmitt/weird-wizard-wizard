@@ -220,8 +220,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
           <h2>Ancestry: {character.ancestry.name}</h2>
         </div>
 
-
-        {character.professions.map(profession => (
+        {character.professions.map((profession) => (
           <>
             <Separator />
 

@@ -4,11 +4,16 @@ use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
 
 use crate::{
-    WWError::{self, Generic}, WWResult, db::{
+    db::{
         etc::TalentRestore,
         info_tables::{self, FullInfoTable},
         option_blocks::{self, FullOptionBlock},
-    }, import::{NamePairToId, NameToId, PathTalentRow, is_affirmative}, modifiers::{FullModifier, HasModifiers}, util::db_boolean,
+    },
+    import::{is_affirmative, NamePairToId, NameToId, PathTalentRow},
+    modifiers::{FullModifier, HasModifiers},
+    util::db_boolean,
+    WWError::{self, Generic},
+    WWResult,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -126,8 +131,12 @@ async fn extend_raw_path_talent(
         option_blocks::get_from_opt(db, raw_talent.option_block_id),
     );
 
-    let full_modifiers =
-        FullModifier::from_path_talent(&raw_talent.name, &raw_talent.source, source_string, &raw_talent.mod_str)?;
+    let full_modifiers = FullModifier::from_path_talent(
+        &raw_talent.name,
+        &raw_talent.source,
+        source_string,
+        &raw_talent.mod_str,
+    )?;
 
     Ok(FullPathTalent {
         id: raw_talent.id,
@@ -145,7 +154,11 @@ async fn extend_raw_path_talent(
     })
 }
 
-async fn get_from_ids(db: &Pool<Sqlite>, ids: Vec<i64>, source_string: String) -> WWResult<Vec<FullPathTalent>> {
+async fn get_from_ids(
+    db: &Pool<Sqlite>,
+    ids: Vec<i64>,
+    source_string: String,
+) -> WWResult<Vec<FullPathTalent>> {
     let path_talents: Vec<FullPathTalent> = futures::stream::iter(ids)
         .map(|id| {
             let source = source_string.clone();
@@ -200,7 +213,9 @@ async fn get_by_name_and_source(
     .fetch_one(db)
     .await
     .map_err(|_| {
-        Generic(format!("Could not find path talent with name '{name}' for source '{source}'"))
+        Generic(format!(
+            "Could not find path talent with name '{name}' for source '{source}'"
+        ))
     });
 
     extend_raw_path_talent(db, raw_talent?, origin.to_owned()).await

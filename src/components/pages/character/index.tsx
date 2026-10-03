@@ -63,7 +63,9 @@ export const CharacterPage = () => {
           <TabsTrigger value="Info">Info</TabsTrigger>
           <TabsTrigger value="Talents">Talents</TabsTrigger>
           <TabsTrigger value="Spells">Spells</TabsTrigger>
-          <TabsTrigger value="Pending Choices">Pending Choices ({choiceCount})</TabsTrigger>
+          <TabsTrigger value="Pending Choices">
+            Pending Choices ({choiceCount})
+          </TabsTrigger>
           <TabsTrigger value="Selected Choices">Selected Choices</TabsTrigger>
         </TabsList>
         <div className={cn('gap-6 w-250 p-4 flex flex-col items-center')}>
@@ -77,14 +79,10 @@ export const CharacterPage = () => {
             <CharacterSpells spells={character.spells.map((s) => s[0])} />
           </TabsContent>
           <TabsContent value="Pending Choices">
-            <CharacterChoices
-              character={character}
-            />
+            <CharacterChoices character={character} />
           </TabsContent>
           <TabsContent value="Selected Choices">
-            <CharacterSelections
-              character={character}
-            />
+            <CharacterSelections character={character} />
           </TabsContent>
         </div>
       </Tabs>

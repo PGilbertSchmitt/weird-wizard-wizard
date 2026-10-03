@@ -7,9 +7,27 @@ use sqlx::{types::chrono::NaiveDateTime, Pool, Sqlite};
 use ts_rs::TS;
 
 use crate::{
-    WWError::Generic, WWResult, db::{
-        ancestries::{self, FullAncestry}, character_choices::{self, CharacterChoice, ModifierSelections, SlotMod, collect_from_modifier_tree}, etc::{PathKind, Size}, languages::{self, Language}, levels::FullLevel, magic_talents::FullMagicTalent, path_talents::FullPathTalent, paths::{self, FullPath}, professions::{self, Profession}, senses::{self, FullSense}, speed_traits::{self, FullSpeedTrait}, spells::FullSpell, traditions::{self, TraditionIndexItem},
-    }, mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod}, modifiers::{FullModifier, ModifierPathNode},
+    db::{
+        ancestries::{self, FullAncestry},
+        character_choices::{
+            self, collect_from_modifier_tree, CharacterChoice, ModifierSelections, SlotMod,
+        },
+        etc::{PathKind, Size},
+        languages::{self, Language},
+        levels::FullLevel,
+        magic_talents::FullMagicTalent,
+        path_talents::FullPathTalent,
+        paths::{self, FullPath},
+        professions::{self, Profession},
+        senses::{self, FullSense},
+        speed_traits::{self, FullSpeedTrait},
+        spells::FullSpell,
+        traditions::{self, TraditionIndexItem},
+    },
+    mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod},
+    modifiers::{FullModifier, ModifierPathNode},
+    WWError::Generic,
+    WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]

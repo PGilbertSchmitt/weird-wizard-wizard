@@ -79,7 +79,7 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
             return <ChooseLanguage {...choiceProps} />;
           }
           case 'Profession': {
-            return <ChooseProfession {...choiceProps} />
+            return <ChooseProfession {...choiceProps} />;
           }
           case 'Select': {
             return (
@@ -115,10 +115,12 @@ const ModalContainer = ({ children, onClose }: ModalContainerProps) => (
   >
     {children}
     <div
-      className={cn('w-6 h-6 absolute right-2 top-2 flex items-center justify-center rounded-full bg-inherit hover:brightness-90')}
+      className={cn(
+        'w-6 h-6 absolute right-2 top-2 flex items-center justify-center rounded-full bg-inherit hover:brightness-90',
+      )}
       onClick={onClose}
     >
-      <X strokeWidth='1px' />
+      <X strokeWidth="1px" />
     </div>
   </StaticCard>
 );

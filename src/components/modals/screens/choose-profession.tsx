@@ -60,7 +60,8 @@ export const ChooseProfession = ({
                   </Button>
                 ))}
               </TabsContent>
-            ))}js
+            ))}
+            js
           </div>
         </Tabs>
       </div>

@@ -49,4 +49,5 @@ export interface ErrorModalData {
 }
 
 // Might have non-CharacterChoice-based modals
-export type ModalData = CharacterChoiceModalData | CharacterPathModalData | ErrorModalData;
+export type ModalData =
+  CharacterChoiceModalData | CharacterPathModalData | ErrorModalData;
