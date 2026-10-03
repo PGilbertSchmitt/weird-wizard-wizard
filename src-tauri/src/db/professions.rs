@@ -4,7 +4,7 @@ use ts_rs::TS;
 
 use crate::{import::ProfessionRow, WWError, WWResult};
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Clone, Serialize, Deserialize)]
 #[ts(export, export_to = "other_info.ts")]
 pub struct Profession {
     pub id: i64,

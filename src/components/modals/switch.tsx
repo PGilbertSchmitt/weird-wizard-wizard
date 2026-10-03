@@ -11,6 +11,7 @@ import { useModal } from '@/hooks/modal';
 import { ChooseSelection } from './screens/choose-selection';
 import { X } from 'lucide-react';
 import { ChoosePath } from './screens/choose-path';
+import { ChooseProfession } from './screens/choose-profession';
 
 interface ModalSwitchProps {
   modalData: ModalData;
@@ -77,6 +78,9 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
           case 'Language': {
             return <ChooseLanguage {...choiceProps} />;
           }
+          case 'Profession': {
+            return <ChooseProfession {...choiceProps} />
+          }
           case 'Select': {
             return (
               <ChooseSelection
@@ -86,7 +90,6 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
             );
           }
           case 'MagicTalent':
-          case 'Profession':
           case 'Slots':
           case 'NoviceSpellFrom':
           case 'ExpertSpellFrom':

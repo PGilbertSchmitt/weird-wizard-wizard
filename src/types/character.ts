@@ -48,7 +48,7 @@ export type FullCharacter = {
   agility: number;
   intellect: number;
   will: number;
-  profession: Profession;
+  professions: Array<Profession>;
   ancestry: FullAncestry;
   novice_path: FullPath;
   expert_path: FullPath | null;

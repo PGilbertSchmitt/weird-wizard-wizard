@@ -4,8 +4,7 @@ import { cn, nth } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { Language } from '@/types/other_info';
 import { Button } from '@/components/ui/button';
-import { useSaveChoice } from '@/api/characters';
-import { useModal } from '@/hooks/modal';
+import { ConfirmSelection } from './confirm-selection';
 
 export const ChooseLanguage = ({
   character,
@@ -13,8 +12,6 @@ export const ChooseLanguage = ({
   modifier,
 }: ModalChoiceProps) => {
   const { data: languages } = useNonSecretLanguages();
-  const { mutateAsync: saveChoice } = useSaveChoice(character.id);
-  const { popNonErrorModal, pushError } = useModal();
 
   const [selected, setSelected] = useState<Language[]>([]);
 
@@ -32,7 +29,7 @@ export const ChooseLanguage = ({
     return null;
   }
 
-  const selectedLangugages = selected.map((l) => l.id);
+  const selectedLanguages = selected.map((l) => l.id);
   const pickLanguage = selected.length < keys.length;
   const idxStr = keys.length === 1 ? '' : nth(selected.length);
 
@@ -45,7 +42,7 @@ export const ChooseLanguage = ({
           <Button
             className={cn('m-2 w-full')}
             key={lang.id}
-            disabled={selectedLangugages.includes(lang.id)}
+            disabled={selectedLanguages.includes(lang.id)}
             onClick={() => setSelected([...selected, lang])}
           >
             <h2>{lang.name}</h2>
@@ -55,31 +52,16 @@ export const ChooseLanguage = ({
       </div>
     </div>
   ) : (
-    <div className={cn('w-40')}>
-      <h3 className="mb-4">Selections:</h3>
-
+    <ConfirmSelection
+      characterId={character.id}
+      modifier={modifier}
+      values={selected.map((lang) => lang.id.toString())}
+    >
       <ul>
         {selected.map((lang) => (
           <li key={lang.id}>- {lang.name}</li>
         ))}
       </ul>
-
-      <Button
-        className={cn('w-full mt-4')}
-        onClick={() => {
-          saveChoice({
-            modifier,
-            values: selected.map((lang) => lang.id.toString()),
-          })
-            .then(popNonErrorModal)
-            .catch((err) => {
-              popNonErrorModal();
-              pushError(err.toString());
-            });
-        }}
-      >
-        Confirm
-      </Button>
-    </div>
+    </ConfirmSelection>
   );
 };

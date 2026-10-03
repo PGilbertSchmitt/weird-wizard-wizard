@@ -56,7 +56,7 @@ pub struct FullCharacter {
     agility: i64,
     intellect: i64,
     will: i64,
-    profession: Profession,
+    professions: Vec<Profession>,
     ancestry: FullAncestry,
     novice_path: FullPath,
     expert_path: Option<FullPath>,
@@ -190,6 +190,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         all_speed_traits,
         all_senses,
         all_traditions,
+        all_professions,
     ) = futures::join!(
         professions::get(db, raw_character.profession_id),
         ancestries::get(db, raw_character.ancestry_id),
@@ -200,6 +201,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         speed_traits::get_all(db),
         senses::get_all(db),
         traditions::get_index(db),
+        professions::get_all(db),
     );
 
     let profession = profession?;
@@ -210,6 +212,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     let all_speed_traits = all_speed_traits?;
     let all_senses = all_senses?;
     let all_traditions = all_traditions?;
+    let all_professions = all_professions?;
 
     let mut fields = CumulativeFields::from_ancestry(&ancestry)?;
 
@@ -332,6 +335,15 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         }
     }
 
+    let mut professions = vec![profession];
+    for id in selections.gained_profession_ids {
+        if let Some(profession) = all_professions.iter().find(|prof| prof.id == id) {
+            professions.push(profession.clone());
+        } else {
+            return Err(Generic(format!("Cannot find profession with id {id}")));
+        }
+    }
+
     for (talent, _, source) in selections.gained_talents {
         fields.path_talents.push((talent, source));
     }
@@ -355,7 +367,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         agility: raw_character.agility + selections.agility,
         intellect: raw_character.intellect + selections.intellect,
         will: raw_character.will + selections.will,
-        profession,
+        professions,
         ancestry,
         novice_path: novice_path,
         expert_path: expert_path,

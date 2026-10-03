@@ -196,7 +196,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
         <Separator />
 
         <div className={cn('bg-secondary-background text-foreground p-4')}>
-          <div className={cn('flex flex-row gap-4')}>
+          <div className={cn('flex flex-row justify-between gap-4')}>
             <div>
               <AttributeTable rows={attributes} />
             </div>
@@ -220,13 +220,18 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
           <h2>Ancestry: {character.ancestry.name}</h2>
         </div>
 
-        <Separator />
 
-        <div className={cn('bg-secondary-background text-foreground p-4')}>
-          <h2>Profession: {character.profession.name}</h2>
-          <span>({character.profession.category})</span>
-          <p>{character.profession.description}</p>
-        </div>
+        {character.professions.map(profession => (
+          <>
+            <Separator />
+
+            <div className={cn('bg-secondary-background text-foreground p-4')}>
+              <h2>Profession: {profession.name}</h2>
+              <span>({profession.category})</span>
+              <p>{profession.description}</p>
+            </div>
+          </>
+        ))}
 
         {character.expert_path && (
           <>

@@ -2,10 +2,9 @@ import { cn, nth } from '@/lib/utils';
 import { ModalChoiceProps } from '../switch';
 import { useChoiceTable } from '@/api/choice-selections';
 import { Button } from '@/components/ui/button';
-import { useSaveChoice } from '@/api/characters';
-import { useModal } from '@/hooks/modal';
 import { useMemo, useState } from 'react';
 import { FullChoice } from '@/types/choice_selections';
+import { ConfirmSelection } from './confirm-selection';
 
 interface ChooseSelectProps extends ModalChoiceProps {
   selectionName: string;
@@ -18,8 +17,6 @@ export const ChooseSelection = ({
   selectionName,
 }: ChooseSelectProps) => {
   const { data: choiceTable } = useChoiceTable(selectionName);
-  const { mutateAsync: saveChoice } = useSaveChoice(character.id);
-  const { popNonErrorModal, pushError } = useModal();
 
   const [selected, setSelected] = useState<Array<FullChoice>>([]);
 
@@ -75,31 +72,16 @@ export const ChooseSelection = ({
       </div>
     </div>
   ) : (
-    <div className={cn('w-80')}>
-      <h3 className="mb-4">Selections:</h3>
-
+    <ConfirmSelection
+      characterId={character.id}
+      modifier={modifier}
+      values={selected.map((choice) => choice.id.toString())}
+    >
       <ul>
         {selected.map((choice) => (
           <li key={choice.id}>- {choice.label}</li>
         ))}
       </ul>
-
-      <Button
-        className={cn('w-full mt-4')}
-        onClick={() => {
-          saveChoice({
-            modifier,
-            values: selected.map((choice) => choice.id.toString()),
-          })
-            .then(popNonErrorModal)
-            .catch((err) => {
-              popNonErrorModal();
-              pushError(err.toString());
-            });
-        }}
-      >
-        Confirm
-      </Button>
-    </div>
+    </ConfirmSelection>
   );
 };
