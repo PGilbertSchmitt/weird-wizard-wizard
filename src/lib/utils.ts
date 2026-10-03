@@ -1,5 +1,5 @@
 import { clsx, type ClassValue } from 'clsx';
-import { last } from 'ramda';
+import { init, last } from 'ramda';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -20,5 +20,18 @@ export const nth = (idx: number): string => {
       return `${str}rd`;
     default:
       return `${str}th`;
+  }
+};
+
+export const orSeparatedStr = (sources: string[]): string => {
+  switch (sources.length) {
+    case 0:
+      return '';
+    case 1:
+      return sources[0];
+    case 2:
+      return `${sources[0]} or ${sources[1]}`;
+    default:
+      return `${init(sources).join(', ')}, or ${last(sources)}`;
   }
 };

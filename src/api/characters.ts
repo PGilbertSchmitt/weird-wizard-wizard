@@ -95,6 +95,22 @@ export const useSaveChoice = (characterId: number) => {
   });
 };
 
+export const useDeleteChoice = (characterId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (modifier: FullModifier) =>
+      invoke('delete_choice', {
+        characterId: characterId,
+        modifier,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: CHARACTER_KEYS.character(characterId),
+      });
+    },
+  });
+};
+
 export const useSetPath = (id: number) => {
   const queryClient = useQueryClient();
   return useMutation({

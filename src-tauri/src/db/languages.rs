@@ -1,3 +1,4 @@
+use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{sqlite::SqliteRow, FromRow, Pool, Row, Sqlite, SqliteConnection};
 use ts_rs::TS;
@@ -63,14 +64,18 @@ pub async fn insert_all(tx: &mut SqliteConnection, rows: &Vec<LanguageRow>) -> W
     Ok(name_to_id)
 }
 
+fn convert_language(raw: RawLanguage) -> Language {
+    Language {
+        id: raw.id,
+        name: raw.name,
+        description: raw.description,
+        secret: db_boolean(raw.secret),
+    }
+}
+
 fn convert_languages(raw: Vec<RawLanguage>) -> Vec<Language> {
     raw.into_iter()
-        .map(|l| Language {
-            id: l.id,
-            name: l.name,
-            description: l.description,
-            secret: db_boolean(l.secret),
-        })
+        .map(convert_language)
         .collect()
 }
 
@@ -102,6 +107,14 @@ pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<Lan
     Ok(convert_languages(languages))
 }
 
+pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<Language> {
+    let language = sqlx::query_as!(RawLanguage, "SELECT * FROM languages WHERE id = ?", id)
+        .fetch_one(db)
+        .await?;
+
+    Ok(convert_language(language))
+}
+
 pub async fn get_all(db: &Pool<Sqlite>) -> WWResult<Vec<Language>> {
     let languages = sqlx::query_as!(RawLanguage, "SELECT * FROM languages",)
         .fetch_all(db)
@@ -116,4 +129,14 @@ pub async fn get_all_non_secret(db: &Pool<Sqlite>) -> WWResult<Vec<Language>> {
         .await?;
 
     Ok(convert_languages(languages))
+}
+
+pub async fn get_languages_by_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<Language>> {
+    let languages = futures::stream::iter(ids)
+        .map(|id| async move { get(db, id).await })
+        .buffered(100)
+        .try_collect()
+        .await?;
+
+    Ok(languages)
 }

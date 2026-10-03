@@ -48,8 +48,6 @@ export const PathsByCategory = ({
     );
   }
 
-  console.log('Have onselect?', onSelect);
-
   return (
     <div className={cn('w-dvw max-w-250 px-4')}>
       <Button className="p-1" onClick={toggleAll}>

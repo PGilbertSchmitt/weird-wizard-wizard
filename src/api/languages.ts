@@ -7,3 +7,9 @@ export const useNonSecretLanguages = () =>
     queryKey: ['non-secret-languages'],
     queryFn: () => invoke<Array<Language>>('get_non_secret_languages'),
   });
+
+export const useLanguagesByIds = (ids: number[]) =>
+  useQuery({
+    queryKey: ['languages', ids.sort((a, b) => a - b)],
+    queryFn: () => invoke<Array<Language>>('get_languages_by_ids', { ids }),
+  });

@@ -1,9 +1,7 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    db::characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter},
-    store::get_database,
-    WWResult,
+    WWResult, db::{character_choices, characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter}}, modifiers::FullModifier, store::get_database,
 };
 
 #[command]
@@ -48,4 +46,25 @@ pub async fn update_character_level(app: AppHandle<Wry>, id: i64, level: i64) ->
 pub async fn update_character_path(app: AppHandle<Wry>, id: i64, path_id: i64) -> WWResult<()> {
     let db_state = get_database(&app)?;
     characters::set_path(&db_state.pool, id, path_id).await
+}
+
+#[command]
+pub async fn save_choice(
+    app: AppHandle<Wry>,
+    character_id: i64,
+    modifier: FullModifier,
+    values: Vec<String>,
+) -> WWResult<()> {
+    let db_state = get_database(&app)?;
+    character_choices::save_choices(&db_state.pool, character_id, modifier, values).await
+}
+
+#[command]
+pub async fn delete_choice(
+    app: AppHandle<Wry>,
+    character_id: i64,
+    modifier: FullModifier,
+) -> WWResult<()> {
+    let db_state = get_database(&app)?;
+    character_choices::delete_choice(&db_state.pool, character_id, modifier).await
 }

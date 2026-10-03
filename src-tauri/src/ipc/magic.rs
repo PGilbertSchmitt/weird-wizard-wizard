@@ -23,6 +23,12 @@ pub async fn get_tradition_index(app: AppHandle<Wry>) -> WWResult<Vec<TraditionI
 }
 
 #[command]
+pub async fn get_tradition_name(app: AppHandle<Wry>, id: i64) -> WWResult<String> {
+    let db_state = get_database(&app)?;
+    Ok(traditions::get_name(&db_state.pool, id).await?)
+}
+
+#[command]
 pub async fn get_spell(app: AppHandle<Wry>, id: i64) -> WWResult<FullSpell> {
     let db_state = get_database(&app)?;
     Ok(spells::get(&db_state.pool, id).await?)
@@ -38,6 +44,12 @@ pub async fn get_spells_for_tradition(
 }
 
 #[command]
+pub async fn get_spell_name(app: AppHandle<Wry>, id: i64) -> WWResult<String> {
+    let db_state = get_database(&app)?;
+    Ok(spells::get_name(&db_state.pool, id).await?)
+}
+
+#[command]
 pub async fn get_magic_talent(app: AppHandle<Wry>, id: i64) -> WWResult<FullMagicTalent> {
     let db_state = get_database(&app)?;
     Ok(magic_talents::get(&db_state.pool, id).await?)
@@ -50,4 +62,10 @@ pub async fn get_magic_talents_for_tradition(
 ) -> WWResult<Vec<FullMagicTalent>> {
     let db_state = get_database(&app)?;
     Ok(magic_talents::get_for_tradition(&db_state.pool, tradition_id).await?)
+}
+
+#[command]
+pub async fn get_magic_talent_name(app: AppHandle<Wry>, id: i64) -> WWResult<String> {
+    let db_state = get_database(&app)?;
+    Ok(magic_talents::get_name(&db_state.pool, id).await?)
 }

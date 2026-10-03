@@ -18,8 +18,6 @@ export const CharacterPage = () => {
   const id = parseInt(params['id'] || '-1');
   const { data: character, error } = useCharacter(id);
 
-  console.log('Character', character);
-
   if (error) {
     return (
       <div className="flex flex-col items-center gap-5">

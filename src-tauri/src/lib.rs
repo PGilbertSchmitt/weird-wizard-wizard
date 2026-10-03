@@ -55,7 +55,13 @@ pub fn run() {
             ipc::get_spells_for_tradition,
             ipc::get_non_secret_languages,
             ipc::save_choice,
+            ipc::delete_choice,
             ipc::get_choice_table,
+            ipc::get_languages_by_ids,
+            ipc::get_tradition_name,
+            ipc::get_spell_name,
+            ipc::get_magic_talent_name,
+            ipc::get_choice_selection,
             // Not used yet:
             ipc::get_table,
             ipc::get_option_block,

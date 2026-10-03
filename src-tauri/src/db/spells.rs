@@ -161,3 +161,11 @@ pub async fn get_for_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullS
 
     Ok(spells)
 }
+
+pub async fn get_name(db: &Pool<Sqlite>, id: i64) -> WWResult<String> {
+    Ok(
+        sqlx::query_scalar!("SELECT name FROM spells where id = ?", id)
+            .fetch_one(db)
+            .await?,
+    )
+}

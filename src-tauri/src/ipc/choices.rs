@@ -1,11 +1,7 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    db::{
-        character_choices,
-        choice_selections::{self, ChoiceTable},
-    },
-    modifiers::FullModifier,
+    db::choice_selections::{self, ChoiceTable, FullChoice},
     store::get_database,
     WWResult,
 };
@@ -17,12 +13,7 @@ pub async fn get_choice_table(app: AppHandle<Wry>, name: String) -> WWResult<Cho
 }
 
 #[command]
-pub async fn save_choice(
-    app: AppHandle<Wry>,
-    character_id: i64,
-    modifier: FullModifier,
-    values: Vec<String>,
-) -> WWResult<()> {
+pub async fn get_choice_selection(app: AppHandle<Wry>, id: i64) -> WWResult<FullChoice> {
     let db_state = get_database(&app)?;
-    character_choices::save_choices(&db_state.pool, character_id, modifier, values).await
+    choice_selections::get_full_choice_selection(&db_state.pool, id).await
 }

@@ -110,7 +110,7 @@ pub async fn get_choice_table(db: &Pool<Sqlite>, name: String) -> WWResult<Choic
     })
 }
 
-async fn get_full_choice_selection(db: &Pool<Sqlite>, id: i64) -> WWResult<FullChoice> {
+pub async fn get_full_choice_selection(db: &Pool<Sqlite>, id: i64) -> WWResult<FullChoice> {
     let raw_choice = sqlx::query_as!(
         RawChoice,
         "SELECT cs.id, cs.label, cs.description, cs.mod_str, ct.name

@@ -221,3 +221,11 @@ pub async fn get_by_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullMa
         .await?;
     Ok(talents)
 }
+
+pub async fn get_name(db: &Pool<Sqlite>, id: i64) -> WWResult<String> {
+    Ok(
+        sqlx::query_scalar!("SELECT name FROM magic_talents where id = ?", id)
+            .fetch_one(db)
+            .await?,
+    )
+}

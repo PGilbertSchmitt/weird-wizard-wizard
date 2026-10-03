@@ -3,7 +3,7 @@ www-data-old/
 src/components/pages/import-seed-old
 src-tauri/test.db
 src-tauri/character_insert.sql
-import-state-machine.drawio
+*.drawio
 
 # Logs
 logs

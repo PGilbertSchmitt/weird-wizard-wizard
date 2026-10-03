@@ -12,7 +12,6 @@ export const ChooseLanguage = ({
   keys,
   modifier,
 }: ModalChoiceProps) => {
-  console.log('We are da language');
   const { data: languages } = useNonSecretLanguages();
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
   const { popNonErrorModal, pushError } = useModal();

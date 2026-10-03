@@ -842,3 +842,23 @@ pub async fn save_choices(
 
     Ok(())
 }
+
+pub async fn delete_choice(
+    db: &Pool<Sqlite>,
+    character_id: i64,
+    modifier: FullModifier,
+) -> WWResult<()> {
+    let choice_keys = modifier.keys();
+
+    for (_, key) in choice_keys.into_iter() {
+        sqlx::query!(
+            "DELETE FROM character_choices WHERE character_id = ? AND choice_key = ?",
+            character_id,
+            key,
+        )
+        .execute(db)
+        .await?;
+    };
+
+    Ok(())
+}

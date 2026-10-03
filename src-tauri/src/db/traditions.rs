@@ -117,3 +117,11 @@ pub async fn get_index(db: &Pool<Sqlite>) -> WWResult<Vec<TraditionIndexItem>> {
             .await?,
     )
 }
+
+pub async fn get_name(db: &Pool<Sqlite>, id: i64) -> WWResult<String> {
+    Ok(
+        sqlx::query_scalar!("SELECT name FROM traditions where id = ?", id)
+            .fetch_one(db)
+            .await?,
+    )
+}
