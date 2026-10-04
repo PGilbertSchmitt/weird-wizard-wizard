@@ -328,6 +328,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character
 -- Profession      => id, foreign key to professions table
 -- Tradition       => id|t|id, foreign key to traditions table and foreign key to magic_talents table
 --              or => id|s|id, foreign key to traditions table and foreign key to spells table
+-- MagicTalent     => id|t|id, foreign key to traditions table and foreign key to magic_talents table
+--              or => id|s|id, foreign key to traditions table and foreign key to spells table
 -- NoviceSpell     => id, foreign key to spells table
 -- NoviceSpellFrom => id, foreign key to spells table
 -- ExpertSpell     => id, foreign key to spells table

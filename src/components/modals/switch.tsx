@@ -75,6 +75,14 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
           case 'Tradition': {
             return <ChooseTraditionFlow {...choiceProps} />;
           }
+          case 'MagicTalent': {
+            return (
+              <ChooseTraditionFlow
+                {...choiceProps}
+                limitedTraditions={chooseTarget.data[1]}
+              />
+            );
+          }
           case 'Language': {
             return <ChooseLanguage {...choiceProps} />;
           }
@@ -89,7 +97,6 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
               />
             );
           }
-          case 'MagicTalent':
           case 'Slots':
           case 'NoviceSpellFrom':
           case 'ExpertSpellFrom':

@@ -6,6 +6,7 @@ import {
 } from '@/types/magic';
 import { useQuery } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
+import { uniq } from 'ramda';
 
 export const useTraditions = () =>
   useQuery({
@@ -28,11 +29,29 @@ export const useMagicTalents = (traditionId: number) =>
       }),
   });
 
+export const useMagicTalentsByTradName = (traditionNames: string[]) =>
+  useQuery({
+    queryKey: ['magic_talents', uniq(traditionNames).sort()],
+    queryFn: () =>
+      invoke<Array<FullMagicTalent>>('get_magic_talents_for_tradition_names', {
+        traditionNames,
+      }),
+  });
+
 export const useSpellsForTradition = (traditionId: number) =>
   useQuery({
     queryKey: ['spells', traditionId],
     queryFn: () =>
       invoke<Array<FullSpell>>('get_spells_for_tradition', { traditionId }),
+  });
+
+export const useSpellsForTraditionNames = (traditionNames: string[]) =>
+  useQuery({
+    queryKey: ['spells', uniq(traditionNames).sort()],
+    queryFn: () =>
+      invoke<Array<FullSpell>>('get_spells_for_tradition_names', {
+        traditionNames,
+      }),
   });
 
 export const useTraditionName = (id: number) =>

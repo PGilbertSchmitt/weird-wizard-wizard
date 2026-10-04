@@ -419,11 +419,15 @@ pub async fn collect_from_modifier_tree(
                     &modifier,
                     saved_choices.clone(),
                     &mut selections,
-                    parse_id_choice,
+                    parse_tradition_ids_choice,
                 )?
                 .into_iter()
-                .for_each(|talent_id| {
-                    new_magic_talent_ids.push(talent_id);
+                .for_each(|(_, kind, item_id)| {
+                    if kind == "t" {
+                        new_magic_talent_ids.push(item_id);
+                    } else {
+                        new_magic_spells.push(item_id);
+                    }
                 });
             }
 

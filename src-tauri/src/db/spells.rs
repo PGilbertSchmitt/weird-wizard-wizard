@@ -112,35 +112,42 @@ pub async fn insert_all(
     Ok(())
 }
 
+async fn extend_raw_spell(db: &Pool<Sqlite>, raw_spell: SpellWithTradName) -> WWResult<FullSpell> {
+    let info_table = info_tables::get_from_opt(db, raw_spell.info_table_id).await?;
+    let option_block = option_blocks::get_from_opt(db, raw_spell.option_block_id).await?;
+
+    let full_modifiers = FullModifier::from_spell(
+        &raw_spell.name,
+        &raw_spell.tradition_name,
+        &raw_spell.mod_str,
+    )?;
+
+    Ok(FullSpell {
+        id: raw_spell.id,
+        tradition_id: raw_spell.tradition_id,
+        tradition_name: raw_spell.tradition_name,
+        name: raw_spell.name,
+        description: raw_spell.description,
+        path_kind: raw_spell.path_kind,
+        castings: raw_spell.castings,
+        duration: raw_spell.duration,
+        target: raw_spell.target,
+        condition: raw_spell.condition,
+        ritual: db_boolean(raw_spell.ritual),
+        info_table,
+        option_block,
+        modifiers: full_modifiers,
+    })
+}
+
 pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullSpell> {
-    let spell = sqlx::query_as!(
+    let raw_spell = sqlx::query_as!(
         SpellWithTradName,
         "SELECT s.*, t.name as tradition_name FROM spells s JOIN traditions t ON t.id = s.tradition_id WHERE s.id = ?",
         id
     ).fetch_one(db).await?;
 
-    let info_table = info_tables::get_from_opt(db, spell.info_table_id).await?;
-    let option_block = option_blocks::get_from_opt(db, spell.option_block_id).await?;
-
-    let full_modifiers =
-        FullModifier::from_spell(&spell.name, &spell.tradition_name, &spell.mod_str)?;
-
-    Ok(FullSpell {
-        id,
-        tradition_id: spell.tradition_id,
-        tradition_name: spell.tradition_name,
-        name: spell.name,
-        description: spell.description,
-        path_kind: spell.path_kind,
-        castings: spell.castings,
-        duration: spell.duration,
-        target: spell.target,
-        condition: spell.condition,
-        ritual: db_boolean(spell.ritual),
-        info_table,
-        option_block,
-        modifiers: full_modifiers,
-    })
+    extend_raw_spell(db, raw_spell).await
 }
 
 pub async fn get_for_tradition(db: &Pool<Sqlite>, tradition_id: i64) -> WWResult<Vec<FullSpell>> {

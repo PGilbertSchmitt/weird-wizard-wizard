@@ -43,6 +43,7 @@ export const ChooseSpellFlow = ({
         <ChooseTradition
           idxStr={idxStr}
           traditions={availableTraditions}
+          forSpells
           onSelect={(id, name) => {
             dispatch({
               type: FormActions.SET_TRADITION,

@@ -9,11 +9,16 @@ import { useModal } from '@/hooks/modal';
 import { WithTraditions } from '@/components/providers/with-traditions';
 import { ChooseTradition } from '../choose-tradition';
 
+interface ChooseTraditionFlowProps extends ModalChoiceProps {
+  limitedTraditions?: string[];
+}
+
 export const ChooseTraditionFlow = ({
   character,
   modifier,
   keys,
-}: ModalChoiceProps) => {
+  limitedTraditions,
+}: ChooseTraditionFlowProps) => {
   const { popNonErrorModal, pushError } = useModal();
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
   const [state, dispatch] = useReducer<FormState, [FormAction]>(
@@ -31,6 +36,7 @@ export const ChooseTraditionFlow = ({
     <div className={cn('w-fit flex flex-col items-center gap-4')}>
       {curStep === ItemSteps.PICK_TRADITION && (
         <WithTraditions
+          limitedTraditions={limitedTraditions}
           onRender={(traditions) => (
             <ChooseTradition
               idxStr={idxStr}
