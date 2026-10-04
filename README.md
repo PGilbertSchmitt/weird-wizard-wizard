@@ -59,9 +59,11 @@ The `#[ts(export, ...)]` macro defines the path to the type file in the TypeScri
   - [x] **Pick Choice Table Options**
   - [x] **Pick Profession**
   - [x] **Pick Traditions & Magic Talents**
+  - [x] **Pick Magic Talents from specific traditions**
   - [x] **Pick Spells from own Traditions**
-  - [ ] **Pick Spells from specific Traditions**
-- [ ] **Manual Choice Dismissal**
+  - [x] **Pick Spells from specific Traditions**
+  - [ ] **Pick Spells to augment slot counts**
+- [x] **Manual Choice Dismissal**
 - [ ] **Spell Casting / Talent Casting / Spell Slots**
 - [ ] **Time Progression** _(to manage time-based choices and spell slot restoration)_
 - [ ] **Character Override handling**
