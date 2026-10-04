@@ -50,4 +50,11 @@ export type FullTradition = {
 
 export type MagicTalentCharges = 'None' | 'One' | 'OneTwoThree';
 
+export type SpellSlotInfo = {
+  perm_used: number;
+  perm_total: number;
+  temp_used: number;
+  temp_total: number;
+};
+
 export type TraditionIndexItem = { id: number; name: string; blurb: string };

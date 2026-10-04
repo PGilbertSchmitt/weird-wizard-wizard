@@ -18,6 +18,8 @@ export const CharacterPage = () => {
   const id = parseInt(params['id'] || '-1');
   const { data: character, error } = useCharacter(id);
 
+  console.log(character);
+
   if (error) {
     return (
       <div className="flex flex-col items-center gap-5">
@@ -76,7 +78,10 @@ export const CharacterPage = () => {
             <CharacterTalents character={character} />
           </TabsContent>
           <TabsContent value="Spells">
-            <CharacterSpells spells={character.spells.map((s) => s[0])} />
+            <CharacterSpells
+              character={character}
+              spells={character.spells.map((s) => s[0])}
+            />
           </TabsContent>
           <TabsContent value="Pending Choices">
             <CharacterChoices character={character} />

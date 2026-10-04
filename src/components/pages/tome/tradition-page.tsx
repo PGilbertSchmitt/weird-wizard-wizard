@@ -9,7 +9,7 @@ import {
   TabsContent,
 } from '@/components/ui/neo/tabs';
 import { MagicTalentCard } from './magic-talent-card';
-import { SpellCard } from './magic-spell-card';
+import { SpellCard } from '../shared/magic-spell-card';
 
 export const TraditionPage = () => {
   const traditionParam = useParams()['traditionId'] || '-1';

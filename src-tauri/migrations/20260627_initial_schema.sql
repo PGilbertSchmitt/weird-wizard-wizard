@@ -323,6 +323,22 @@ CREATE TABLE IF NOT EXISTS character_choices (
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character_id, choice_key);
 
+-- This totals are supplied by the frontend and only used so it knows when the slot counts
+-- change (when augments are added/removed). The frontend handles all logic for calculating
+-- the real count of remaining permanent and temporary spells slots using the delta for what
+-- it knows the current total to be against what the database says it used to be.
+CREATE TABLE IF NOT EXISTS spell_slots (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE NOT NULL,
+    spell_id     INTEGER REFERENCES spells(id) NOT NULL,
+    perm_used    INTEGER NOT NULL,
+    perm_total   INTEGER NOT NULL,
+    temp_used    INTEGER NOT NULL,
+    temp_total   INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_spell_slots ON spell_slots (character_id, spell_id);
+
 -- The interpretation of the character_choices `selection` column depends on the mod target:
 -- Language        => id, foreign key to languages table
 -- Profession      => id, foreign key to professions table

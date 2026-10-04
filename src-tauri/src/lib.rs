@@ -62,6 +62,8 @@ pub fn run() {
             ipc::get_spell_name,
             ipc::get_magic_talent_name,
             ipc::get_choice_selection,
+            ipc::get_spell_slots,
+            ipc::cast_spell,
             // Not used yet:
             ipc::get_table,
             ipc::get_option_block,

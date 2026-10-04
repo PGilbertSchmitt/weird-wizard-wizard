@@ -8,14 +8,19 @@ import {
 } from '@/components/ui/neo/tabs';
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { SpellCard } from '../tome/magic-spell-card';
+import { SpellCard } from '../shared/magic-spell-card';
 import { fromPairs, toPairs, values } from 'ramda';
+import { FullCharacter } from '@/types/character';
 
 interface CharacterSpellsProps {
+  character: FullCharacter;
   spells: Array<FullSpell>;
 }
 
-export const CharacterSpells = ({ spells }: CharacterSpellsProps) => {
+export const CharacterSpells = ({
+  spells,
+  character,
+}: CharacterSpellsProps) => {
   const spellsByKind = useMemo(() => {
     const byKinds = spells.reduce(
       (acc, spell) => {
@@ -42,11 +47,18 @@ export const CharacterSpells = ({ spells }: CharacterSpellsProps) => {
   }
 
   if (ownedKinds.length === 1) {
-    <div className={cn('flex flex-col gap-4')}>
-      {spellsByKind[ownedKinds[0]].map(([spell, count]) => (
-        <SpellCard key={spell.id} count={count} spell={spell} />
-      ))}
-    </div>;
+    return (
+      <div className={cn('flex flex-col gap-4')}>
+        {spellsByKind[ownedKinds[0]].map(([spell, count]) => (
+          <SpellCard
+            key={spell.id}
+            count={count}
+            spell={spell}
+            character={character}
+          />
+        ))}
+      </div>
+    );
   }
 
   const defaultValue = ownedKinds[0];
@@ -70,6 +82,7 @@ export const CharacterSpells = ({ spells }: CharacterSpellsProps) => {
                 key={spell.id}
                 count={count > 1 ? count : undefined}
                 spell={spell}
+                character={character}
               />
             ))}
           </div>

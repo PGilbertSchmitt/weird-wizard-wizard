@@ -10,14 +10,17 @@ import { FullSpell } from '@/types/magic';
 import { Waypoints } from 'lucide-react';
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { MagicSpellCasting } from './magic-spell-casting';
+import { FullCharacter } from '@/types/character';
 
 interface SpellCardProps {
   spell: FullSpell;
   count?: number;
   onSelect?: (id: number, name: string) => void;
+  character?: FullCharacter;
 }
 
-export const SpellCard = ({ spell, onSelect, count }: SpellCardProps) => {
+export const SpellCard = ({ spell, onSelect, count, character }: SpellCardProps) => {
   const attributeRows: AttributeRows = useMemo(() => {
     return [
       {
@@ -66,6 +69,15 @@ export const SpellCard = ({ spell, onSelect, count }: SpellCardProps) => {
       </div>
 
       <Separator />
+
+      {character && (
+        <>
+          <div className="bg-secondary-background text-foreground p-4">
+            <MagicSpellCasting character={character} spell={spell} />
+          </div>
+          <Separator />
+        </>
+      )}
 
       <div className="bg-secondary-background text-foreground rounded-b-base p-4">
         <Paragraph size="sm">{spell.description}</Paragraph>

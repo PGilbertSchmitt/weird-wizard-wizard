@@ -22,6 +22,7 @@ pub mod seed_data;
 pub mod senses;
 pub mod speed_traits;
 pub mod spells;
+pub mod spell_slots;
 pub mod traditions;
 
 pub struct Database {

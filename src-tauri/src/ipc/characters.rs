@@ -1,13 +1,9 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    db::{
-        character_choices,
-        characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter},
-    },
-    modifiers::FullModifier,
-    store::get_database,
-    WWResult,
+    WWResult, db::{
+        character_choices, characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter}, spell_slots::{self, SpellSlotInfo},
+    }, modifiers::FullModifier, store::get_database,
 };
 
 #[command]
@@ -73,4 +69,32 @@ pub async fn delete_choice(
 ) -> WWResult<()> {
     let db_state = get_database(&app)?;
     character_choices::delete_choice(&db_state.pool, character_id, modifier).await
+}
+
+#[command]
+pub async fn get_spell_slots(
+    app: AppHandle<Wry>,
+    character_id: i64,
+    spell_id: i64,
+) -> WWResult<Option<SpellSlotInfo>> {
+    let db_state = get_database(&app)?;
+    spell_slots::get(&db_state.pool, character_id, spell_id).await
+}
+
+#[command]
+pub async fn cast_spell(
+    app: AppHandle<Wry>,
+    character_id: i64,
+    spell_id: i64,
+    perm_count: i64,
+    temp_count: i64,
+) -> WWResult<()> {
+    let db_state = get_database(&app)?;
+    spell_slots::cast(
+        &db_state.pool,
+        character_id,
+        spell_id,
+        perm_count,
+        temp_count,
+    ).await
 }

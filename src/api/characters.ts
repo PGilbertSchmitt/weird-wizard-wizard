@@ -4,13 +4,38 @@ import {
   CreateCharacter,
   FullCharacter,
 } from '@/types/character';
+import { SpellSlotInfo } from '@/types/magic';
 import { FullModifier } from '@/types/modifiers';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 
 const CHARACTER_KEYS = {
   characterIndex: ['characterIndex'],
   character: (id: number) => ['character', id],
+};
+
+const invalidateCharacterDependentQueries = (
+  queryClient: QueryClient,
+  characterId: number,
+) => {
+  queryClient.invalidateQueries({
+    queryKey: CHARACTER_KEYS.character(characterId),
+  });
+  invalidateSpellSlotQueries(queryClient, characterId);
+};
+
+const invalidateSpellSlotQueries = (
+  queryClient: QueryClient,
+  characterId: number,
+) => {
+  queryClient.invalidateQueries({
+    queryKey: ['spellSlots', characterId],
+  });
 };
 
 export const useCharacterIndex = () =>
@@ -69,9 +94,7 @@ export const useUpdateCharacterLevel = (id: number) => {
     mutationFn: (level: number) =>
       invoke<void>('update_character_level', { id, level }),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: CHARACTER_KEYS.character(id),
-      });
+      invalidateCharacterDependentQueries(queryClient, id);
     },
   });
 };
@@ -91,9 +114,7 @@ export const useSaveChoice = (characterId: number) => {
         values,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: CHARACTER_KEYS.character(characterId),
-      });
+      invalidateCharacterDependentQueries(queryClient, characterId);
     },
   });
 };
@@ -107,9 +128,7 @@ export const useDeleteChoice = (characterId: number) => {
         modifier,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: CHARACTER_KEYS.character(characterId),
-      });
+      invalidateCharacterDependentQueries(queryClient, characterId);
     },
   });
 };
@@ -120,9 +139,31 @@ export const useSetPath = (id: number) => {
     mutationFn: (pathId: number) =>
       invoke('update_character_path', { id, pathId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: CHARACTER_KEYS.character(id),
-      });
+      invalidateCharacterDependentQueries(queryClient, id);
+    },
+  });
+};
+
+export const useSpellSlots = (characterId: number, spellId: number) =>
+  useQuery({
+    queryKey: ['spellSlots', characterId, spellId],
+    queryFn: () =>
+      invoke<SpellSlotInfo | null>('get_spell_slots', { characterId, spellId }),
+  });
+
+interface CastSpellParams {
+  spellId: number;
+  permCount: number;
+  tempCount: number;
+}
+
+export const useCastSpell = (characterId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: CastSpellParams) =>
+      invoke('cast_spell', { ...params, characterId }),
+    onSuccess: () => {
+      invalidateSpellSlotQueries(queryClient, characterId);
     },
   });
 };

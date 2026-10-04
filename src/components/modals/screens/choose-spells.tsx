@@ -1,5 +1,5 @@
 import { useSpellsForTradition } from '@/api/magic';
-import { SpellCard } from '@/components/pages/tome/magic-spell-card';
+import { SpellCard } from '@/components/pages/shared/magic-spell-card';
 import { cn } from '@/lib/utils';
 import { PathKind } from '@/types/etc';
 import { FullSpell } from '@/types/magic';
