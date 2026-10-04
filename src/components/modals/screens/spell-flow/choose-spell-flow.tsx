@@ -9,9 +9,11 @@ import { ChooseSpells } from '../choose-spells';
 import { PathKind } from '@/types/etc';
 import { Button } from '@/components/ui/button';
 import { TraditionIndexItem } from '@/types/magic';
+import { WithTraditions } from '@/components/providers/with-traditions';
 
 interface ChooseSpellFlowProps extends ModalChoiceProps {
   maxKind: PathKind;
+  limitedTraditions?: string[];
 }
 
 export const ChooseSpellFlow = ({
@@ -19,6 +21,7 @@ export const ChooseSpellFlow = ({
   modifier,
   maxKind,
   keys,
+  limitedTraditions,
 }: ChooseSpellFlowProps) => {
   const { popNonErrorModal, pushError } = useModal();
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
@@ -39,20 +42,39 @@ export const ChooseSpellFlow = ({
 
   return (
     <div className={cn('w-fit flex flex-col items-center gap-4')}>
-      {curStep === SpellSteps.PICK_TRADITION && (
-        <ChooseTradition
-          idxStr={idxStr}
-          traditions={availableTraditions}
-          forSpells
-          onSelect={(id, name) => {
-            dispatch({
-              type: FormActions.SET_TRADITION,
-              idx: curIdx,
-              data: { id, name },
-            });
-          }}
-        />
-      )}
+      {curStep === SpellSteps.PICK_TRADITION &&
+        (limitedTraditions ? (
+          <WithTraditions
+            limitedTraditions={limitedTraditions}
+            onRender={(traditions) => (
+              <ChooseTradition
+                idxStr={idxStr}
+                traditions={traditions}
+                forSpells
+                onSelect={(id, name) => {
+                  dispatch({
+                    type: FormActions.SET_TRADITION,
+                    idx: curIdx,
+                    data: { id, name },
+                  });
+                }}
+              />
+            )}
+          />
+        ) : (
+          <ChooseTradition
+            idxStr={idxStr}
+            traditions={availableTraditions}
+            forSpells
+            onSelect={(id, name) => {
+              dispatch({
+                type: FormActions.SET_TRADITION,
+                idx: curIdx,
+                data: { id, name },
+              });
+            }}
+          />
+        ))}
 
       {curStep === SpellSteps.PICK_SPELL && (
         <ChooseSpells

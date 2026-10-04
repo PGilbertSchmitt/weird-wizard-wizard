@@ -66,11 +66,38 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
           case 'NoviceSpell': {
             return <ChooseSpellFlow {...choiceProps} maxKind="Novice" />;
           }
+          case 'NoviceSpellFrom': {
+            return (
+              <ChooseSpellFlow
+                {...choiceProps}
+                limitedTraditions={chooseTarget.data[1]}
+                maxKind="Novice"
+              />
+            );
+          }
           case 'ExpertSpell': {
             return <ChooseSpellFlow {...choiceProps} maxKind="Expert" />;
           }
+          case 'ExpertSpellFrom': {
+            return (
+              <ChooseSpellFlow
+                {...choiceProps}
+                limitedTraditions={chooseTarget.data[1]}
+                maxKind="Expert"
+              />
+            );
+          }
           case 'MasterSpell': {
             return <ChooseSpellFlow {...choiceProps} maxKind="Master" />;
+          }
+          case 'MasterSpellFrom': {
+            return (
+              <ChooseSpellFlow
+                {...choiceProps}
+                limitedTraditions={chooseTarget.data[1]}
+                maxKind="Master"
+              />
+            );
           }
           case 'Tradition': {
             return <ChooseTraditionFlow {...choiceProps} />;
@@ -97,10 +124,7 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
               />
             );
           }
-          case 'Slots':
-          case 'NoviceSpellFrom':
-          case 'ExpertSpellFrom':
-          case 'MasterSpellFrom': {
+          case 'Slots': {
             return <h1>TODO</h1>;
           }
         }

@@ -339,7 +339,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character
 -- Select          => id, foreign key to choice_selections table
 -- SelectAgain     => id, foreign key to choice_selections table
 -- Score           => [ability], where ability is one of strength, agility, intellect, and will (lowercase)
--- Slots           => [plus|times]|[integer]|id, where id is a foreign key to spells table
+-- Slots           => [plus|times]|[integer], where id is a foreign key to spells table
 --   Tradition, all pure spell IDs, and Select/SelectAgain can trigger additional mods.
 --   The rest are terminal and won't affect the character further.
 -- Additionally, an Override Statblock can also be set in the character_choices table, where the `selection`

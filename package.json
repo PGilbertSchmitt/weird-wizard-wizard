@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "format": "prettier --write .",
+    "format": "pnpm format-ts ; pnpm format-rust",
+    "format-ts": "prettier --write .",
+    "format-rust": "cd ./src-tauri/ && cargo fmt",
     "build-types": "cargo test --manifest-path=src-tauri/Cargo.toml; pnpm format-types",
     "format-types": "pnpm prettier src/types/ --write",
     "tauri": "tauri"

@@ -9,7 +9,7 @@ interface WithTraditionsProps {
 }
 
 export const WithTraditions = ({
-  limitedTraditions = [],
+  limitedTraditions,
   onRender,
 }: WithTraditionsProps) => {
   const { data: allTraditions } = useTraditions();
@@ -18,9 +18,11 @@ export const WithTraditions = ({
     if (!allTraditions) {
       return null;
     }
-    return allTraditions.length > 0
-      ? allTraditions?.filter((t) => limitedTraditions.includes(t.name))
-      : allTraditions;
+    const anyTradition =
+      limitedTraditions === undefined || limitedTraditions.includes('ANY');
+    return anyTradition
+      ? allTraditions
+      : allTraditions.filter((t) => limitedTraditions.includes(t.name));
   }, [allTraditions, limitedTraditions]);
 
   if (traditions) {
