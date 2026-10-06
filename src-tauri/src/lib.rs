@@ -64,6 +64,7 @@ pub fn run() {
             ipc::get_choice_selection,
             ipc::get_spell_slots,
             ipc::cast_spell,
+            ipc::pass_time,
             // Not used yet:
             ipc::get_table,
             ipc::get_option_block,

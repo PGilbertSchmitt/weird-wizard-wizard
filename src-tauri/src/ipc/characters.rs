@@ -3,7 +3,7 @@ use tauri::{command, AppHandle, Wry};
 use crate::{
     WWResult, db::{
         character_choices, characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter}, spell_slots::{self, SpellSlotInfo},
-    }, modifiers::FullModifier, store::get_database,
+    }, mod_dsl::ast::WhenDuration, modifiers::FullModifier, store::get_database,
 };
 
 #[command]
@@ -97,4 +97,17 @@ pub async fn cast_spell(
         perm_count,
         temp_count,
     ).await
+}
+
+#[command]
+pub async fn pass_time(
+    app: AppHandle<Wry>,
+    character_id: i64,
+    duration: WhenDuration,
+) -> WWResult<()> {
+    let db_state = get_database(&app)?;
+    if duration.is_rest() {
+        spell_slots::rest(&db_state.pool, character_id).await?;
+    }
+    character_choices::pass_time(&db_state.pool, character_id, duration).await
 }

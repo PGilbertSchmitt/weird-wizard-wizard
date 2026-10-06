@@ -12,6 +12,7 @@ import { ChooseSelection } from './screens/choose-selection';
 import { X } from 'lucide-react';
 import { ChoosePath } from './screens/choose-path';
 import { ChooseProfession } from './screens/choose-profession';
+import { PassTimeModal } from './screens/pass-time';
 
 interface ModalSwitchProps {
   modalData: ModalData;
@@ -37,6 +38,14 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
         <p className={cn('my-4')}>{modalData.error}</p>
         <Button onClick={popModal}>Aw, ok...</Button>
       </StaticCard>
+    );
+  }
+
+  if (modalData.type === ModalTypes.TIME) {
+    return (
+      <ModalContainer onClose={popModal}>
+        <PassTimeModal character={modalData.character} />
+      </ModalContainer>
     );
   }
 

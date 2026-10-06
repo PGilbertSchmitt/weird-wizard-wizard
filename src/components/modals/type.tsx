@@ -10,6 +10,7 @@ export const ModalTypes = {
   CHOOSE: 'Choose',
   CHOOSE_PATH: 'Choose Path',
   ERROR: 'Error',
+  TIME: 'Time',
 } as const;
 // type ModalType = typeof ModalTypes[keyof typeof ModalTypes];
 
@@ -42,7 +43,13 @@ export interface CharacterPathModalData {
   kind: 'Expert' | 'Master';
 }
 
-// For errors during the import process
+// For the progression of time
+export interface TimeModalData {
+  type: typeof ModalTypes.TIME;
+  character: FullCharacter;
+}
+
+// For errors
 export interface ErrorModalData {
   type: typeof ModalTypes.ERROR;
   error: React.ReactNode;
@@ -50,4 +57,7 @@ export interface ErrorModalData {
 
 // Might have non-CharacterChoice-based modals
 export type ModalData =
-  CharacterChoiceModalData | CharacterPathModalData | ErrorModalData;
+  | CharacterChoiceModalData
+  | CharacterPathModalData
+  | TimeModalData
+  | ErrorModalData;

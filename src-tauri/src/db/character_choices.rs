@@ -11,18 +11,13 @@ use dashmap::DashSet;
 use sqlx::{Pool, Sqlite};
 
 use crate::{
-    db::{
+    WWError::Generic, WWResult, db::{
         choice_selections,
         etc::ChoiceDuration,
         magic_talents::{self, FullMagicTalent},
         path_talents::{self, FullPathTalent},
         spells::{self, FullSpell},
-    },
-    mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target},
-    modifiers::{FullModifier, HasModifiers},
-    util::db_boolean,
-    WWError::Generic,
-    WWResult,
+    }, mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target, WhenDuration}, modifiers::{FullModifier, HasModifiers}, util::db_boolean,
 };
 
 const DISCLAIMER: &'static str = "If you're getting this error, this is a bug with the system. You did nothing wrong (probably).";
@@ -845,7 +840,7 @@ pub async fn save_choices(
             key,
             value,
             dismissable,
-            duration // modifier.
+            duration
         )
         .execute(db)
         .await?;
@@ -870,6 +865,36 @@ pub async fn delete_choice(
         .execute(db)
         .await?;
     }
+
+    Ok(())
+}
+
+async fn _pass_time(
+    db: &Pool<Sqlite>,
+    character_id: i64,
+    duration_str: String,
+) -> WWResult<()> {
+    sqlx::query!(
+        "DELETE FROM character_choices WHERE character_id = ? AND duration = ?",
+        character_id,
+        duration_str,
+    ).execute(db).await?;
+
+    Ok(())
+}
+
+pub async fn pass_time(
+    db: &Pool<Sqlite>,
+    character_id: i64,
+    duration: WhenDuration,
+) -> WWResult<()> {
+    let duration_strings = duration.contained_duration_strings();
+    let len = duration_strings.len();
+    futures::stream::iter(duration_strings.clone())
+        .map(|duration_str| async move { _pass_time(db, character_id, duration_str).await })
+        .buffered(len)
+        .try_collect::<Vec<_>>()
+        .await?;
 
     Ok(())
 }

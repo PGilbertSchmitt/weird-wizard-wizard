@@ -64,9 +64,11 @@ The `#[ts(export, ...)]` macro defines the path to the type file in the TypeScri
   - [x] **Pick Spells from specific Traditions**
   - [ ] **Pick Spells to augment slot counts**
 - [x] **Manual Choice Dismissal**
-- [ ] **Spell Casting / Talent Casting / Spell Slots**
-- [ ] **Time Progression** _(to manage time-based choices and spell slot restoration)_
+- [x] **Spell Casting / Talent Casting / Spell Slots**
+- [x] **Simple Time Progression (1 hour & rest)** _(to manage time-based choices and spell slot restoration)_
+- [ ] **Better Time Progression**
 - [ ] **Character Override handling**
+- [ ] **Handle Conditional Modifiers** _(dependent on level, current dmg, etc.)_
 
 ## Did I use AI to create this?
 

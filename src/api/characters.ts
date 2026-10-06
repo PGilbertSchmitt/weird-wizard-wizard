@@ -5,7 +5,7 @@ import {
   FullCharacter,
 } from '@/types/character';
 import { SpellSlotInfo } from '@/types/magic';
-import { FullModifier } from '@/types/modifiers';
+import { FullModifier, WhenDuration } from '@/types/modifiers';
 import {
   QueryClient,
   useMutation,
@@ -167,3 +167,14 @@ export const useCastSpell = (characterId: number) => {
     },
   });
 };
+
+export const usePassTime = (characterId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (duration: WhenDuration) =>
+      invoke('pass_time', { characterId, duration }),
+    onSuccess: () => {
+      invalidateCharacterDependentQueries(queryClient, characterId);
+    },
+  });
+}

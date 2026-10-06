@@ -63,6 +63,52 @@ impl WhenDuration {
             Self::Rest => String::from("Rest"),
         }
     }
+
+    pub fn is_rest(&self) -> bool {
+        match self {
+            Self::Rest => true,
+            _ => false,
+        }
+    }
+
+    /**
+     * When a duration is passed, this function returns the list of all strings derived from
+     * WhenDuration values which are contained withiin it. The values here are specific decisions.
+     */
+    pub fn contained_duration_strings(&self) -> Vec<String> {
+        match self {
+            Self::OneMinute => vec![Self::OneMinute.to_string()],
+            Self::OneHour => vec![
+                Self::OneHour.to_string(),
+                Self::OneMinute.to_string(),
+            ],
+            Self::FourHours => vec![
+                Self::FourHours.to_string(),
+                Self::OneHour.to_string(),
+                Self::OneMinute.to_string(),
+            ],
+            // A rest is 8 hours, but just because that amount of time passes doesn't mean a rest has occured
+            Self::EightHours => vec![
+                Self::EightHours.to_string(),
+                Self::FourHours.to_string(),
+                Self::OneHour.to_string(),
+                Self::OneMinute.to_string(),
+            ],
+            Self::OneDay => vec![
+                Self::OneDay.to_string(),
+                Self::EightHours.to_string(),
+                Self::FourHours.to_string(),
+                Self::OneHour.to_string(),
+                Self::OneMinute.to_string(),
+            ],
+            Self::Rest => vec![
+                Self::EightHours.to_string(),
+                Self::FourHours.to_string(),
+                Self::OneHour.to_string(),
+                Self::OneMinute.to_string(),
+            ],
+        }
+    }
 }
 
 #[derive(TS, Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]

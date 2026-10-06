@@ -12,6 +12,7 @@ import { CharacterChoices } from './character-choices';
 import { CharacterTalents } from './character-talents';
 import { CharacterSpells } from './character-spells';
 import { CharacterSelections } from './character-selections';
+import { TimePasser } from './time-passer';
 
 export const CharacterPage = () => {
   const params = useParams();
@@ -53,11 +54,15 @@ export const CharacterPage = () => {
 
   return (
     <div>
-      <div className={cn('flex flex-col items-center mb-8')}>
+      <div className={cn('flex flex-col items-center mb-8 relative')}>
         <h1>{character.name}</h1>
         <p>
           Level {character.level} {characterLabel}
         </p>
+
+        <div className={cn('absolute insert-y-0 right-0 flex items-center')}>
+          <TimePasser character={character} />
+        </div>
       </div>
 
       <Tabs defaultValue="Info" className={cn('flex flex-col items-center')}>

@@ -106,3 +106,8 @@ pub async fn cast(
 
     Ok(())
 }
+
+pub async fn rest(db: &Pool<Sqlite>, character_id: i64) -> WWResult<()> {
+    sqlx::query!("DELETE FROM spell_slots WHERE character_id = ?", character_id).execute(db).await?;
+    Ok(())
+}
