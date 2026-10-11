@@ -19,7 +19,7 @@ export const CharacterChoices = ({ character }: CharacterChoicesProps) => {
       if (target.type !== 'Choose') {
         return [];
       }
-      const [chooseTarget, _] = target.data;
+      const chooseTarget = target.data;
 
       const choiceLabel = choiceString(chooseTarget);
       const sourceLabel = sourceString(choice.path_node);
@@ -28,6 +28,7 @@ export const CharacterChoices = ({ character }: CharacterChoicesProps) => {
         path_node: choice.path_node,
         mod_details: {
           target,
+          idx: choice.mod_details.idx,
           when: choice.mod_details.when,
           condition: choice.mod_details.condition,
         },

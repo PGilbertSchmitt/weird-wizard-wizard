@@ -278,7 +278,7 @@ END;
 
 -- END: SEEDABLE TABLES
 
--- START: USER-GENERATED RECORD TABLES 
+-- START: USER-GENERATED RECORD TABLES
 
 CREATE TABLE IF NOT EXISTS characters (
     id             INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -292,10 +292,11 @@ CREATE TABLE IF NOT EXISTS characters (
     will           INTEGER NOT NULL,
     profession_id  INTEGER REFERENCES professions(id) NOT NULL,
     ancestry_id    INTEGER REFERENCES ancestries(id) NOT NULL,
-    novice_path_id INTEGER REFERENCES paths(id) NOT NULL, 
-    expert_path_id INTEGER REFERENCES paths(id), 
-    master_path_id INTEGER REFERENCES paths(id), 
+    novice_path_id INTEGER REFERENCES paths(id) NOT NULL,
+    expert_path_id INTEGER REFERENCES paths(id),
+    master_path_id INTEGER REFERENCES paths(id),
 
+    current_hour   INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -312,13 +313,14 @@ BEGIN
         END;
 END;
 
-CREATE TABLE IF NOT EXISTS character_choices (
+CREATE TABLE IF NOT EXISTS character_effects (
     id           INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     character_id INTEGER REFERENCES characters(id) ON DELETE CASCADE NOT NULL,
     choice_key   TEXT NOT NULL,
     selection    TEXT NOT NULL,
     dismissable  TEXT, -- Boolean
-    duration     TEXT CHECK (duration IN ('OneMinute', 'OneHour', 'FourHours', 'EightHours', 'OneDay', 'Rest'))
+    duration     TEXT CHECK (duration IN ('OneMinute', 'OneHour', 'FourHours', 'EightHours', 'OneDay', 'Rest')),
+    cast_hour    INTEGER NOT NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character_id, choice_key);
@@ -362,4 +364,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_spell_slots ON spell_slots (character_i
 -- column isn't an incrementing number. If, somehow, 2 overrides are active, the higher value dictates the
 -- active record.
 
--- END: USER-GENERATED RECORD TABLES 
+-- END: USER-GENERATED RECORD TABLES

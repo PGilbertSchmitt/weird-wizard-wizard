@@ -9,7 +9,7 @@ pub async fn validate_modifier(
     match modifier.target {
         Target::Grant(grant_target) => validate_grant_target(tx, grant_target).await,
         Target::Lose(lose_target) => validate_lose_target(tx, lose_target).await,
-        Target::Choose(choose_target, _) => validate_choose_target(tx, choose_target).await,
+        Target::Choose(choose_target) => validate_choose_target(tx, choose_target).await,
         _ => Ok(()),
     }
 }

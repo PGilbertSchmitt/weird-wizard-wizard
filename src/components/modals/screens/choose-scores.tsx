@@ -8,13 +8,13 @@ import { useSaveChoice } from '@/api/characters';
 import { ModalChoiceProps } from '../switch';
 
 export const ChooseScores = ({
-  keys,
+  keyCount,
   character,
   modifier,
 }: ModalChoiceProps) => {
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
 
-  const amount = keys.length;
+  const amount = keyCount;
   const [scores, setScores] = useState<Scores>({
     strength: character.strength,
     agility: character.agility,
@@ -65,7 +65,8 @@ export const ChooseScores = ({
     const incrementedScores: string[] = [];
     const tmpScores = { ...scores };
 
-    for (let _ of keys) {
+    // I haven't used a normal counting for-loop in a long time. Almost feels wrong.
+    for (let i = 0; i < keyCount; i++) {
       for (let [ability, value] of toPairs(tmpScores)) {
         if (value > minScores[ability]) {
           incrementedScores.push(ability);

@@ -6,6 +6,7 @@ use ts_rs::TS;
 #[derive(TS, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "modifiers.ts")]
 pub struct Modifier {
+    pub idx: usize, // position within a mod str
     pub when: WhenMod,
     pub target: Target,
     pub condition: Condition,
@@ -18,26 +19,32 @@ pub enum Target {
     Grant(GrantTarget),
     Lose(LoseTarget),
     Override(OverrideTarget),
-    Choose(ChooseTarget, Vec<String>),
+    Choose(ChooseTarget),
     Apply(ApplyTarget),
 }
 
 impl Target {
-    pub fn choice_strings(&self) -> Vec<String> {
+    // Choose targets can generate multiple keys, Apply never generates keys, and the
+    // the rest always generate exactly 1 key.
+    pub fn target_keys(&self) -> Vec<String> {
         match self {
-            Self::Choose(_, s) => s.clone(),
-            _ => Vec::new(),
+            Self::Choose(target) => target.keys(),
+            Self::Grant(target) => target.keys(),
+            Self::Lose(target) => target.keys(),
+            Self::Override(target) => target.keys(),
+            // Apply is explicitly a 1-time effect, so no keys are needed to record it
+            Self::Apply(_) => Vec::new(),
         }
     }
 
-    pub fn replace_choice_strings(&mut self, new_strings: Vec<String>) {
-        match self {
-            Self::Choose(_, old_strings) => {
-                *old_strings = new_strings;
-            }
-            _ => {}
-        }
-    }
+    // pub fn replace_choice_strings(&mut self, new_strings: Vec<String>) {
+    //     match self {
+    //         Self::Choose(_, old_strings) => {
+    //             *old_strings = new_strings;
+    //         }
+    //         _ => {}
+    //     }
+    // }
 }
 
 #[derive(TS, Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -164,6 +171,29 @@ pub enum GrantTarget {
     MagicTalent(String, String),
 }
 
+impl GrantTarget {
+    pub fn keys(&self) -> Vec<String> {
+        match self {
+            Self::Int(_) => vec!["GRANT_INT".into()],
+            Self::Str(_) => vec!["GRANT_STR".into()],
+            Self::Will(_) => vec!["GRANT_WILL".into()],
+            Self::Agl(_) => vec!["GRANT_AGL".into()],
+            Self::Speed(_) => vec!["GRANT_SPEED".into()],
+            Self::Health(_) => vec!["GRANT_HEALTH".into()],
+            Self::Defense(_) => vec!["GRANT_DEFENSE".into()],
+            Self::NatDef(_) => vec!["GRANT_NATDEF".into()],
+            Self::BonusDamage(_) => vec!["GRANT_BONUSDAMAGE".into()],
+            Self::Language(_) => vec!["GRANT_LANGUAGE".into()],
+            Self::Tradition(_) => vec!["GRANT_TRADITION".into()],
+            Self::Immunity(_) => vec!["GRANT_IMMUNITY".into()],
+            Self::Sense(_) => vec!["GRANT_SENSE".into()],
+            Self::SpeedTrait(_) => vec!["GRANT_SPEEDTRAIT".into()],
+            Self::Talent(..) => vec!["GRANT_TALENT".into()],
+            Self::MagicTalent(..) => vec!["GRANT_MAGICTALENT".into()],
+        }
+    }
+}
+
 // Lose - Only Talent and MagicTalent
 #[derive(TS, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
@@ -171,6 +201,15 @@ pub enum GrantTarget {
 pub enum LoseTarget {
     Talent(String, String),
     MagicTalent(String, String),
+}
+
+impl LoseTarget {
+    pub fn keys(&self) -> Vec<String> {
+        match self {
+            Self::Talent(..) => vec!["LOSE_TALENT".into()],
+            Self::MagicTalent(..) => vec!["LOSE_MAGICTALENT".into()],
+        }
+    }
 }
 
 // Override - Only Speed, Defense, the unique StatBlock target, and the unique MergeStatBlock target
@@ -182,6 +221,17 @@ pub enum OverrideTarget {
     Defense(i32),
     StatBlock(String),
     MergeStatBlock(String, String),
+}
+
+impl OverrideTarget {
+    pub fn keys(&self) -> Vec<String> {
+        match self {
+            Self::Speed(_) => vec!["OVERRIDE_SPEED".into()],
+            Self::Defense(_) => vec!["OVERRIDE_DEFENSE".into()],
+            Self::StatBlock(_) => vec!["OVERRIDE_STATBLOCK".into()],
+            Self::MergeStatBlock(..) => vec!["OVERRIDE_MERGESTATBLOCK".into()],
+        }
+    }
 }
 
 // Choose - This MOD uses its own targets, which don't overlap with any of the others
@@ -205,28 +255,28 @@ pub enum ChooseTarget {
 }
 
 impl ChooseTarget {
-    pub fn choice_strings(&self) -> Vec<String> {
+    pub fn keys(&self) -> Vec<String> {
         match self {
-            Self::Language(count) => repeat_id("LANGUAGE", *count),
-            Self::Profession(count) => repeat_id("PROFESSION", *count),
-            Self::Tradition(count) => repeat_id("TRADITION", *count),
-            Self::NoviceSpell(count) => repeat_id("NOVICE_SPELL", *count),
+            Self::Language(count) => repeat_id("CHOOSE_LANGUAGE", *count),
+            Self::Profession(count) => repeat_id("CHOOSE_PROFESSION", *count),
+            Self::Tradition(count) => repeat_id("CHOOSE_TRADITION", *count),
+            Self::NoviceSpell(count) => repeat_id("CHOOSE_NOVICE_SPELL", *count),
             Self::NoviceSpellFrom(count, trads) => {
-                repeat_id(&format!("NOVICE_SPELL({})", trads.join(",")), *count)
+                repeat_id(&format!("CHOOSE_NOVICE_SPELL({})", trads.join(",")), *count)
             }
-            Self::ExpertSpell(count) => repeat_id("EXPERT_SPELL", *count),
+            Self::ExpertSpell(count) => repeat_id("CHOOSE_EXPERT_SPELL", *count),
             Self::ExpertSpellFrom(count, trads) => {
-                repeat_id(&format!("EXPERT_SPELL({})", trads.join(",")), *count)
+                repeat_id(&format!("CHOOSE_EXPERT_SPELL({})", trads.join(",")), *count)
             }
-            Self::MasterSpell(count) => repeat_id("MASTER_SPELL", *count),
+            Self::MasterSpell(count) => repeat_id("CHOOSE_MASTER_SPELL", *count),
             Self::MasterSpellFrom(count, trads) => {
-                repeat_id(&format!("MASTER_SPELL({})", trads.join(",")), *count)
+                repeat_id(&format!("CHOOSE_MASTER_SPELL({})", trads.join(",")), *count)
             }
             Self::Select(count, choice_id) => repeat_id(&format!("SELECT='{choice_id}'"), *count),
-            Self::Score(count) => repeat_id("SCORE", *count),
-            Self::Slots(target) => vec![format!("SLOTS='{target}'")],
+            Self::Score(count) => repeat_id("CHOOSE_SCORE", *count),
+            Self::Slots(target) => vec![format!("CHOOSE_SLOTS='{target}'")],
             Self::MagicTalent(count, trads) => {
-                repeat_id(&format!("MagicTalent({})", trads.join(",")), *count)
+                repeat_id(&format!("CHOOSE_MAGIC_TALENT({})", trads.join(",")), *count)
             }
         }
     }
@@ -369,4 +419,13 @@ pub enum Condition {
     HasNot,
     Has(HasCategory),
     If(SimpleExpr),
+}
+
+impl Condition {
+    pub fn unconditional(&self) -> bool {
+        match self {
+            Self::None => true,
+            _ => false,
+        }
+    }
 }

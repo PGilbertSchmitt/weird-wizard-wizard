@@ -15,7 +15,7 @@ import { ConfirmSelection } from './confirm-selection';
 
 export const ChooseProfession = ({
   character,
-  keys,
+  keyCount,
   modifier,
 }: ModalChoiceProps) => {
   const { data: professionCategories } = useProfessionIndex();
@@ -30,8 +30,8 @@ export const ChooseProfession = ({
     ...character.professions.map((p) => p.id),
     ...selected.map((p) => p.id),
   ];
-  const pickProfession = selected.length < keys.length;
-  const idxStr = keys.length === 1 ? '' : nth(selected.length);
+  const pickProfession = selected.length < keyCount;
+  const idxStr = keyCount === 1 ? '' : nth(selected.length);
 
   return pickProfession ? (
     <div className={cn('w-fit')}>

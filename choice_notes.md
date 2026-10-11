@@ -125,7 +125,17 @@ A LOSE MOD is just like a GRANT, except it takes away something. Currently, this
 [PERM] LOSE.Talent.Luminous Symbiote ; GRANT.Talent.Durable Luminous Symbiote ;
 ```
 
-The benefit of using LOSE to replace talents instead of OVERRIDE is that any talents lost in this way will still show up on the sheet, but they will be greyed out and marked as having been overriden.
+The benefit of using LOSE to replace talents instead of OVERRIDE is that any talents lost in this way will no longer be active. They may show up on the sheet still, though I'm still debating that.
+
+IMPORTANT: There is a lot of complexity in calculating the tree of all effects on a player, and the LOSE modifier greatly increases that. If a path talent grants the player several modifiers (that themselves lead to further modifications), any LOSE modifier for that talent would prune that list of effects from the character. That leads to theoretical situations where a lost talent contained a LOSE modifier on a different talent, and then the tree becomes impossible to resolve. Or consider a case where a LOSE modifier has a condition that is only met when the lost talent is active, so that when the talent is lost, the LOSE no longer applies. There are no cases in the current system where that could be the case, but it's still technically _possible_. To resolve these edge cases while allowing talents to be lost, a key restriction on the LOSE modifier is such that:
+- It can only be used on modifiers that are permanent and unconditional
+- It can't be used in spell modifiers since they are always cast, and therefore conditional.
+- It can be used in path talents, magic talents, and choice selections. HOWEVER, because of the first point, the LOSE modifier in a choice selection will only take affect if the initiator of the choice selection (the mod string that contains the SELECT=...) is on a path talent / magic talent following the principles of the first point. For example, if you have a talent with `[PERM] CHOOSE.Select='My cool effects'`, then the `My cool effects` selections can contain LOSE modifiers, but if the talent instead had `[CAST] CHOOSE.Select='My cool effects'` or `[PERM] CHOOSE.Select='My cool effects'@IF(...)`, then any LOSE modifiers in the `My cool effects` selections would be ignored.
+
+The resolution of the character effect tree works as follows:
+
+1. A first pass evaluates a minimal tree looking for LOSE modifiers. This minimal tree ignores conditionals and non-permanent modifiers, and only looks at path talents, magic talents, and choice selections.
+2. A second pass evaluates the full tree, skipping resolution of any talents marked by the first pass.
 
 ## OVERRIDE
 

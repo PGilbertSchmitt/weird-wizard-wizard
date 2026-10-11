@@ -19,10 +19,11 @@ export const ModalTypes = {
 export interface FullChoiceModifier {
   path_node: ModifierPathNode;
   mod_details: {
+    idx: number;
     when: WhenMod;
     target: {
       type: 'Choose';
-      data: [ChooseTarget, Array<string>];
+      data: ChooseTarget;
     };
     condition: Condition;
   };

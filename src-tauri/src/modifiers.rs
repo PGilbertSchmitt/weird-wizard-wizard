@@ -154,27 +154,23 @@ pub trait HasModifiers {
 }
 
 impl FullModifier {
+    // This will need context about anything used in conditionals
     pub fn required(&self) -> bool {
         self.mod_details.when.is_permanent()
     }
 
-    pub fn keys(&self) -> Vec<(String, String)> {
+    pub fn keys(&self) -> Vec<String> {
         self.mod_details
             .target
-            .choice_strings()
+            .target_keys()
             .iter()
-            .map(|choice_str| {
-                (
-                    choice_str.clone(),
-                    format!("{}=>{}", self.path_node, choice_str),
-                )
-            })
+            .map(|key| format!("{}=>{}", self.path_node, key))
             .collect()
     }
 
-    pub fn set_choice_strings(&mut self, new_strings: Vec<String>) {
-        self.mod_details.target.replace_choice_strings(new_strings);
-    }
+    // pub fn set_choice_strings(&mut self, new_strings: Vec<String>) {
+    //     self.mod_details.target.replace_choice_strings(new_strings);
+    // }
 
     pub fn from_path_talent(
         name: &str,

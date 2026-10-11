@@ -90,7 +90,12 @@ export type LoseTarget =
   | { type: 'Talent'; data: [string, string] }
   | { type: 'MagicTalent'; data: [string, string] };
 
-export type Modifier = { when: WhenMod; target: Target; condition: Condition };
+export type Modifier = {
+  idx: number;
+  when: WhenMod;
+  target: Target;
+  condition: Condition;
+};
 
 export type ModifierPathNode =
   | { type: 'LevelLanguage'; data: { path_name: string; level: number } }
@@ -126,7 +131,7 @@ export type Target =
   | { type: 'Grant'; data: GrantTarget }
   | { type: 'Lose'; data: LoseTarget }
   | { type: 'Override'; data: OverrideTarget }
-  | { type: 'Choose'; data: [ChooseTarget, Array<string>] }
+  | { type: 'Choose'; data: ChooseTarget }
   | { type: 'Apply'; data: ApplyTarget };
 
 export type WhenDuration =

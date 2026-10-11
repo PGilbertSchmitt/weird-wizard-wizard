@@ -31,7 +31,7 @@ pub struct FullSpell {
     ritual: bool,
     info_table: Option<FullInfoTable>,
     option_block: Option<FullOptionBlock>,
-    modifiers: Vec<FullModifier>,
+    pub modifiers: Vec<FullModifier>,
 }
 
 impl HasModifiers for FullSpell {

@@ -3,7 +3,7 @@ import { ModalChoiceProps } from '../../switch';
 import { useSaveChoice } from '@/api/characters';
 import { useMemo, useReducer } from 'react';
 import { cn, nth, ValueOf } from '@/lib/utils';
-import { clone, isNil, sortBy, uniqBy } from 'ramda';
+import { clone, identity, isNil, sortBy, times, uniqBy } from 'ramda';
 import { ChooseTradition } from '../choose-tradition';
 import { ChooseSpells } from '../choose-spells';
 import { PathKind } from '@/types/etc';
@@ -19,15 +19,15 @@ interface ChooseSpellFlowProps extends ModalChoiceProps {
 export const ChooseSpellFlow = ({
   character,
   modifier,
+  keyCount,
   maxKind,
-  keys,
   limitedTraditions,
 }: ChooseSpellFlowProps) => {
   const { popNonErrorModal, pushError } = useModal();
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
   const [state, dispatch] = useReducer<FormState, [FormAction]>(
     reducer,
-    keys.map((key) => ({ key })),
+    times(identity, keyCount).map((key) => ({ key })),
   );
 
   const [curStep, curIdx] = getStepAndId(state);
@@ -125,7 +125,7 @@ export const ChooseSpellFlow = ({
 };
 
 interface SpellChoice {
-  key: string;
+  key: number;
   traditionId?: number;
   traditionName?: string;
   spellId?: number;

@@ -5,8 +5,10 @@ use tauri::{AppHandle, Manager};
 
 pub mod ancestries;
 pub mod character_choices;
+pub mod character_effects;
 pub mod characters;
 pub mod choice_selections;
+pub mod collect_effects;
 pub mod etc;
 pub mod immunities;
 pub mod info_tables;
@@ -23,6 +25,7 @@ pub mod senses;
 pub mod speed_traits;
 pub mod spells;
 pub mod spell_slots;
+pub mod time;
 pub mod traditions;
 
 pub struct Database {

@@ -6,6 +6,7 @@ mod ipc;
 mod mod_dsl;
 mod modifiers;
 mod result;
+mod selection_types;
 mod store;
 mod util;
 

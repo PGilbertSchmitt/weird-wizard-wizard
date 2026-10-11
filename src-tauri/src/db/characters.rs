@@ -43,6 +43,7 @@ struct RawCharacter {
     novice_path_id: i64,
     expert_path_id: Option<i64>,
     master_path_id: Option<i64>,
+    current_hour: i64,
     created_at: NaiveDateTime,
 }
 
@@ -63,6 +64,7 @@ pub struct FullCharacter {
     novice_path: FullPath,
     expert_path: Option<FullPath>,
     master_path: Option<FullPath>,
+    current_hour: i64,
     created_at: String,
 
     // Fields derived from ancestries, paths, and choices
@@ -151,8 +153,9 @@ pub async fn create_character(db: &Pool<Sqlite>, character_info: CreateCharacter
             will,
             profession_id,
             ancestry_id,
-            novice_path_id
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            novice_path_id,
+            current_hour
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
         character_info.name,
         1,
         init_health,
@@ -163,7 +166,8 @@ pub async fn create_character(db: &Pool<Sqlite>, character_info: CreateCharacter
         character_info.will,
         character_info.profession_id,
         character_info.ancestry_id,
-        character_info.novice_path_id
+        character_info.novice_path_id,
+        0
     )
     .execute(db)
     .await?;
@@ -374,6 +378,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         novice_path: novice_path,
         expert_path: expert_path,
         master_path: master_path,
+        current_hour: raw_character.current_hour,
         created_at: raw_character.created_at.to_string(),
 
         // Fields derived from ancestries, paths, grants, and choices
@@ -475,6 +480,7 @@ impl CumulativeFields {
             self.choices.push(level_choice(
                 ModifierPathNode::LevelScore { level: level.level },
                 ChooseTarget::Score(2),
+                0,
             ))
         }
 
@@ -483,6 +489,7 @@ impl CumulativeFields {
             self.choices.push(level_choice(
                 ModifierPathNode::LevelScore { level: level.level },
                 ChooseTarget::Score(3),
+                0,
             ))
         }
 
@@ -510,7 +517,7 @@ impl CumulativeFields {
                 .push((speed_trait.clone(), level_source.clone()));
         }
 
-        for tradition in &level.traditions {
+        for (idx, tradition) in level.traditions.iter().enumerate() {
             self.traditions
                 .push((tradition.clone(), level_source.clone()));
             let target = ChooseTarget::MagicTalent(1, vec![tradition.name.clone()]);
@@ -520,6 +527,7 @@ impl CumulativeFields {
                     level: level.level,
                 },
                 target,
+                idx,
             ));
         }
 
@@ -537,6 +545,7 @@ impl CumulativeFields {
                     level: level.level,
                 },
                 target,
+                0,
             ));
         }
 
@@ -548,6 +557,7 @@ impl CumulativeFields {
                     level: level.level,
                 },
                 target,
+                0,
             ));
         }
 
@@ -559,6 +569,7 @@ impl CumulativeFields {
                     level: level.level,
                 },
                 target,
+                0,
             ));
         }
 
@@ -570,6 +581,7 @@ impl CumulativeFields {
                     level: level.level,
                 },
                 target,
+                0,
             ));
         }
 
@@ -581,6 +593,7 @@ impl CumulativeFields {
                     level: level.level,
                 },
                 target,
+                0,
             ));
         }
 
@@ -588,13 +601,17 @@ impl CumulativeFields {
     }
 }
 
-fn level_choice(path_str: ModifierPathNode, choose_target: ChooseTarget) -> FullModifier {
-    let target_strs = choose_target.choice_strings();
+fn level_choice(
+    path_str: ModifierPathNode,
+    choose_target: ChooseTarget,
+    idx: usize,
+) -> FullModifier {
     FullModifier {
         path_node: path_str,
         mod_details: Modifier {
+            idx,
             when: WhenMod::Permanent,
-            target: Target::Choose(choose_target, target_strs),
+            target: Target::Choose(choose_target),
             condition: Condition::None,
         },
     }

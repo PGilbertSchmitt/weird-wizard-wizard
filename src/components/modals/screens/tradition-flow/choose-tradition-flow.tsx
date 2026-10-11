@@ -1,7 +1,7 @@
 import { cn, nth, ValueOf } from '@/lib/utils';
 import { ModalChoiceProps } from '../../switch';
 import { useReducer } from 'react';
-import { clone, isNil } from 'ramda';
+import { clone, identity, isNil, times } from 'ramda';
 import { Button } from '@/components/ui/button';
 import { useSaveChoice } from '@/api/characters';
 import { ChooseItem } from './choose-item';
@@ -16,14 +16,14 @@ interface ChooseTraditionFlowProps extends ModalChoiceProps {
 export const ChooseTraditionFlow = ({
   character,
   modifier,
-  keys,
+  keyCount,
   limitedTraditions,
 }: ChooseTraditionFlowProps) => {
   const { popNonErrorModal, pushError } = useModal();
   const { mutateAsync: saveChoice } = useSaveChoice(character.id);
   const [state, dispatch] = useReducer<FormState, [FormAction]>(
     reducer,
-    keys.map((key) => ({ key })),
+    times(identity, keyCount).map((key) => ({ key })),
   );
   const [curStep, curIdx] = getStepAndId(state);
 
@@ -107,7 +107,7 @@ export const ChooseTraditionFlow = ({
 };
 
 export interface ItemChoice {
-  key: string;
+  key: number;
   traditionId?: number;
   traditionName?: string;
   kind?: 'talent' | 'spell';

@@ -69,6 +69,9 @@ The `#[ts(export, ...)]` macro defines the path to the type file in the TypeScri
 - [ ] **Better Time Progression**
 - [ ] **Character Override handling**
 - [ ] **Handle Conditional Modifiers** _(dependent on level, current dmg, etc.)_
+- [ ] **Handle equipment**
+  - [ ] **Seed / Create equipment items**
+  - [ ] **Apply equipped items to defense or other traits**
 
 ## Did I use AI to create this?
 

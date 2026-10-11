@@ -15,6 +15,7 @@ export type CharacterChoice = {
   selection: string;
   dismissable: boolean;
   duration: ChoiceDuration;
+  cast_hour: number;
 };
 
 export type CharacterIndexItem = {
@@ -53,6 +54,7 @@ export type FullCharacter = {
   novice_path: FullPath;
   expert_path: FullPath | null;
   master_path: FullPath | null;
+  current_hour: number;
   created_at: string;
   max_health: number;
   nat_def: number;

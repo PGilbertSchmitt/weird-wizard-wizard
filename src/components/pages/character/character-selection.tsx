@@ -13,7 +13,6 @@ import { EllipsisVertical } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/neo/dropdown-menu';
@@ -71,7 +70,7 @@ const CharacterSelectionSwitch = ({
   modifier,
   choices,
 }: CharacterSelectSwitchProps) => {
-  const choiceTarget = modifier.mod_details.target.data[0];
+  const choiceTarget = modifier.mod_details.target.data;
 
   switch (choiceTarget.type) {
     case 'Score': {

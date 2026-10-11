@@ -8,7 +8,7 @@ import { ConfirmSelection } from './confirm-selection';
 
 export const ChooseLanguage = ({
   character,
-  keys,
+  keyCount,
   modifier,
 }: ModalChoiceProps) => {
   const { data: languages } = useNonSecretLanguages();
@@ -30,8 +30,8 @@ export const ChooseLanguage = ({
   }
 
   const selectedLanguages = selected.map((l) => l.id);
-  const pickLanguage = selected.length < keys.length;
-  const idxStr = keys.length === 1 ? '' : nth(selected.length);
+  const pickLanguage = selected.length < keyCount;
+  const idxStr = keyCount === 1 ? '' : nth(selected.length);
 
   return pickLanguage ? (
     <div className={cn('w-fit')}>

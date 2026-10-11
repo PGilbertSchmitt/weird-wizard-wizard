@@ -16,8 +16,10 @@ pub fn parse_mods(input: &str) -> Result<Vec<Modifier>, String> {
     let mut tokens: Tokens = Token::lexer(input).peekable();
     let when = parse_casting(&mut tokens)?.unwrap_or(WhenMod::CastOnce);
     let mut v = Vec::new();
+    let mut mod_count = 0;
     while tokens.peek().is_some() {
-        if let Some(modifier) = parse_single_mod(&mut tokens, when)? {
+        if let Some(modifier) = parse_single_mod(&mut tokens, when, mod_count)? {
+            mod_count += 1;
             v.push(modifier);
         }
     }
@@ -83,7 +85,7 @@ fn parse_cast_time(tokens: &mut Tokens) -> Result<Option<WhenDuration>, String> 
     }
 }
 
-fn parse_single_mod(tokens: &mut Tokens, when: WhenMod) -> Result<Option<Modifier>, String> {
+fn parse_single_mod(tokens: &mut Tokens, when: WhenMod, idx: usize) -> Result<Option<Modifier>, String> {
     let next = tokens.next();
     if next.is_none() {
         return Ok(None);
@@ -95,11 +97,7 @@ fn parse_single_mod(tokens: &mut Tokens, when: WhenMod) -> Result<Option<Modifie
         Token::Grant => Target::Grant(parse_grant_target(tokens)?),
         Token::Lose => Target::Lose(parse_lose_target(tokens)?),
         Token::Override => Target::Override(parse_override_target(tokens)?),
-        Token::Choose => {
-            let choose_target = parse_choose_target(tokens)?;
-            let choice_strings = choose_target.choice_strings();
-            Target::Choose(choose_target, choice_strings)
-        }
+        Token::Choose => Target::Choose(parse_choose_target(tokens)?),
         Token::Apply => Target::Apply(parse_apply_target(tokens)?),
         other => {
             return Err(format!(
@@ -117,6 +115,7 @@ fn parse_single_mod(tokens: &mut Tokens, when: WhenMod) -> Result<Option<Modifie
     };
 
     Ok(Some(Modifier {
+        idx,
         when,
         target,
         condition,

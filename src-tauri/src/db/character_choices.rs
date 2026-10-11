@@ -11,13 +11,18 @@ use dashmap::DashSet;
 use sqlx::{Pool, Sqlite};
 
 use crate::{
-    WWError::Generic, WWResult, db::{
+    db::{
         choice_selections,
         etc::ChoiceDuration,
         magic_talents::{self, FullMagicTalent},
         path_talents::{self, FullPathTalent},
         spells::{self, FullSpell},
-    }, mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target, WhenDuration}, modifiers::{FullModifier, HasModifiers}, util::db_boolean,
+    },
+    mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, OverrideTarget, Target},
+    modifiers::{FullModifier, HasModifiers},
+    util::db_boolean,
+    WWError::Generic,
+    WWResult,
 };
 
 const DISCLAIMER: &'static str = "If you're getting this error, this is a bug with the system. You did nothing wrong (probably).";
@@ -29,6 +34,7 @@ struct RawCharacterChoice {
     selection: String,
     dismissable: Option<String>,
     duration: ChoiceDuration,
+    cast_hour: i64,
 }
 
 #[derive(TS, Debug, Clone, Serialize, Deserialize)]
@@ -38,6 +44,7 @@ pub struct CharacterChoice {
     selection: String,
     dismissable: bool,
     duration: ChoiceDuration,
+    cast_hour: i64,
 }
 
 pub async fn get_for_character(
@@ -46,7 +53,7 @@ pub async fn get_for_character(
 ) -> WWResult<HashMap<String, CharacterChoice>> {
     let choices = sqlx::query_as!(
         RawCharacterChoice,
-        "SELECT id, choice_key, selection, dismissable, duration
+        "SELECT id, choice_key, selection, dismissable, duration, cast_hour
         FROM character_choices WHERE character_id = ?",
         id
     )
@@ -62,6 +69,7 @@ pub async fn get_for_character(
                 selection: choice.selection,
                 dismissable: db_boolean(choice.dismissable),
                 duration: choice.duration,
+                cast_hour: choice.cast_hour,
             },
         );
     }
@@ -243,36 +251,10 @@ impl ModifierSelections {
     }
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
-#[ts(export, export_to = "character.ts")]
-pub enum SlotMod {
-    Plus { amount: i64, spell_id: i64 },
-    Times { amount: i64, spell_id: i64 },
-}
-
-pub struct Losses {
-    path_talents: HashSet<(String, String)>,
-    magic_talents: HashSet<(String, String)>,
-}
-
-impl Losses {
-    pub fn new() -> Self {
-        Self {
-            path_talents: HashSet::new(),
-            magic_talents: HashSet::new(),
-        }
-    }
-
-    pub fn merge(&mut self, other: Self) {
-        self.path_talents.extend(other.path_talents.into_iter());
-        self.magic_talents.extend(other.magic_talents.into_iter());
-    }
-}
-
 // This function is totally nuts.
 // If it becomes unmanagable, it might not be a bad idea to re-create this functionality
 // using simply serial patterns, rather than trying to be as efficient as possible.
-pub async fn collect_from_modifier_tree(
+pub async fn collect_from_modifier_tree_old(
     db: &Pool<Sqlite>,
     modifier: &FullModifier,
 
@@ -327,7 +309,7 @@ pub async fn collect_from_modifier_tree(
             _ => {}
         },
 
-        Target::Choose(choose_target, _) => match choose_target {
+        Target::Choose(choose_target) => match choose_target {
             ChooseTarget::Score(_) => {
                 handle_choice(
                     &modifier,
@@ -605,13 +587,13 @@ fn handle_grant_target(
             // Granted Traditions creates a new choice to pick a talent from that tradition
             for item in items {
                 let choose_target = ChooseTarget::MagicTalent(1, vec![item.clone()]);
-                let choice_strings = choose_target.choice_strings();
                 new_choice_mods.push(FullModifier {
                     path_node: modifier.path_node.to_owned(),
                     mod_details: Modifier {
+                        idx: 0,
                         when: modifier.mod_details.when,
                         condition: modifier.mod_details.condition.clone(),
-                        target: Target::Choose(choose_target, choice_strings),
+                        target: Target::Choose(choose_target),
                     },
                 });
                 selections
@@ -662,6 +644,7 @@ where
     let mut selected_choices: Vec<CharacterChoice> = Vec::new();
     let mut results = Vec::new();
     for (choice_key, full_key) in modifier.keys() {
+        println!("Lookin for '{choice_key}' / {full_key}");
         match saved_choices.get(&full_key) {
             Some(ch) => {
                 results.push(on_selection(&ch.selection, &mut selections)?);
@@ -674,14 +657,15 @@ where
             }
         }
     }
-    let mut modifier = modifier.clone();
+
+    println!("required: {required_choice_strings:?}");
+    println!("selected: {selected_choices:?}");
     if required_choice_strings.len() > 0 {
-        modifier.set_choice_strings(required_choice_strings);
-        selections.required_choices.push(modifier);
-    } else {
+        selections.required_choices.push(modifier.clone());
+    } else if selected_choices.len() > 0 {
         selections
             .selected_choices
-            .push((modifier, selected_choices))
+            .push((modifier.clone(), selected_choices))
     }
 
     Ok(results)
@@ -826,6 +810,13 @@ pub async fn save_choices(
         return Err(Generic(format!("Choice could not be saved, number of saved values does not match the number of choice keys")));
     }
     let (dismissable, duration) = modifier.mod_details.when.to_choice_data();
+    let cast_hour = sqlx::query_scalar!(
+        "SELECT current_hour FROM characters WHERE id = ?",
+        character_id
+    )
+    .fetch_one(db)
+    .await?;
+
     for ((_, key), value) in choice_keys.into_iter().zip(values.into_iter()) {
         sqlx::query!(
             "INSERT INTO character_choices (
@@ -833,14 +824,16 @@ pub async fn save_choices(
                 choice_key,
                 selection,
                 dismissable,
-                duration
-            ) VALUES ($1, $2, $3, $4, $5)
+                duration,
+                cast_hour
+            ) VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT(character_id, choice_key) DO UPDATE SET selection = $3",
             character_id,
             key,
             value,
             dismissable,
-            duration
+            duration,
+            cast_hour
         )
         .execute(db)
         .await?;
@@ -865,36 +858,6 @@ pub async fn delete_choice(
         .execute(db)
         .await?;
     }
-
-    Ok(())
-}
-
-async fn _pass_time(
-    db: &Pool<Sqlite>,
-    character_id: i64,
-    duration_str: String,
-) -> WWResult<()> {
-    sqlx::query!(
-        "DELETE FROM character_choices WHERE character_id = ? AND duration = ?",
-        character_id,
-        duration_str,
-    ).execute(db).await?;
-
-    Ok(())
-}
-
-pub async fn pass_time(
-    db: &Pool<Sqlite>,
-    character_id: i64,
-    duration: WhenDuration,
-) -> WWResult<()> {
-    let duration_strings = duration.contained_duration_strings();
-    let len = duration_strings.len();
-    futures::stream::iter(duration_strings.clone())
-        .map(|duration_str| async move { _pass_time(db, character_id, duration_str).await })
-        .buffered(len)
-        .try_collect::<Vec<_>>()
-        .await?;
 
     Ok(())
 }

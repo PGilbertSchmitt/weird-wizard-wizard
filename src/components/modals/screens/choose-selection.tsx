@@ -12,7 +12,7 @@ interface ChooseSelectProps extends ModalChoiceProps {
 
 export const ChooseSelection = ({
   character,
-  keys,
+  keyCount,
   modifier,
   selectionName,
 }: ChooseSelectProps) => {
@@ -29,16 +29,16 @@ export const ChooseSelection = ({
           return false;
         }
 
-        if (target.data[0].type !== 'Select') {
+        if (target.data.type !== 'Select') {
           return false;
         }
 
-        return target.data[0].data[1] === selectionName;
+        return target.data.data[1] === selectionName;
       },
     );
 
     return relevantPriorChoices
-      .flatMap(([_, choices]) => choices.map((ch) => ch.id))
+      .flatMap(([_, choices]) => choices.map((ch) => parseInt(ch.selection)))
       .concat(selected.map((ch) => ch.id));
   }, [selectionName, character, selected]);
 
@@ -46,8 +46,8 @@ export const ChooseSelection = ({
     return null;
   }
 
-  const idxStr = keys.length === 1 ? '' : nth(0);
-  const pickChoice = selected.length < keys.length;
+  const idxStr = keyCount === 1 ? '' : nth(0);
+  const pickChoice = selected.length < keyCount;
 
   return pickChoice ? (
     <div className={cn('w-fit')}>

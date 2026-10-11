@@ -221,7 +221,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
         </div>
 
         {character.professions.map((profession) => (
-          <>
+          <Fragment key={profession.name}>
             <Separator />
 
             <div className={cn('bg-secondary-background text-foreground p-4')}>
@@ -229,7 +229,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
               <span>({profession.category})</span>
               <p>{profession.description}</p>
             </div>
-          </>
+          </Fragment>
         ))}
 
         {character.expert_path && (

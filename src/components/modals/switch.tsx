@@ -13,6 +13,7 @@ import { X } from 'lucide-react';
 import { ChoosePath } from './screens/choose-path';
 import { ChooseProfession } from './screens/choose-profession';
 import { PassTimeModal } from './screens/pass-time';
+import { countKeys } from '@/lib/modifier-utils';
 
 interface ModalSwitchProps {
   modalData: ModalData;
@@ -21,7 +22,7 @@ interface ModalSwitchProps {
 export interface ModalChoiceProps {
   character: FullCharacter;
   modifier: FullChoiceModifier;
-  keys: string[];
+  keyCount: number;
 }
 
 export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
@@ -57,12 +58,12 @@ export const ModalSwitch = ({ modalData }: ModalSwitchProps) => {
     );
   }
 
-  const [chooseTarget, keys] = modalData.modifier.mod_details.target.data;
+  const chooseTarget = modalData.modifier.mod_details.target.data;
 
   const choiceProps: ModalChoiceProps = {
     character: modalData.character,
-    keys: keys,
     modifier: modalData.modifier,
+    keyCount: countKeys(modalData.modifier.mod_details),
   };
 
   return (

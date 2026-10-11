@@ -2,7 +2,7 @@ use tauri::{command, AppHandle, Wry};
 
 use crate::{
     WWResult, db::{
-        character_choices, characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter}, spell_slots::{self, SpellSlotInfo},
+        character_choices, characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter}, spell_slots::{self, SpellSlotInfo}, time,
     }, mod_dsl::ast::WhenDuration, modifiers::FullModifier, store::get_database,
 };
 
@@ -109,5 +109,5 @@ pub async fn pass_time(
     if duration.is_rest() {
         spell_slots::rest(&db_state.pool, character_id).await?;
     }
-    character_choices::pass_time(&db_state.pool, character_id, duration).await
+    time::pass_time(&db_state.pool, character_id, duration).await
 }

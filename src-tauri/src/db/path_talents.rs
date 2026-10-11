@@ -198,7 +198,7 @@ pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<Ful
     get_from_ids(db, ids, format!("L({level_id})")).await
 }
 
-async fn get_by_name_and_source(
+pub async fn get_by_name_and_source(
     db: &Pool<Sqlite>,
     name: &str,
     source: &str,

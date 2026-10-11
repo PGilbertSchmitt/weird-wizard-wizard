@@ -176,7 +176,7 @@ pub async fn get_for_tradition(
     Ok(talents)
 }
 
-async fn get_by_name_and_tradition(
+pub async fn get_by_name_and_tradition(
     db: &Pool<Sqlite>,
     tradition: &str,
     name: &str,
