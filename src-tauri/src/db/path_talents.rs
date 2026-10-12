@@ -220,20 +220,3 @@ pub async fn get_by_name_and_source(
 
     extend_raw_path_talent(db, raw_talent?, origin.to_owned()).await
 }
-
-// Used by character_choices when retrieving talents via GRANT modifiers
-pub async fn get_by_selections(
-    db: &Pool<Sqlite>,
-    selections: Vec<(String, String, String)>,
-) -> WWResult<Vec<FullPathTalent>> {
-    let talents = futures::stream::iter(selections.into_iter())
-        .map(|(source, talent_name, origin)| {
-            let db = db.clone();
-            async move { get_by_name_and_source(&db, &talent_name, &source, &origin).await }
-        })
-        .buffered(100)
-        .try_collect()
-        .await;
-
-    Ok(talents?)
-}

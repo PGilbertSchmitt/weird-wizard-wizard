@@ -1,50 +1,54 @@
-use crate::db::professions::Profession;
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Debug)]
+use crate::db::{
+    languages::Language, magic_talents::FullMagicTalent, path_talents::FullPathTalent,
+    professions::Profession, senses::FullSense, speed_traits::FullSpeedTrait, spells::FullSpell,
+    traditions::PartialTradition,
+};
+
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
 pub struct GainedLanguage {
-    pub name: String,
+    pub language: Language,
     pub source: String,
     pub cast_hour: i64,
 }
 
-#[derive(Debug)]
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
 pub struct GainedImmunity {
-    pub name: String,
+    pub name: String, // A String is all we need here
     pub source: String,
     pub cast_hour: i64,
 }
 
-#[derive(Debug)]
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
 pub struct GainedTradition {
-    pub name: String,
+    pub tradition: PartialTradition,
     pub source: String,
     pub cast_hour: i64,
 }
 
-#[derive(Debug)]
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
 pub struct GainedSense {
-    pub name: String,
-    pub amount: Option<String>,
+    pub sense: FullSense,
     pub source: String,
     pub cast_hour: i64,
 }
 
-#[derive(Debug)]
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
 pub struct GainedSpeedTrait {
-    pub name: String,
-    pub amount: Option<String>,
+    pub speed_trait: FullSpeedTrait,
     pub source: String,
     pub cast_hour: i64,
 }
 
-#[derive(Debug)]
-pub struct GainedLanguageId {
-    pub id: i64,
-    pub source: String,
-    pub cast_hour: i64,
-}
-
-#[derive(Debug)]
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
 pub struct GainedProfession {
     pub profession: Profession,
     pub source: String,
@@ -53,11 +57,26 @@ pub struct GainedProfession {
     pub cast_hour: i64,
 }
 
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
+pub struct GainedPathTalent {
+    pub talent: FullPathTalent,
+    pub source: String,
+    pub cast_hour: i64,
+}
 
-// GainedSenses: Vec<(String, Option<String>, String)>
-// GainedSpeedTraits: Vec<(String, Option<String>, String)>
-// GainedTraditionIds: Vec<(i64, String)>
-// GainedProfessionIds: Vec<i64>
-// GainedTalents: Vec<(FullPathTalent, Vec<ModifierSelections>, String)>
-// GainedMagicTalents: Vec<(FullMagicTalent, Vec<ModifierSelections>, String)>
-// GainedSpells: Vec<(FullSpell, String)>
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
+pub struct GainedMagicTalent {
+    pub talent: FullMagicTalent,
+    pub source: String,
+    pub cast_hour: i64,
+}
+
+#[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "character.ts")]
+pub struct GainedSpell {
+    pub spell: FullSpell,
+    pub source: String,
+    pub cast_hour: i64,
+}

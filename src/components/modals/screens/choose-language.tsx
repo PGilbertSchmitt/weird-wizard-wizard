@@ -20,7 +20,7 @@ export const ChooseLanguage = ({
       return null;
     }
 
-    const ownedLanguages = character.languages.map((l) => l[0].id);
+    const ownedLanguages = character.languages.map((l) => l.language.id);
 
     return languages.filter((l) => !ownedLanguages.includes(l.id));
   }, [character.languages, languages, selected]);

@@ -1,24 +1,35 @@
 use std::{
     collections::{HashMap, HashSet},
     future::Future,
-    mem,
     pin::Pin,
     sync::Arc,
 };
 
-use dashmap::{DashMap, DashSet};
+use dashmap::DashSet;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite};
 use ts_rs::TS;
 
 use crate::{
-    WWError::Generic, WWResult, db::{
-        character_effects::CharacterEffect, magic_talents::{self, FullMagicTalent}, path_talents::{self, FullPathTalent}, professions, spells::{self, FullSpell},
-    }, mod_dsl::ast::{
-        ChooseTarget, Condition, GrantTarget, LoseTarget, Modifier, Target, WhenDuration,
-    }, modifiers::FullModifier, selection_types::{
-        GainedImmunity, GainedLanguage, GainedLanguageId, GainedProfession, GainedSense, GainedSpeedTrait, GainedTradition,
+    db::{
+        character_effects::CharacterEffect,
+        choice_selections,
+        languages::Language,
+        magic_talents::{self, FullMagicTalent},
+        path_talents, professions,
+        senses::{FullSense, RawSense},
+        speed_traits::{FullSpeedTrait, RawSpeedTrait},
+        spells::{self, FullSpell},
+        traditions::{self, PartialTradition},
     },
+    mod_dsl::ast::{ChooseTarget, GrantTarget, LoseTarget, Modifier, Target},
+    modifiers::{FullModifier, HasModifiers},
+    selection_types::{
+        GainedImmunity, GainedLanguage, GainedMagicTalent, GainedPathTalent, GainedProfession,
+        GainedSense, GainedSpeedTrait, GainedSpell, GainedTradition,
+    },
+    WWError::Generic,
+    WWResult,
 };
 
 const DISCLAIMER: &'static str = "If you're getting this error, this is a bug with the system. You did nothing wrong (probably).";
@@ -40,28 +51,20 @@ pub struct ModifierSelections {
     pub gained_traditions: Vec<GainedTradition>,
     pub gained_senses: Vec<GainedSense>,
     pub gained_speed_traits: Vec<GainedSpeedTrait>,
-    pub gained_language_ids: Vec<GainedLanguageId>,
-    pub gained_tradition_ids: Vec<(i64, String)>,
     pub gained_professions: Vec<GainedProfession>,
     pub statblock_overrides: Vec<(i64, String)>,
     pub modified_slots: Vec<SlotMod>,
 
-    // These lists are for the source/name and tradition/name respectively, and are checked during the
-    // flattening of the tree to prune gained_talents and gained_magic_talents respectively.
-    pub lost_talents: Vec<(String, String)>,
-    pub lost_magic_talents: Vec<(String, String)>,
-
     // This is how the ModifierSelections recurses into a tree structure. It will later be collapsed into
     // a flat structure, during which time the accumulated "lost" talents can prune the tree.
-    pub gained_talents: Vec<(FullPathTalent, Vec<ModifierSelections>, String)>,
-    pub gained_magic_talents: Vec<(FullMagicTalent, Vec<ModifierSelections>, String)>,
+    pub gained_path_talents: Vec<GainedPathTalent>,
+    pub gained_magic_talents: Vec<GainedMagicTalent>,
+    pub gained_spells: Vec<GainedSpell>,
 
     // Much like path/magic talents, spells can have mods, and thus can trigger additional lookups, which
     // means we have to load them during the runtime of `collect_from_modifier_tree`. However, because
     // spells are not affected by the LOSE mod, we don't need to store the mod subtree for spells, we
     // can merge them immediately and just return the full spell record.
-    pub gained_spells: Vec<(FullSpell, String)>,
-
     pub required_choices: Vec<FullModifier>,
     pub selected_choices: Vec<(FullModifier, Vec<CharacterEffect>)>,
 }
@@ -78,23 +81,19 @@ impl ModifierSelections {
             defense: 0,
             nat_def: 0,
             bonus_damage: 0,
+            gained_professions: Vec::new(),
             gained_languages: Vec::new(),
             gained_traditions: Vec::new(),
             gained_senses: Vec::new(),
             gained_immunities: Vec::new(),
             gained_speed_traits: Vec::new(),
-            gained_talents: Vec::new(),
+            gained_path_talents: Vec::new(),
             gained_magic_talents: Vec::new(),
-            gained_language_ids: Vec::new(),
-            gained_professions: Vec::new(),
             gained_spells: Vec::new(),
-            gained_tradition_ids: Vec::new(),
             modified_slots: Vec::new(),
-            statblock_overrides: Vec::new(),
-            lost_talents: Vec::new(),
-            lost_magic_talents: Vec::new(),
             selected_choices: Vec::new(),
             required_choices: Vec::new(),
+            statblock_overrides: Vec::new(),
         }
     }
 
@@ -115,85 +114,18 @@ impl ModifierSelections {
         self.gained_immunities.append(&mut other.gained_immunities);
         self.gained_speed_traits
             .append(&mut other.gained_speed_traits);
-        self.gained_talents.append(&mut other.gained_talents);
-        self.gained_language_ids
-            .append(&mut other.gained_language_ids);
+        self.gained_path_talents
+            .append(&mut other.gained_path_talents);
         self.gained_professions
             .append(&mut other.gained_professions);
         self.gained_spells.append(&mut other.gained_spells);
-        self.gained_tradition_ids
-            .append(&mut other.gained_tradition_ids);
         self.modified_slots.append(&mut other.modified_slots);
         self.gained_magic_talents
             .append(&mut other.gained_magic_talents);
         self.statblock_overrides
             .append(&mut other.statblock_overrides);
-        self.lost_talents.append(&mut other.lost_talents);
-        self.lost_magic_talents
-            .append(&mut other.lost_magic_talents);
         self.selected_choices.append(&mut other.selected_choices);
         self.required_choices.append(&mut other.required_choices);
-    }
-
-    pub fn collect_losses(&self) -> Losses {
-        let mut losses = Losses::new();
-
-        for talent in &self.lost_talents {
-            losses.path_talents.insert(talent.clone());
-        }
-        for (_, sub_trees, _) in &self.gained_talents {
-            for sub_tree in sub_trees {
-                losses.merge(sub_tree.collect_losses());
-            }
-        }
-
-        for talent in &self.lost_magic_talents {
-            losses.magic_talents.insert(talent.clone());
-        }
-        for (_, sub_trees, _) in &self.gained_magic_talents {
-            for sub_tree in sub_trees {
-                losses.merge(sub_tree.collect_losses());
-            }
-        }
-
-        losses
-    }
-
-    pub fn collect(mut self, losses: &Losses) -> Self {
-        let path_talents: Vec<(FullPathTalent, Vec<ModifierSelections>, String)> =
-            mem::replace(&mut self.gained_talents, Vec::new())
-                .into_iter()
-                .filter(|(talent, ..)| {
-                    !losses
-                        .path_talents
-                        .contains(&(talent.source.to_owned(), talent.name.to_owned()))
-                })
-                .map(|(talent, sub_trees, source)| {
-                    sub_trees
-                        .into_iter()
-                        .for_each(|sub_tree| self.merge(sub_tree.collect(&losses)));
-                    (talent, Vec::new(), source)
-                })
-                .collect();
-        let magic_talents: Vec<(FullMagicTalent, Vec<ModifierSelections>, String)> =
-            mem::replace(&mut self.gained_magic_talents, Vec::new())
-                .into_iter()
-                .filter(|(talent, ..)| {
-                    !losses
-                        .magic_talents
-                        .contains(&(talent.tradition_name.to_owned(), talent.name.to_owned()))
-                })
-                .map(|(talent, sub_trees, source)| {
-                    sub_trees
-                        .into_iter()
-                        .for_each(|sub_tree| self.merge(sub_tree.collect(&losses)));
-                    (talent, Vec::new(), source)
-                })
-                .collect();
-
-        self.gained_talents = path_talents;
-        self.gained_magic_talents = magic_talents;
-        self
     }
 }
 
@@ -205,8 +137,8 @@ pub enum SlotMod {
 }
 
 pub struct Losses {
-    path_talents: HashSet<(String, String)>,
-    magic_talents: HashSet<(String, String)>,
+    pub path_talents: HashSet<(String, String)>,
+    pub magic_talents: HashSet<(String, String)>,
 }
 
 impl Losses {
@@ -235,7 +167,7 @@ impl Losses {
 pub fn modifier_tree_first_pass(
     db: Pool<Sqlite>,
     modifier: FullModifier,
-) -> Pin<Box<dyn Future<Output = WWResult<Losses>>>> {
+) -> Pin<Box<dyn Future<Output = WWResult<Losses>> + Send>> {
     Box::pin(async move {
         let origin_string = modifier.path_node.source_string();
         let mut losses = Losses::new();
@@ -294,7 +226,7 @@ pub fn modifier_tree_first_pass(
  * implemented reliably. If a condition relied on whether a trait existed on the player, but that
  * trait was only provided by a separate modifier, then the condition could flop between met and
  * unmet on any given execution.
- * 
+ *
  * This version of the modifier tree is now serial, but deterministic. It has the potential to
  * be slow, but my hope is that it's still fast enough that the player would never notice. The
  * biggest factor to time in this function is from DB queries to spells, talents, and choice
@@ -305,9 +237,11 @@ pub fn modifier_tree_second_pass(
     db: Pool<Sqlite>,
     modifier: FullModifier,
     effect_cache: Arc<HashMap<String, CharacterEffect>>,
-    // processed_mods: HashSet<FullModifier>,
+    language_cache: Arc<Vec<Language>>,
+    speed_trait_cache: Arc<Vec<RawSpeedTrait>>,
+    sense_cache: Arc<Vec<RawSense>>,
     processed_effects: DashSet<i64>,
-) -> Pin<Box<dyn Future<Output = WWResult<ModifierSelections>>>> {
+) -> Pin<Box<dyn Future<Output = WWResult<ModifierSelections>> + Send>> {
     Box::pin(async move {
         let origin = modifier.path_node.source_string();
         let mut selections = ModifierSelections::new();
@@ -366,11 +300,19 @@ pub fn modifier_tree_second_pass(
                     }
                     GrantTarget::Language(items) => {
                         for name in items {
-                            selections.gained_languages.push(GainedLanguage {
-                                name,
-                                source: origin.clone(),
-                                cast_hour,
-                            });
+                            if let Some(language) =
+                                language_cache.iter().find(|lang| lang.name == name)
+                            {
+                                selections.gained_languages.push(GainedLanguage {
+                                    language: language.clone(),
+                                    source: origin.clone(),
+                                    cast_hour,
+                                });
+                            } else {
+                                return Err(Generic(format!(
+                                    "Cannot find language with name {name}"
+                                )));
+                            };
                         }
                     }
                     GrantTarget::Immunity(items) => {
@@ -384,28 +326,49 @@ pub fn modifier_tree_second_pass(
                     }
                     GrantTarget::Sense(items) => {
                         for (name, amount) in items {
-                            selections.gained_senses.push(GainedSense {
-                                name,
-                                amount,
-                                source: origin.clone(),
-                                cast_hour,
-                            });
+                            if let Some(sense) = sense_cache.iter().find(|sense| sense.name == name)
+                            {
+                                selections.gained_senses.push(GainedSense {
+                                    sense: FullSense {
+                                        id: sense.id,
+                                        name,
+                                        description: sense.description.clone(),
+                                        unit: sense.unit.clone(),
+                                        amount,
+                                    },
+                                    source: origin.clone(),
+                                    cast_hour,
+                                });
+                            } else {
+                                return Err(Generic(format!("Cannot find sense with name {name}")));
+                            }
                         }
                     }
                     GrantTarget::SpeedTrait(items) => {
                         for (name, amount) in items {
-                            selections.gained_speed_traits.push(GainedSpeedTrait {
-                                name,
-                                amount,
-                                source: origin.clone(),
-                                cast_hour,
-                            });
+                            if let Some(raw_trait) =
+                                speed_trait_cache.iter().find(|t| t.name == name)
+                            {
+                                selections.gained_speed_traits.push(GainedSpeedTrait {
+                                    speed_trait: FullSpeedTrait {
+                                        id: raw_trait.id,
+                                        name,
+                                        description: raw_trait.description.clone(),
+                                        unit: raw_trait.unit.clone(),
+                                        amount,
+                                    },
+                                    source: origin.clone(),
+                                    cast_hour,
+                                });
+                            } else {
+                            }
                         }
                     }
                     GrantTarget::Tradition(items) => {
                         for name in items {
+                            let tradition = traditions::get_partial_by_name(&db, &name).await?;
                             selections.gained_traditions.push(GainedTradition {
-                                name: name.clone(),
+                                tradition,
                                 source: origin.clone(),
                                 cast_hour,
                             });
@@ -429,6 +392,9 @@ pub fn modifier_tree_second_pass(
                                     db.clone(),
                                     constructed_magic_talent_modifier,
                                     effect_cache.clone(),
+                                    language_cache.clone(),
+                                    speed_trait_cache.clone(),
+                                    sense_cache.clone(),
                                     processed_effects.clone(),
                                 )
                                 .await?,
@@ -439,12 +405,23 @@ pub fn modifier_tree_second_pass(
                         let talent =
                             path_talents::get_by_name_and_source(&db, &talent, &source, &origin)
                                 .await?;
-                        for sub_modifier in talent.modifiers {
+                        let talent_modifiers = talent.modifiers();
+
+                        selections.gained_path_talents.push(GainedPathTalent {
+                            talent,
+                            source: origin.clone(),
+                            cast_hour,
+                        });
+
+                        for sub_modifier in talent_modifiers {
                             selections.merge(
                                 modifier_tree_second_pass(
                                     db.clone(),
                                     sub_modifier,
                                     effect_cache.clone(),
+                                    language_cache.clone(),
+                                    speed_trait_cache.clone(),
+                                    sense_cache.clone(),
                                     processed_effects.clone(),
                                 )
                                 .await?,
@@ -455,12 +432,24 @@ pub fn modifier_tree_second_pass(
                         let talent =
                             magic_talents::get_by_name_and_tradition(&db, &tradition, &talent)
                                 .await?;
-                        for sub_modifier in talent.modifiers {
+
+                        let talent_modifiers = talent.modifiers();
+
+                        selections.gained_magic_talents.push(GainedMagicTalent {
+                            talent,
+                            source: origin.clone(),
+                            cast_hour,
+                        });
+
+                        for sub_modifier in talent_modifiers {
                             selections.merge(
                                 modifier_tree_second_pass(
                                     db.clone(),
                                     sub_modifier,
                                     effect_cache.clone(),
+                                    language_cache.clone(),
+                                    speed_trait_cache.clone(),
+                                    sense_cache.clone(),
                                     processed_effects.clone(),
                                 )
                                 .await?,
@@ -479,17 +468,26 @@ pub fn modifier_tree_second_pass(
                     }
                     ChooseTarget::Language(_) => {
                         for effect in handle_choice(&modifier, effect_cache, &mut selections)? {
-                            selections.gained_language_ids
-                                .push(GainedLanguageId {
-                                    id: parse_id_choice(&effect.selection)?,
+                            let lang_id = parse_id_choice(&effect.selection)?;
+                            if let Some(language) =
+                                language_cache.iter().find(|lang| lang.id == lang_id)
+                            {
+                                selections.gained_languages.push(GainedLanguage {
+                                    language: language.clone(),
                                     source: origin.clone(),
                                     cast_hour: effect.cast_hour,
                                 });
+                            } else {
+                                return Err(Generic(format!(
+                                    "Cannot find language with id {lang_id}"
+                                )));
+                            };
                         }
                     }
                     ChooseTarget::Profession(_) => {
                         for effect in handle_choice(&modifier, effect_cache, &mut selections)? {
-                            let profession = professions::get(&db, parse_id_choice(&effect.selection)?).await?;
+                            let profession =
+                                professions::get(&db, parse_id_choice(&effect.selection)?).await?;
                             selections.gained_professions.push(GainedProfession {
                                 profession,
                                 source: origin.clone(),
@@ -497,13 +495,129 @@ pub fn modifier_tree_second_pass(
                             });
                         }
                     }
+                    ChooseTarget::Tradition(_) => {
+                        for effect in
+                            handle_choice(&modifier, effect_cache.clone(), &mut selections)?
+                        {
+                            let (tradition, talent, spell) =
+                                get_tradition_elements(db.clone(), &effect.selection).await?;
+
+                            selections.gained_traditions.push(GainedTradition {
+                                tradition,
+                                source: origin.clone(),
+                                cast_hour: effect.cast_hour,
+                            });
+
+                            if let Some(talent) = talent {
+                                for sub_modifier in talent.modifiers.clone() {
+                                    selections.merge(
+                                        modifier_tree_second_pass(
+                                            db.clone(),
+                                            sub_modifier,
+                                            effect_cache.clone(),
+                                            language_cache.clone(),
+                                            speed_trait_cache.clone(),
+                                            sense_cache.clone(),
+                                            processed_effects.clone(),
+                                        )
+                                        .await?,
+                                    );
+                                }
+
+                                selections.gained_magic_talents.push(GainedMagicTalent {
+                                    talent,
+                                    source: origin.clone(),
+                                    cast_hour: effect.cast_hour,
+                                });
+                            }
+
+                            if let Some(spell) = spell {
+                                for sub_modifier in spell.modifiers.clone() {
+                                    selections.merge(
+                                        modifier_tree_second_pass(
+                                            db.clone(),
+                                            sub_modifier,
+                                            effect_cache.clone(),
+                                            language_cache.clone(),
+                                            speed_trait_cache.clone(),
+                                            sense_cache.clone(),
+                                            processed_effects.clone(),
+                                        )
+                                        .await?,
+                                    );
+                                }
+
+                                selections.gained_spells.push(GainedSpell {
+                                    spell,
+                                    source: origin.clone(),
+                                    cast_hour: effect.cast_hour,
+                                });
+                            }
+                        }
+                    }
+                    ChooseTarget::MagicTalent(..) => {
+                        for effect in
+                            handle_choice(&modifier, effect_cache.clone(), &mut selections)?
+                        {
+                            let (_, talent, spell) =
+                                get_tradition_elements(db.clone(), &effect.selection).await?;
+
+                            if let Some(talent) = talent {
+                                for sub_modifier in talent.modifiers.clone() {
+                                    selections.merge(
+                                        modifier_tree_second_pass(
+                                            db.clone(),
+                                            sub_modifier,
+                                            effect_cache.clone(),
+                                            language_cache.clone(),
+                                            speed_trait_cache.clone(),
+                                            sense_cache.clone(),
+                                            processed_effects.clone(),
+                                        )
+                                        .await?,
+                                    );
+                                }
+
+                                selections.gained_magic_talents.push(GainedMagicTalent {
+                                    talent,
+                                    source: origin.clone(),
+                                    cast_hour: effect.cast_hour,
+                                });
+                            }
+
+                            if let Some(spell) = spell {
+                                for sub_modifier in spell.modifiers.clone() {
+                                    selections.merge(
+                                        modifier_tree_second_pass(
+                                            db.clone(),
+                                            sub_modifier,
+                                            effect_cache.clone(),
+                                            language_cache.clone(),
+                                            speed_trait_cache.clone(),
+                                            sense_cache.clone(),
+                                            processed_effects.clone(),
+                                        )
+                                        .await?,
+                                    );
+                                }
+
+                                selections.gained_spells.push(GainedSpell {
+                                    spell,
+                                    source: origin.clone(),
+                                    cast_hour: effect.cast_hour,
+                                });
+                            }
+                        }
+                    }
                     ChooseTarget::NoviceSpell(_)
-                    | ChooseTarget::NoviceSpellFrom(_, _)
+                    | ChooseTarget::NoviceSpellFrom(..)
                     | ChooseTarget::ExpertSpell(_)
-                    | ChooseTarget::ExpertSpellFrom(_, _)
+                    | ChooseTarget::ExpertSpellFrom(..)
                     | ChooseTarget::MasterSpell(_)
-                    | ChooseTarget::MasterSpellFrom(_, _) => {
-                        for effect in handle_choice(&modifier, effect_cache.clone(), &mut selections)? {
+                    | ChooseTarget::MasterSpellFrom(..) => {
+                        for effect in
+                            handle_choice(&modifier, effect_cache.clone(), &mut selections)?
+                        {
                             let spell_id = parse_id_choice(&effect.selection)?;
                             let spell = spells::get(&db, spell_id).await?;
                             for sub_modifier in spell.modifiers {
@@ -512,15 +626,54 @@ pub fn modifier_tree_second_pass(
                                         db.clone(),
                                         sub_modifier,
                                         effect_cache.clone(),
+                                        language_cache.clone(),
+                                        speed_trait_cache.clone(),
+                                        sense_cache.clone(),
                                         processed_effects.clone(),
-                                    ).await?,
+                                    )
+                                    .await?,
                                 );
                             }
                         }
                     }
-                    _ => todo!(),
+                    ChooseTarget::Select(..) => {
+                        for effect in
+                            handle_choice(&modifier, effect_cache.clone(), &mut selections)?
+                        {
+                            let choice_selection = choice_selections::get_full_choice_selection(
+                                &db,
+                                parse_id_choice(&effect.selection)?,
+                            )
+                            .await?;
+                            for sub_modifier in choice_selection.modifiers() {
+                                selections.merge(
+                                    modifier_tree_second_pass(
+                                        db.clone(),
+                                        sub_modifier,
+                                        effect_cache.clone(),
+                                        language_cache.clone(),
+                                        speed_trait_cache.clone(),
+                                        sense_cache.clone(),
+                                        processed_effects.clone(),
+                                    )
+                                    .await?,
+                                );
+                            }
+                        }
+                    }
+                    ChooseTarget::Slots(_) => {
+                        for effect in
+                            handle_choice(&modifier, effect_cache.clone(), &mut selections)?
+                        {
+                            let slot_effect = parse_slots_choice(&effect.selection)?;
+                            selections.modified_slots.push(slot_effect);
+                        }
+                    }
                 };
             }
+
+            // TODO:
+            // Target::Override(override_target) => {}
 
             // The remaining target types are Apply and Lose
             // Lose modifiers are handled in the first-pass, so ignored in the second pass
@@ -571,11 +724,10 @@ fn handle_choice(
         selections
             .selected_choices
             .push((modifier.clone(), results.clone()));
-        return Ok(results)
+        return Ok(results);
     }
 
     Ok(Vec::new())
-
 }
 
 fn parse_score_choice(entry: &str, selections: &mut ModifierSelections) -> WWResult<()> {
@@ -600,10 +752,7 @@ fn parse_id_choice(entry: &str) -> WWResult<i64> {
         .map_err(|_| Generic(format!("Failed to parse ID value '{entry}'. {DISCLAIMER}")))?)
 }
 
-fn parse_tradition_ids_choice(
-    entry: &str,
-    _: &mut ModifierSelections,
-) -> WWResult<(i64, String, i64)> {
+fn parse_tradition_ids_choice(entry: &str) -> WWResult<(i64, String, i64)> {
     let make_error = || {
         Generic(format!(
             "Failed to parse tradition decision '{entry}'. {DISCLAIMER}"
@@ -626,7 +775,7 @@ fn parse_tradition_ids_choice(
     Ok((trad_id, kind, item_id))
 }
 
-fn parse_slots_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<SlotMod> {
+fn parse_slots_choice(entry: &str) -> WWResult<SlotMod> {
     let make_error = || {
         Generic(format!(
             "Failed to parse slots decision '{entry}'. {DISCLAIMER}"
@@ -646,4 +795,43 @@ fn parse_slots_choice(entry: &str, _: &mut ModifierSelections) -> WWResult<SlotM
     } else {
         Err(make_error())
     }
+}
+
+async fn get_tradition_elements(
+    db: Pool<Sqlite>,
+    selection: &str,
+) -> WWResult<(PartialTradition, Option<FullMagicTalent>, Option<FullSpell>)> {
+    let (trad_id, kind, item_id) = parse_tradition_ids_choice(selection)?;
+    let db_1 = db.clone();
+    let db_2 = db.clone();
+    let is_talent = kind == "t";
+    let (tradition, talent, spell) = futures::join!(
+        traditions::get_partial(&db, trad_id),
+        async move {
+            if is_talent {
+                Some(magic_talents::get(&db_1, item_id).await)
+            } else {
+                None
+            }
+        },
+        async move {
+            if !is_talent {
+                Some(spells::get(&db_2, item_id).await)
+            } else {
+                None
+            }
+        },
+    );
+
+    Ok((
+        tradition?,
+        match talent {
+            None => None,
+            Some(talent) => Some(talent?),
+        },
+        match spell {
+            None => None,
+            Some(spell) => Some(spell?),
+        },
+    ))
 }

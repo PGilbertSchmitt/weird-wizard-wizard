@@ -21,7 +21,7 @@ export const MagicSpellCasting = ({
 
   const [permCount, tempCount] = useMemo(() => {
     const ownedSpellCount = character.spells.filter(
-      (s) => s[0].id === spell.id,
+      (s) => s.spell.id === spell.id,
     ).length;
     const permCastings = ownedSpellCount * spell.castings;
 

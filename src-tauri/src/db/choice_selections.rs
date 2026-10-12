@@ -1,4 +1,3 @@
-use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
@@ -158,18 +157,4 @@ fn convert_choice(raw_choice: RawChoice) -> WWResult<FullChoice> {
         description: raw_choice.description,
         modifiers,
     })
-}
-
-// This needs to build mods the same way
-pub async fn get_for_choice_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullChoice>> {
-    let selections: Vec<FullChoice> = futures::stream::iter(ids)
-        .map(|id| {
-            let db = db.clone();
-            async move { get_full_choice_selection(&db, id).await }
-        })
-        .buffered(100)
-        .try_collect()
-        .await?;
-
-    Ok(selections)
 }

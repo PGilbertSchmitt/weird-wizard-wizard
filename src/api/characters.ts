@@ -177,4 +177,4 @@ export const usePassTime = (characterId: number) => {
       invalidateCharacterDependentQueries(queryClient, characterId);
     },
   });
-}
+};

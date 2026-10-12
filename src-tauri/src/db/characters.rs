@@ -1,5 +1,4 @@
 use dashmap::DashSet;
-use futures::{stream::FuturesUnordered, StreamExt};
 use std::{sync::Arc, time::SystemTime};
 
 use serde::{Deserialize, Serialize};
@@ -7,11 +6,28 @@ use sqlx::{types::chrono::NaiveDateTime, Pool, Sqlite};
 use ts_rs::TS;
 
 use crate::{
-    WWError::Generic, WWResult, db::{
-        ancestries::{self, FullAncestry}, character_choices::{
-            self, CharacterChoice, ModifierSelections, SlotMod, collect_from_modifier_tree,
-        }, etc::{PathKind, Size}, languages::{self, Language}, levels::FullLevel, magic_talents::FullMagicTalent, path_talents::FullPathTalent, paths::{self, FullPath}, professions::{self, Profession}, senses::{self, FullSense}, speed_traits::{self, FullSpeedTrait}, spells::FullSpell, traditions::{self, TraditionIndexItem},
-    }, mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod}, modifiers::{FullModifier, ModifierPathNode}, util::clamp,
+    db::{
+        ancestries::{self, FullAncestry},
+        character_effects::{self, CharacterEffect},
+        collect_effects::{
+            modifier_tree_first_pass, modifier_tree_second_pass, Losses, ModifierSelections,
+            SlotMod,
+        },
+        etc::{PathKind, Size},
+        languages,
+        levels::FullLevel,
+        paths::{self, FullPath},
+        professions::{self, Profession},
+        senses, speed_traits,
+    },
+    mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod},
+    modifiers::{FullModifier, ModifierPathNode},
+    selection_types::{
+        GainedImmunity, GainedLanguage, GainedMagicTalent, GainedPathTalent, GainedProfession,
+        GainedSense, GainedSpeedTrait, GainedSpell, GainedTradition,
+    },
+    util::clamp,
+    WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -47,7 +63,7 @@ struct RawCharacter {
     created_at: NaiveDateTime,
 }
 
-#[derive(TS, Serialize, Deserialize)]
+#[derive(TS, Debug, Serialize, Deserialize)]
 #[ts(export, export_to = "character.ts")]
 pub struct FullCharacter {
     id: i64,
@@ -59,7 +75,7 @@ pub struct FullCharacter {
     agility: i64,
     intellect: i64,
     will: i64,
-    professions: Vec<Profession>,
+    profession: Profession,
     ancestry: FullAncestry,
     novice_path: FullPath,
     expert_path: Option<FullPath>,
@@ -73,20 +89,21 @@ pub struct FullCharacter {
     arm_def: i64,
     speed: i64,
     bonus_dmg: i64,
-    traditions: Vec<(TraditionIndexItem, String)>,
-    speed_traits: Vec<(FullSpeedTrait, String)>,
-    senses: Vec<(FullSense, String)>,
-    immunities: Vec<(String, String)>, // Immunities are so simple, we probably don't even need a table
-    languages: Vec<(Language, String)>,
+    gained_professions: Vec<GainedProfession>,
+    traditions: Vec<GainedTradition>,
+    speed_traits: Vec<GainedSpeedTrait>,
+    senses: Vec<GainedSense>,
+    immunities: Vec<GainedImmunity>, // Immunities are so simple, we probably don't even need a table
+    languages: Vec<GainedLanguage>,
     size: Size,
 
-    path_talents: Vec<(FullPathTalent, String)>,
-    magic_talents: Vec<(FullMagicTalent, String)>,
-    spells: Vec<(FullSpell, String)>,
+    path_talents: Vec<GainedPathTalent>,
+    magic_talents: Vec<GainedMagicTalent>,
+    spells: Vec<GainedSpell>,
 
     modified_slots: Vec<SlotMod>,
     required_choices: Vec<FullModifier>,
-    selected_choices: Vec<(FullModifier, Vec<CharacterChoice>)>,
+    selected_choices: Vec<(FullModifier, Vec<CharacterEffect>)>,
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -180,11 +197,11 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     let start = SystemTime::now();
     let (raw_character, all_character_choices) = futures::join!(
         sqlx::query_as!(RawCharacter, "SELECT * FROM characters WHERE id = ?", id).fetch_one(db),
-        character_choices::get_for_character(db, id),
+        character_effects::get_for_character(db, id),
     );
 
     let raw_character = raw_character?;
-    let saved_character_choices = Arc::new(all_character_choices?);
+    let effects_cache = Arc::new(all_character_choices?);
 
     let (
         profession,
@@ -195,8 +212,8 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         all_languages,
         all_speed_traits,
         all_senses,
-        all_traditions,
-        all_professions,
+        // all_traditions,
+        // all_professions,
     ) = futures::join!(
         professions::get(db, raw_character.profession_id),
         ancestries::get(db, raw_character.ancestry_id),
@@ -206,19 +223,19 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         languages::get_all(db),
         speed_traits::get_all(db),
         senses::get_all(db),
-        traditions::get_index(db),
-        professions::get_all(db),
+        // traditions::get_index(db),
+        // professions::get_all(db),
     );
 
     let profession = profession?;
     let ancestry = ancestry?;
     let novice_path = novice_path?;
 
-    let all_languages = all_languages?;
-    let all_speed_traits = all_speed_traits?;
-    let all_senses = all_senses?;
-    let all_traditions = all_traditions?;
-    let all_professions = all_professions?;
+    let language_cache = Arc::new(all_languages?);
+    let speed_trait_cache = Arc::new(all_speed_traits?);
+    let sense_cache = Arc::new(all_senses?);
+    // let all_traditions = all_traditions?;
+    // let all_professions = all_professions?;
 
     let mut fields = CumulativeFields::from_ancestry(&ancestry)?;
 
@@ -253,113 +270,63 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     let health = clamp(raw_character.health, 0, fields.max_health);
     let damage = clamp(raw_character.damage, 0, health);
 
-    let processed_keys = DashSet::new();
-    let mut modifier_futures = FuturesUnordered::new();
-    for choice in &fields.choices {
-        let saved_choices = saved_character_choices.clone();
-        let processed_keys = processed_keys.clone();
-        modifier_futures.push(collect_from_modifier_tree(
-            db,
-            choice,
-            saved_choices,
-            processed_keys,
-        ));
+    let mut losses = Losses::new();
+    for modifier in fields.modifiers.clone() {
+        losses.merge(modifier_tree_first_pass(db.clone(), modifier.to_modifier()).await?);
     }
+
+    // TODO: Delete all effects for character not found in this dashset
+    let processed_effects: DashSet<i64> = DashSet::new();
     let mut selections = ModifierSelections::new();
-    while let Some(selection) = modifier_futures.next().await {
-        selections.merge(selection?);
-    }
-
-    // Prune and flatten selections
-    let all_losses = selections.collect_losses();
-    let mut selections = selections.collect(&all_losses);
-
-    // In the following code, you will see linear searches. Normally, this would give me stomach ulcers,
-    // but the vecs containing the search spaces are so small that it's probably more efficient than
-    // building HashMaps with a fast hash function. Maybe for fun, I'll benchmark for Traditions which
-    // has 33 official options.
-
-    for (name, source) in selections.gained_languages {
-        if let Some(language) = all_languages.iter().find(|lang| lang.name == name) {
-            fields.languages.push((language.clone(), source));
-        } else {
-            return Err(Generic(format!("Cannot find language with name {name}")));
+    for modifier in fields.modifiers {
+        match modifier {
+            FieldModifier::PathTalent {
+                source,
+                name,
+                modifier,
+            } => {
+                if !losses.path_talents.contains(&(source, name)) {
+                    selections.merge(
+                        modifier_tree_second_pass(
+                            db.clone(),
+                            modifier,
+                            effects_cache.clone(),
+                            language_cache.clone(),
+                            speed_trait_cache.clone(),
+                            sense_cache.clone(),
+                            processed_effects.clone(),
+                        )
+                        .await?,
+                    );
+                }
+            }
+            FieldModifier::Other(modifier) => {
+                selections.merge(
+                    modifier_tree_second_pass(
+                        db.clone(),
+                        modifier,
+                        effects_cache.clone(),
+                        language_cache.clone(),
+                        speed_trait_cache.clone(),
+                        sense_cache.clone(),
+                        processed_effects.clone(),
+                    )
+                    .await?,
+                );
+            }
         }
     }
 
-    for (id, source) in selections.gained_language_ids {
-        if let Some(language) = all_languages.iter().find(|lang| lang.id == id) {
-            fields.languages.push((language.clone(), source));
-        } else {
-            return Err(Generic(format!("Cannot find language with id {id}")));
-        }
-    }
-
-    for (name, amount, source) in selections.gained_speed_traits {
-        if let Some(raw_trait) = all_speed_traits.iter().find(|st| st.name == name) {
-            let speed_trait = FullSpeedTrait {
-                id: raw_trait.id,
-                name: name.clone(),
-                description: raw_trait.description.clone(),
-                unit: raw_trait.unit.clone(),
-                amount: amount,
-            };
-            fields.speed_traits.push((speed_trait, source));
-        } else {
-            return Err(Generic(format!("Cannot find speed trait with name {name}")));
-        }
-    }
-
-    for (name, amount, source) in selections.gained_senses {
-        if let Some(raw_trait) = all_senses.iter().find(|st| st.name == name) {
-            let speed_trait = FullSpeedTrait {
-                id: raw_trait.id,
-                name: name.clone(),
-                description: raw_trait.description.clone(),
-                unit: raw_trait.unit.clone(),
-                amount: amount,
-            };
-            fields.speed_traits.push((speed_trait, source));
-        } else {
-            return Err(Generic(format!("Cannot find sense with name {name}")));
-        }
-    }
-
-    for (name, source) in selections.gained_traditions {
-        if let Some(tradition) = all_traditions.iter().find(|trad| trad.name == name) {
-            fields.traditions.push((tradition.clone(), source));
-        } else {
-            return Err(Generic(format!("Cannot find tradition with name {name}")));
-        }
-    }
-
-    for (id, source) in selections.gained_tradition_ids {
-        if let Some(tradition) = all_traditions.iter().find(|trad| trad.id == id) {
-            fields.traditions.push((tradition.clone(), source));
-        } else {
-            return Err(Generic(format!("Cannot find tradition with id {id}")));
-        }
-    }
-
-    let mut professions = vec![profession];
-    for id in selections.gained_profession_ids {
-        if let Some(profession) = all_professions.iter().find(|prof| prof.id == id) {
-            professions.push(profession.clone());
-        } else {
-            return Err(Generic(format!("Cannot find profession with id {id}")));
-        }
-    }
-
-    for (talent, _, source) in selections.gained_talents {
-        fields.path_talents.push((talent, source));
-    }
-
-    let mut magic_talents = Vec::new();
-    for (talent, _, source) in selections.gained_magic_talents {
-        magic_talents.push((talent, source));
-    }
-
+    fields.traditions.append(&mut selections.gained_traditions);
+    fields.languages.append(&mut selections.gained_languages);
+    fields
+        .speed_traits
+        .append(&mut selections.gained_speed_traits);
+    fields.senses.append(&mut selections.gained_senses);
     fields.immunities.append(&mut selections.gained_immunities);
+    fields
+        .path_talents
+        .append(&mut selections.gained_path_talents);
 
     println!("Took {}ms", start.elapsed().unwrap().as_millis());
 
@@ -373,7 +340,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         agility: raw_character.agility + selections.agility,
         intellect: raw_character.intellect + selections.intellect,
         will: raw_character.will + selections.will,
-        professions,
+        profession,
         ancestry,
         novice_path: novice_path,
         expert_path: expert_path,
@@ -387,6 +354,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         arm_def: fields.arm_def + selections.defense, // Is this right?
         speed: fields.speed + selections.speed,
         bonus_dmg: fields.bonus_dmg + selections.bonus_damage,
+        gained_professions: selections.gained_professions,
         traditions: fields.traditions,
         speed_traits: fields.speed_traits,
         senses: fields.senses,
@@ -395,7 +363,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
         size: fields.size,
 
         path_talents: fields.path_talents,
-        magic_talents,
+        magic_talents: selections.gained_magic_talents,
         spells: selections.gained_spells,
 
         modified_slots: selections.modified_slots,
@@ -404,31 +372,63 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
     })
 }
 
+// This lets us filter out lost path talents after the first pass. Magic talents
+// are only acquired via grants/choices, so those have to be filtered by the
+// second pass.
+#[derive(Clone)]
+enum FieldModifier {
+    PathTalent {
+        source: String,
+        name: String,
+        modifier: FullModifier,
+    },
+    Other(FullModifier),
+}
+
+impl FieldModifier {
+    fn to_modifier(self) -> FullModifier {
+        match self {
+            Self::PathTalent { modifier, .. } => modifier,
+            Self::Other(modifier) => modifier,
+        }
+    }
+}
+
 struct CumulativeFields {
     max_health: i64,
     nat_def: i64,
     arm_def: i64,
     speed: i64,
     bonus_dmg: i64,
-    traditions: Vec<(TraditionIndexItem, String)>,
-    speed_traits: Vec<(FullSpeedTrait, String)>,
-    senses: Vec<(FullSense, String)>,
-    immunities: Vec<(String, String)>,
-    languages: Vec<(Language, String)>,
-    path_talents: Vec<(FullPathTalent, String)>,
+    traditions: Vec<GainedTradition>,
+    speed_traits: Vec<GainedSpeedTrait>,
+    senses: Vec<GainedSense>,
+    immunities: Vec<GainedImmunity>,
+    languages: Vec<GainedLanguage>,
+    path_talents: Vec<GainedPathTalent>,
     size: Size,
-    choices: Vec<FullModifier>,
+    modifiers: Vec<FieldModifier>,
 }
 
 impl CumulativeFields {
     fn from_ancestry(ancestry: &FullAncestry) -> WWResult<Self> {
-        let mut choices = Vec::new();
+        let mut modifiers = Vec::new();
         let mut path_talents = Vec::new();
         let ancestry_source = format!("{} Ancestry", ancestry.name);
 
         for talent in &ancestry.talents {
-            choices.append(&mut talent.modifiers.clone());
-            path_talents.push((talent.clone(), ancestry_source.clone()));
+            for modifier in talent.modifiers.clone() {
+                modifiers.push(FieldModifier::PathTalent {
+                    source: talent.source.clone(),
+                    name: talent.name.clone(),
+                    modifier,
+                })
+            }
+            path_talents.push(GainedPathTalent {
+                talent: talent.clone(),
+                source: ancestry_source.clone(),
+                cast_hour: -1,
+            });
         }
 
         Ok(Self {
@@ -439,32 +439,48 @@ impl CumulativeFields {
                 .speed_traits
                 .clone()
                 .into_iter()
-                .map(|tr| (tr, ancestry_source.clone()))
+                .map(|speed_trait| GainedSpeedTrait {
+                    speed_trait,
+                    source: ancestry_source.clone(),
+                    cast_hour: -1,
+                })
                 .collect(),
             senses: ancestry
                 .senses
                 .clone()
                 .into_iter()
-                .map(|sense| (sense, ancestry_source.clone()))
+                .map(|sense| GainedSense {
+                    sense,
+                    source: ancestry_source.clone(),
+                    cast_hour: -1,
+                })
                 .collect(),
             immunities: ancestry
                 .immunities
                 .clone()
                 .into_iter()
-                .map(|imm| (imm.name, ancestry_source.clone()))
+                .map(|imm| GainedImmunity {
+                    name: imm.name,
+                    source: ancestry_source.clone(),
+                    cast_hour: -1,
+                })
                 .collect(),
             languages: ancestry
                 .languages
                 .clone()
                 .into_iter()
-                .map(|lang| (lang, ancestry_source.clone()))
+                .map(|language| GainedLanguage {
+                    language,
+                    source: ancestry_source.clone(),
+                    cast_hour: -1,
+                })
                 .collect(),
             size: ancestry.size.clone(),
             arm_def: 0,
             bonus_dmg: 0,
             traditions: Vec::new(),
             path_talents,
-            choices,
+            modifiers,
         })
     }
 
@@ -477,124 +493,135 @@ impl CumulativeFields {
 
         // All paths at level 3 get 2 score increases
         if level.level == 3 {
-            self.choices.push(level_choice(
+            self.modifiers.push(FieldModifier::Other(level_choice(
                 ModifierPathNode::LevelScore { level: level.level },
                 ChooseTarget::Score(2),
                 0,
-            ))
+            )))
         }
 
         // All paths at level 7 get 3 score increases
         if level.level == 7 {
-            self.choices.push(level_choice(
+            self.modifiers.push(FieldModifier::Other(level_choice(
                 ModifierPathNode::LevelScore { level: level.level },
                 ChooseTarget::Score(3),
                 0,
-            ))
+            )))
         }
 
         let level_source = format!("{path_name} level {}", level.level);
-        self.speed_traits.append(
-            &mut level
-                .speed_traits
-                .clone()
-                .into_iter()
-                .map(|tr| (tr, level_source.clone()))
-                .collect(),
-        );
 
         if let Some(size) = level.size.clone() {
             self.size = size
         };
 
         for language in &level.languages {
-            self.languages
-                .push((language.clone(), level_source.clone()));
+            self.languages.push(GainedLanguage {
+                language: language.clone(),
+                source: level_source.clone(),
+                cast_hour: -1,
+            });
         }
 
         for speed_trait in &level.speed_traits {
-            self.speed_traits
-                .push((speed_trait.clone(), level_source.clone()));
+            self.speed_traits.push(GainedSpeedTrait {
+                speed_trait: speed_trait.clone(),
+                source: level_source.clone(),
+                cast_hour: -1,
+            });
         }
 
         for (idx, tradition) in level.traditions.iter().enumerate() {
-            self.traditions
-                .push((tradition.clone(), level_source.clone()));
+            self.traditions.push(GainedTradition {
+                tradition: tradition.clone(),
+                source: level_source.clone(),
+                cast_hour: -1,
+            });
+
             let target = ChooseTarget::MagicTalent(1, vec![tradition.name.clone()]);
-            self.choices.push(level_choice(
+            self.modifiers.push(FieldModifier::Other(level_choice(
                 ModifierPathNode::LevelMagicTalent {
                     path_name: path_name.to_string(),
                     level: level.level,
                 },
                 target,
                 idx,
-            ));
+            )));
         }
 
         for talent in &level.path_talents {
-            self.choices.append(&mut talent.modifiers.clone());
-            self.path_talents
-                .push((talent.clone(), level_source.clone()));
+            for modifier in talent.modifiers.clone() {
+                self.modifiers.push(FieldModifier::PathTalent {
+                    source: talent.source.clone(),
+                    name: talent.name.clone(),
+                    modifier,
+                })
+            }
+            self.path_talents.push(GainedPathTalent {
+                talent: talent.clone(),
+                source: level_source.clone(),
+                cast_hour: -1,
+            });
         }
 
         if level.lang_choices > 0 {
             let target = ChooseTarget::Language(level.lang_choices as u32);
-            self.choices.push(level_choice(
+            self.modifiers.push(FieldModifier::Other(level_choice(
                 ModifierPathNode::LevelLanguage {
                     path_name: path_name.to_string(),
                     level: level.level,
                 },
                 target,
                 0,
-            ));
+            )));
         }
 
         if level.trad_choices > 0 {
             let target = ChooseTarget::Tradition(level.trad_choices as u32);
-            self.choices.push(level_choice(
+            self.modifiers.push(FieldModifier::Other(level_choice(
                 ModifierPathNode::LevelTradition {
                     path_name: path_name.to_string(),
                     level: level.level,
                 },
                 target,
                 0,
-            ));
+            )));
         }
 
         if level.novice_spells > 0 {
             let target = ChooseTarget::NoviceSpell(level.novice_spells as u32);
-            self.choices.push(level_choice(
+            self.modifiers.push(FieldModifier::Other(level_choice(
                 ModifierPathNode::LevelNoviceSpell {
                     path_name: path_name.to_string(),
                     level: level.level,
                 },
                 target,
                 0,
-            ));
+            )));
         }
 
         if level.expert_spells > 0 {
             let target = ChooseTarget::ExpertSpell(level.expert_spells as u32);
-            self.choices.push(level_choice(
+            self.modifiers.push(FieldModifier::Other(level_choice(
                 ModifierPathNode::LevelExpertSpell {
                     path_name: path_name.to_string(),
                     level: level.level,
                 },
                 target,
                 0,
-            ));
+            )));
         }
 
         if level.master_spells > 0 {
             let target = ChooseTarget::MasterSpell(level.master_spells as u32);
-            self.choices.push(level_choice(
+            self.modifiers.push(FieldModifier::Other(level_choice(
                 ModifierPathNode::LevelMasterSpell {
                     path_name: path_name.to_string(),
                     level: level.level,
                 },
                 target,
                 0,
-            ));
+            )));
         }
 
         Ok(())

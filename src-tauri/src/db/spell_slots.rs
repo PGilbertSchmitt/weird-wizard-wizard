@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite};
 use ts_rs::TS;
 
-use crate::{WWResult, util::clamp};
+use crate::{util::clamp, WWResult};
 
 #[derive(TS, Debug, Serialize, Deserialize, Clone)]
 #[ts(export, export_to = "magic.ts")]
@@ -102,12 +102,19 @@ pub async fn cast(
         new_info.temp_used,
         new_info.perm_total,
         new_info.temp_total
-    ).execute(db).await?;
+    )
+    .execute(db)
+    .await?;
 
     Ok(())
 }
 
 pub async fn rest(db: &Pool<Sqlite>, character_id: i64) -> WWResult<()> {
-    sqlx::query!("DELETE FROM spell_slots WHERE character_id = ?", character_id).execute(db).await?;
+    sqlx::query!(
+        "DELETE FROM spell_slots WHERE character_id = ?",
+        character_id
+    )
+    .execute(db)
+    .await?;
     Ok(())
 }

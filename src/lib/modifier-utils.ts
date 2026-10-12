@@ -132,34 +132,49 @@ export const sourceString = ({ type, data }: ModifierPathNode): string => {
   }
 };
 
-/** 
+/**
  * This function determines the number of keys that would be saved against the DB. It needs to match the
  * length of the Vec<String> returned by the function `ChooseTarget::keys(&self)` in `modifiers.rs`.
- * 
+ *
  * For APPLY mods, it's always 0. For Grant, Lose, and Override, it's always 1. For Choose, it depends
- * on the number of decisions that need to be made. 
-*/
+ * on the number of decisions that need to be made.
+ */
 export const countKeys = (modifier: Modifier): number => {
   switch (modifier.target.type) {
     case 'Choose': {
       const { type, data } = modifier.target.data;
       switch (type) {
-        case 'Language': return data;
-        case 'Profession': return data;
-        case 'Tradition': return data;
-        case 'NoviceSpell': return data;
-        case 'NoviceSpellFrom': return data[0];
-        case 'ExpertSpell': return data;
-        case 'ExpertSpellFrom': return data[0];
-        case 'MasterSpell': return data;
-        case 'MasterSpellFrom': return data[0];
-        case 'Select': return data[0];
-        case 'MagicTalent': return data[0];
-        case 'Score': return data;
-        case 'Slots': return 1;
+        case 'Language':
+          return data;
+        case 'Profession':
+          return data;
+        case 'Tradition':
+          return data;
+        case 'NoviceSpell':
+          return data;
+        case 'NoviceSpellFrom':
+          return data[0];
+        case 'ExpertSpell':
+          return data;
+        case 'ExpertSpellFrom':
+          return data[0];
+        case 'MasterSpell':
+          return data;
+        case 'MasterSpellFrom':
+          return data[0];
+        case 'Select':
+          return data[0];
+        case 'MagicTalent':
+          return data[0];
+        case 'Score':
+          return data;
+        case 'Slots':
+          return 1;
       }
     }
-    case 'Apply': return 0;
-    default: return 1;
+    case 'Apply':
+      return 0;
+    default:
+      return 1;
   }
-}
+};

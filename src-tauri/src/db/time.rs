@@ -5,7 +5,7 @@ use crate::{mod_dsl::ast::WhenDuration, WWResult};
 
 async fn _pass_time(db: &Pool<Sqlite>, character_id: i64, duration_str: String) -> WWResult<()> {
     sqlx::query!(
-        "DELETE FROM character_choices WHERE character_id = ? AND duration = ?",
+        "DELETE FROM character_effects WHERE character_id = ? AND duration = ?",
         character_id,
         duration_str,
     )
@@ -20,8 +20,6 @@ pub async fn pass_time(
     character_id: i64,
     duration: WhenDuration,
 ) -> WWResult<()> {
-
-
     let duration_strings = duration.contained_duration_strings();
     let len = duration_strings.len();
     futures::stream::iter(duration_strings.clone())

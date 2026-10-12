@@ -32,8 +32,8 @@ export const ChooseItem = ({
     }
 
     const priorOwnedTalentIds = character.magic_talents
-      .filter((talent) => talent[0].tradition_id === traditionId)
-      .map((talent) => talent[0].id);
+      .filter(({ talent }) => talent.tradition_id === traditionId)
+      .map(({ talent }) => talent.id);
 
     const ownedTalentIds = [...priorOwnedTalentIds, ...selectedTalentIds];
 

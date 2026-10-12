@@ -4,7 +4,6 @@ use std::fs;
 use tauri::{AppHandle, Manager};
 
 pub mod ancestries;
-pub mod character_choices;
 pub mod character_effects;
 pub mod characters;
 pub mod choice_selections;
@@ -23,8 +22,8 @@ pub mod professions;
 pub mod seed_data;
 pub mod senses;
 pub mod speed_traits;
-pub mod spells;
 pub mod spell_slots;
+pub mod spells;
 pub mod time;
 pub mod traditions;
 

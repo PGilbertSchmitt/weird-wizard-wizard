@@ -1,9 +1,16 @@
 use tauri::{command, AppHandle, Wry};
 
 use crate::{
-    WWResult, db::{
-        character_choices, characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter}, spell_slots::{self, SpellSlotInfo}, time,
-    }, mod_dsl::ast::WhenDuration, modifiers::FullModifier, store::get_database,
+    db::{
+        character_effects,
+        characters::{self, CharacterIndexItem, CreateCharacter, FullCharacter},
+        spell_slots::{self, SpellSlotInfo},
+        time,
+    },
+    mod_dsl::ast::WhenDuration,
+    modifiers::FullModifier,
+    store::get_database,
+    WWResult,
 };
 
 #[command]
@@ -58,7 +65,7 @@ pub async fn save_choice(
     values: Vec<String>,
 ) -> WWResult<()> {
     let db_state = get_database(&app)?;
-    character_choices::save_choices(&db_state.pool, character_id, modifier, values).await
+    character_effects::save_choices(&db_state.pool, character_id, modifier, values).await
 }
 
 #[command]
@@ -68,7 +75,7 @@ pub async fn delete_choice(
     modifier: FullModifier,
 ) -> WWResult<()> {
     let db_state = get_database(&app)?;
-    character_choices::delete_choice(&db_state.pool, character_id, modifier).await
+    character_effects::delete_choice(&db_state.pool, character_id, modifier).await
 }
 
 #[command]
@@ -96,7 +103,8 @@ pub async fn cast_spell(
         spell_id,
         perm_count,
         temp_count,
-    ).await
+    )
+    .await
 }
 
 #[command]

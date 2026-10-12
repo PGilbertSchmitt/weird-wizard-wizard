@@ -9,7 +9,7 @@ use crate::{
         languages::{self, Language},
         path_talents::{self, FullPathTalent},
         speed_traits::FullSpeedTrait,
-        traditions::TraditionIndexItem,
+        traditions::{self, PartialTradition},
     },
     import::{pipe_separate, NamePairToId, NameToId, PathLevelRow},
     WWError, WWResult,
@@ -53,7 +53,7 @@ pub struct FullLevel {
     pub languages: Vec<Language>,
     pub path_talents: Vec<FullPathTalent>,
     pub speed_traits: Vec<FullSpeedTrait>,
-    pub traditions: Vec<TraditionIndexItem>,
+    pub traditions: Vec<PartialTradition>,
 }
 
 pub async fn insert_all(
@@ -181,15 +181,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullLevel> {
             id
         )
         .fetch_all(db),
-        sqlx::query_as!(
-            TraditionIndexItem,
-            "SELECT t.id, t.name, t.blurb
-            FROM traditions t
-            JOIN level_traditions lt ON lt.tradition_id = t.id
-            WHERE lt.level_id = ?",
-            id
-        )
-        .fetch_all(db),
+        traditions::get_for_level(db, id),
     );
 
     Ok(FullLevel {

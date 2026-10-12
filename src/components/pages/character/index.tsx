@@ -85,7 +85,7 @@ export const CharacterPage = () => {
           <TabsContent value="Spells">
             <CharacterSpells
               character={character}
-              spells={character.spells.map((s) => s[0])}
+              spells={character.spells.map((s) => s.spell)}
             />
           </TabsContent>
           <TabsContent value="Pending Choices">

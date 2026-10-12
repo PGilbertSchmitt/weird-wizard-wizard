@@ -33,7 +33,7 @@ export const ChooseSpellFlow = ({
   const [curStep, curIdx] = getStepAndId(state);
   const idxStr = nth(curIdx);
   const availableTraditions = useMemo(() => {
-    const traditions = character.traditions.map((t) => t[0]);
+    const traditions = character.traditions.map((t) => t.tradition);
     return sortBy(
       (t: TraditionIndexItem) => t.id,
       uniqBy((t) => t.id, traditions),

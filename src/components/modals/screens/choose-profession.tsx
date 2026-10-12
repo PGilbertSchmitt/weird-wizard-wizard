@@ -27,7 +27,8 @@ export const ChooseProfession = ({
   }
 
   const disallowedProfessions = [
-    ...character.professions.map((p) => p.id),
+    character.profession,
+    ...character.gained_professions.map((t) => t.profession),
     ...selected.map((p) => p.id),
   ];
   const pickProfession = selected.length < keyCount;

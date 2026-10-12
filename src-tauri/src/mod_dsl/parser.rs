@@ -85,7 +85,11 @@ fn parse_cast_time(tokens: &mut Tokens) -> Result<Option<WhenDuration>, String> 
     }
 }
 
-fn parse_single_mod(tokens: &mut Tokens, when: WhenMod, idx: usize) -> Result<Option<Modifier>, String> {
+fn parse_single_mod(
+    tokens: &mut Tokens,
+    when: WhenMod,
+    idx: usize,
+) -> Result<Option<Modifier>, String> {
     let next = tokens.next();
     if next.is_none() {
         return Ok(None);

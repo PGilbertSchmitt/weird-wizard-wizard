@@ -1,5 +1,5 @@
 import { FullChoiceModifier } from '@/components/modals/type';
-import { CharacterChoice, FullCharacter } from '@/types/character';
+import { CharacterEffect, FullCharacter } from '@/types/character';
 import { ScoreSelection } from './selections/score-selection';
 import { cn } from '@/lib/utils';
 import { StaticCard } from '@/components/ui/card';
@@ -20,7 +20,7 @@ import {
 interface CharacterSelectionProps {
   character: FullCharacter;
   modifier: FullChoiceModifier;
-  choices: CharacterChoice[];
+  choices: CharacterEffect[];
   canDismiss?: boolean;
 }
 
@@ -63,7 +63,7 @@ export const CharacterSelection = ({
 
 interface CharacterSelectSwitchProps {
   modifier: FullChoiceModifier;
-  choices: CharacterChoice[];
+  choices: CharacterEffect[];
 }
 
 const CharacterSelectionSwitch = ({
@@ -97,7 +97,7 @@ const CharacterSelectionSwitch = ({
 };
 
 export interface SelectionItemProps {
-  choices: CharacterChoice[];
+  choices: CharacterEffect[];
 }
 
 interface SelectionHeaderProps {

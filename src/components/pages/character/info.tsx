@@ -56,23 +56,25 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
   const traits = useMemo(() => {
     const allTraits: AttributeRows = [];
 
-    const speedTraits = character.speed_traits.map(([trait, source]) => (
-      <TooltipText
-        key={trait.id}
-        label={
-          <TooltipWindow>
-            <>
-              <p className="mb-5">{trait.description}</p>
-              <p>
-                <i>From {source}</i>
-              </p>
-            </>
-          </TooltipWindow>
-        }
-      >
-        {`${trait.name} ${trait.amount || ''} ${trait.unit || ''}`.trim()}
-      </TooltipText>
-    ));
+    const speedTraits = character.speed_traits.map(
+      ({ speed_trait, source }) => (
+        <TooltipText
+          key={speed_trait.id}
+          label={
+            <TooltipWindow>
+              <>
+                <p className="mb-5">{speed_trait.description}</p>
+                <p>
+                  <i>From {source}</i>
+                </p>
+              </>
+            </TooltipWindow>
+          }
+        >
+          {`${speed_trait.name} ${speed_trait.amount || ''} ${speed_trait.unit || ''}`.trim()}
+        </TooltipText>
+      ),
+    );
 
     if (speedTraits.length > 0) {
       allTraits.push({
@@ -81,7 +83,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
       });
     }
 
-    const senses = character.senses.map(([sense, source]) => (
+    const senses = character.senses.map(({ sense, source }) => (
       <TooltipText
         key={sense.id}
         label={
@@ -111,7 +113,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
     const collapsedLanguages = character.languages.reduce(
       (
         acc: Record<number, { language: Language; sources: string[] }>,
-        [language, source],
+        { language, source },
       ) => {
         acc[language.id] ||= {
           language,
@@ -151,7 +153,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
     }
 
     const collapsedImmunities = character.immunities.reduce(
-      (acc: Record<string, string[]>, [immunity, source]) => {
+      (acc: Record<string, string[]>, { name: immunity, source }) => {
         acc[immunity] ||= [];
         acc[immunity].push(source);
         return acc;
@@ -220,7 +222,15 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
           <h2>Ancestry: {character.ancestry.name}</h2>
         </div>
 
-        {character.professions.map((profession) => (
+        <Separator />
+
+        <div className={cn('bg-secondary-background text-foreground p-4')}>
+          <h2>Profession: {character.profession.name}</h2>
+          <span>({character.profession.category})</span>
+          <p>{character.profession.description}</p>
+        </div>
+
+        {character.gained_professions.map(({ profession }) => (
           <Fragment key={profession.name}>
             <Separator />
 

@@ -13,7 +13,7 @@ use crate::{
 #[command]
 pub async fn get_tradition(app: AppHandle<Wry>, id: i64) -> WWResult<FullTradition> {
     let db_state = get_database(&app)?;
-    Ok(traditions::get(&db_state.pool, id).await?)
+    Ok(traditions::get_full(&db_state.pool, id).await?)
 }
 
 #[command]

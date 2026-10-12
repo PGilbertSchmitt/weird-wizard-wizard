@@ -1,6 +1,6 @@
 import { isChoiceMod } from '@/lib/modifier-utils';
 import { cn } from '@/lib/utils';
-import { CharacterChoice, FullCharacter } from '@/types/character';
+import { CharacterEffect, FullCharacter } from '@/types/character';
 import { useMemo, useState } from 'react';
 import { CharacterSelection } from './character-selection';
 import { FullChoiceModifier } from '@/components/modals/type';
@@ -17,7 +17,7 @@ interface CharacterSelectionsProps {
   character: FullCharacter;
 }
 
-type Selection = [FullChoiceModifier, CharacterChoice[]];
+type Selection = [FullChoiceModifier, CharacterEffect[]];
 
 export const CharacterSelections = ({
   character,

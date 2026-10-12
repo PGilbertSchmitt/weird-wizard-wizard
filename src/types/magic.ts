@@ -50,6 +50,18 @@ export type FullTradition = {
 
 export type MagicTalentCharges = 'None' | 'One' | 'OneTwoThree';
 
+/**
+ * Like a full tradition but without the spells and talents
+ */
+export type PartialTradition = {
+  id: number;
+  name: string;
+  blurb: string;
+  description: string;
+  special_info: string | null;
+  into_table: FullInfoTable | null;
+};
+
 export type SpellSlotInfo = {
   perm_used: number;
   perm_total: number;

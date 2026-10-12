@@ -323,7 +323,7 @@ CREATE TABLE IF NOT EXISTS character_effects (
     cast_hour    INTEGER NOT NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_choices ON character_choices (character_id, choice_key);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_effects ON character_effects (character_id, choice_key);
 
 -- This totals are supplied by the frontend and only used so it knows when the slot counts
 -- change (when augments are added/removed). The frontend handles all logic for calculating

@@ -21,7 +21,7 @@ export const CharacterTalents = ({ character }: CharacterTalentsProps) => {
   const talentsBySource = useMemo(() => {
     return toPairs(
       character.path_talents.reduce(
-        (acc, [talent]) => {
+        (acc, { talent }) => {
           acc[talent.source] ||= [];
           acc[talent.source].push(talent);
           return acc;
@@ -34,7 +34,7 @@ export const CharacterTalents = ({ character }: CharacterTalentsProps) => {
   const talentsByTradition = useMemo(() => {
     return toPairs(
       character.magic_talents.reduce(
-        (acc, [talent]) => {
+        (acc, { talent }) => {
           acc[talent.tradition_name] ||= [];
           acc[talent.tradition_name].push(talent);
           return acc;

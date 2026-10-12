@@ -85,10 +85,7 @@ impl WhenDuration {
     pub fn contained_duration_strings(&self) -> Vec<String> {
         match self {
             Self::OneMinute => vec![Self::OneMinute.to_string()],
-            Self::OneHour => vec![
-                Self::OneHour.to_string(),
-                Self::OneMinute.to_string(),
-            ],
+            Self::OneHour => vec![Self::OneHour.to_string(), Self::OneMinute.to_string()],
             Self::FourHours => vec![
                 Self::FourHours.to_string(),
                 Self::OneHour.to_string(),

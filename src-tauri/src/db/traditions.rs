@@ -1,3 +1,4 @@
+use futures::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite, SqliteConnection};
 use ts_rs::TS;
@@ -46,6 +47,18 @@ pub struct TraditionIndexItem {
     pub blurb: String,
 }
 
+/** Like a full tradition but without the spells and talents */
+#[derive(TS, Clone, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "magic.ts")]
+pub struct PartialTradition {
+    pub id: i64,
+    pub name: String,
+    pub blurb: String,
+    pub description: String,
+    pub special_info: Option<String>,
+    pub into_table: Option<FullInfoTable>,
+}
+
 pub async fn insert_all(
     tx: &mut SqliteConnection,
     traditions: &Vec<TraditionRow>,
@@ -73,7 +86,7 @@ pub async fn insert_all(
     Ok(trad_map)
 }
 
-pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullTradition> {
+pub async fn get_full(db: &Pool<Sqlite>, id: i64) -> WWResult<FullTradition> {
     let tradition = sqlx::query_as!(RawTradition, "SELECT * FROM traditions WHERE id = ?", id)
         .fetch_one(db)
         .await?;
@@ -107,6 +120,60 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullTradition> {
         novice_spells,
         expert_spells,
         master_spells,
+    })
+}
+
+pub async fn get_for_level(db: &Pool<Sqlite>, level_id: i64) -> WWResult<Vec<PartialTradition>> {
+    let tradition_ids = sqlx::query_scalar!(
+        "SELECT tradition_id FROM level_traditions WHERE level_id = ?",
+        level_id
+    )
+    .fetch_all(db)
+    .await?;
+    let traditions = futures::stream::iter(tradition_ids)
+        .map(|id| async move { get_partial(db, id).await })
+        .buffered(10)
+        .try_collect::<Vec<_>>()
+        .await?;
+
+    Ok(traditions)
+}
+
+pub async fn get_partial(db: &Pool<Sqlite>, id: i64) -> WWResult<PartialTradition> {
+    let tradition = sqlx::query_as!(RawTradition, "SELECT * FROM traditions WHERE id = ?", id)
+        .fetch_one(db)
+        .await?;
+
+    let into_table = info_tables::get_from_opt(db, tradition.info_table_id).await?;
+
+    Ok(PartialTradition {
+        id: tradition.id,
+        name: tradition.name,
+        blurb: tradition.blurb,
+        description: tradition.description,
+        special_info: tradition.special_info,
+        into_table,
+    })
+}
+
+pub async fn get_partial_by_name(db: &Pool<Sqlite>, name: &str) -> WWResult<PartialTradition> {
+    let tradition = sqlx::query_as!(
+        RawTradition,
+        "SELECT * FROM traditions WHERE name = ?",
+        name
+    )
+    .fetch_one(db)
+    .await?;
+
+    let into_table = info_tables::get_from_opt(db, tradition.info_table_id).await?;
+
+    Ok(PartialTradition {
+        id: tradition.id,
+        name: tradition.name,
+        blurb: tradition.blurb,
+        description: tradition.description,
+        special_info: tradition.special_info,
+        into_table,
     })
 }
 

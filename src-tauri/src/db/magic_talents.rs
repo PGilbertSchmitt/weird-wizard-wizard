@@ -195,33 +195,6 @@ pub async fn get_by_name_and_tradition(
     extend_raw_magic_talent(db, raw_talent).await
 }
 
-pub async fn get_by_selections(
-    db: &Pool<Sqlite>,
-    selections: Vec<(String, String)>,
-) -> WWResult<Vec<FullMagicTalent>> {
-    let talents: Vec<FullMagicTalent> = futures::stream::iter(selections.into_iter())
-        .map(|(tradition_name, talent_name)| {
-            let db = db.clone();
-            async move { get_by_name_and_tradition(&db, &tradition_name, &talent_name).await }
-        })
-        .buffered(100)
-        .try_collect()
-        .await?;
-    Ok(talents)
-}
-
-pub async fn get_by_ids(db: &Pool<Sqlite>, ids: Vec<i64>) -> WWResult<Vec<FullMagicTalent>> {
-    let talents: Vec<FullMagicTalent> = futures::stream::iter(ids.into_iter())
-        .map(|id| {
-            let db = db.clone();
-            async move { get(&db, id).await }
-        })
-        .buffered(100)
-        .try_collect()
-        .await?;
-    Ok(talents)
-}
-
 pub async fn get_name(db: &Pool<Sqlite>, id: i64) -> WWResult<String> {
     Ok(
         sqlx::query_scalar!("SELECT name FROM magic_talents where id = ?", id)

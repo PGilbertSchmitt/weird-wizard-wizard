@@ -20,7 +20,12 @@ interface SpellCardProps {
   character?: FullCharacter;
 }
 
-export const SpellCard = ({ spell, onSelect, count, character }: SpellCardProps) => {
+export const SpellCard = ({
+  spell,
+  onSelect,
+  count,
+  character,
+}: SpellCardProps) => {
   const attributeRows: AttributeRows = useMemo(() => {
     return [
       {
