@@ -1,10 +1,10 @@
-use crate::mod_dsl::ast::ChooseSlotTarget;
+use crate::mod_dsl::ast::{ChooseSlotTarget, NumExpr, NumOperand, NumOperator};
 
 use super::{
     ast::{
-        ApplySlotsTarget, ApplyTarget, ChooseTarget, Condition, Dice, ExprOp, ExprValue,
-        GrantTarget, HasCategory, HealAmount, LoseTarget, Modifier, OverrideTarget, SimpleExpr,
-        Target, WhenDuration, WhenMod,
+        ApplySlotsTarget, ApplyTarget, ChooseTarget, CondExpr, CondOperand, CondOperator,
+        Condition, Dice, GrantTarget, HasCategory, HealAmount, LoseTarget, Modifier,
+        OverrideTarget, Target, WhenDuration, WhenMod,
     },
     lexer::Token,
 };
@@ -346,9 +346,8 @@ fn parse_apply_target(tokens: &mut Tokens) -> Result<ApplyTarget, String> {
 
 fn parse_condition(tokens: &mut Tokens) -> Result<Condition, String> {
     match ut(tokens.next())? {
-        Token::HasNotCase => Ok(Condition::HasNot),
         Token::HasCase => Ok(Condition::Has(parse_has_case(tokens)?)),
-        Token::IfCase => Ok(Condition::If(parse_simple_expression(tokens)?)),
+        Token::IfCase => Ok(Condition::If(parse_conditional_expression(tokens)?)),
 
         other_token => Err(format!(
             "Expected a Condition type, instead found '{other_token:?}'"
@@ -515,7 +514,7 @@ fn parse_apply_heal_info(tokens: &mut Tokens) -> Result<HealAmount, String> {
     match ut(tokens.next())? {
         Token::Number(amount) => Ok(HealAmount::Number(amount)),
         Token::Dice(roll_str) => Ok(HealAmount::Roll(parse_dice(roll_str)?)),
-        Token::Calc => Ok(HealAmount::Expr(parse_simple_expression(tokens)?)),
+        Token::Calc => Ok(HealAmount::Expr(parse_numeric_expression_wrapped(tokens)?)),
         Token::Ask => {
             eat_open_paren(tokens)?;
             let s = parse_string(tokens)?;
@@ -545,139 +544,128 @@ fn parse_dice(roll_str: String) -> Result<Dice, String> {
     }
 }
 
-#[derive(Debug)]
-struct TmpExpr {
-    left: Option<ExprValue>,
-    op: Option<ExprOp>,
-    right: Option<ExprValue>,
+fn parse_cond_operand(tokens: &mut Tokens) -> Result<CondOperand, String> {
+    match ut(tokens.next())? {
+        Token::Identifier(text) => {
+            let match_text = text.to_uppercase();
+            let value = match match_text.as_str() {
+                "DEF" => CondOperand::Defense,
+                "DMG" => CondOperand::Dmg,
+                "LEVEL" => CondOperand::Level,
+                "HEALTH" => CondOperand::Health,
+                _ => {
+                    return Err(format!(
+                        "Unknown identifier '{text}' while parsing conditional expression operand"
+                    ));
+                }
+            };
+            Ok(value)
+        }
+        Token::Number(value) => Ok(CondOperand::Number(value as i64)),
+
+        other_token => Err(format!(
+            "Unexpected token '{other_token:?}' while parsing conditional expression operand"
+        )),
+    }
 }
 
-impl TmpExpr {
-    fn new() -> Self {
-        Self {
-            left: None,
-            op: None,
-            right: None,
-        }
-    }
+fn parse_cond_operator(tokens: &mut Tokens) -> Result<CondOperator, String> {
+    match ut(tokens.next())? {
+        Token::Equals => Ok(CondOperator::Eq),
+        Token::Gt => Ok(CondOperator::Gt),
+        Token::GtEq => Ok(CondOperator::GtEq),
+        Token::Lt => Ok(CondOperator::Lt),
+        Token::LtEq => Ok(CondOperator::LtEq),
 
-    fn push_value(&mut self, value: ExprValue) -> Result<(), String> {
-        if self.left.is_none() {
-            self.left = Some(value);
-            Ok(())
-        } else if self.right.is_none() {
-            if self.op.is_some() {
-                self.right = Some(value);
-                Ok(())
-            } else {
-                Err(format!(
-                    "Expected operator while parsing expression, received value '{}'",
-                    value
-                ))
-            }
-        } else {
-            Err(format!(
-                "Unexpected value while parsing expression, received value '{}'",
-                value
-            ))
-        }
-    }
-
-    fn push_op(&mut self, op: ExprOp) -> Result<(), String> {
-        if self.left.is_some() && self.op.is_none() {
-            self.op = Some(op);
-            Ok(())
-        } else {
-            Err(format!(
-                "Expected value while parsing expression, received operator '{}'",
-                op
-            ))
-        }
-    }
-
-    fn to_expr(self) -> Result<SimpleExpr, String> {
-        if self.left.is_none() {
-            return Err(String::from("Empty expression, shame on you"));
-        }
-        let left = self.left.unwrap();
-
-        if self.right.is_none() && self.op.is_some() {
-            return Err(String::from(
-                "Unterminated expression, it shouldn't end with an operator",
+        other_token => {
+            return Err(format!(
+                "Unexpected token '{other_token:?}' while parsing conditional expression operator"
             ));
         }
+    }
+}
 
-        if self.right.is_some() {
-            Ok(SimpleExpr { left, right: None })
-        } else {
-            Ok(SimpleExpr {
-                left,
-                right: Some((self.op.unwrap(), self.right.unwrap())),
-            })
+// The condition expression language is always 2 operands and a boolean operator.
+fn parse_conditional_expression(tokens: &mut Tokens) -> Result<CondExpr, String> {
+    eat_open_paren(tokens)?;
+    let left = parse_cond_operand(tokens)?;
+    let op = parse_cond_operator(tokens)?;
+    let right = parse_cond_operand(tokens)?;
+    eat_close_paren(tokens)?;
+    Ok(CondExpr { left, op, right })
+}
+
+fn parse_num_operand(tokens: &mut Tokens) -> Result<NumOperand, String> {
+    match ut(tokens.next())? {
+        Token::Identifier(text) => {
+            let match_text = text.to_uppercase();
+            let value = match match_text.as_str() {
+                "DMG" => NumOperand::Dmg,
+                "LEVEL" => NumOperand::Level,
+                _ => {
+                    return Err(format!(
+                        "Unknown identifier '{text}' while parsing numeric expression operand"
+                    ));
+                }
+            };
+            Ok(value)
+        }
+        Token::Number(value) => Ok(NumOperand::Number(value as i64)),
+        Token::Str => Ok(NumOperand::Str),
+        Token::Agl => Ok(NumOperand::Agl),
+        Token::Int => Ok(NumOperand::Int),
+        Token::Will => Ok(NumOperand::Will),
+
+        other_token => Err(format!(
+            "Unexpected token '{other_token:?}' while parsing numeric expression operand"
+        )),
+    }
+}
+
+fn parse_num_operator(tokens: &mut Tokens) -> Result<NumOperator, String> {
+    match ut(tokens.next())? {
+        Token::Plus => Ok(NumOperator::Plus),
+        Token::Minus => Ok(NumOperator::Minus),
+        Token::Times => Ok(NumOperator::Times),
+        Token::Slash => Ok(NumOperator::Div),
+        Token::Modulo => Ok(NumOperator::Mod),
+
+        other_token => {
+            return Err(format!(
+                "Unexpected token '{other_token:?}' while parsing numeric expression operator"
+            ));
         }
     }
 }
 
-// The calculation expression language is very minimal. No pemdas, expressions are ordered
-fn parse_simple_expression(tokens: &mut Tokens) -> Result<SimpleExpr, String> {
+fn parse_numeric_expression_wrapped(tokens: &mut Tokens) -> Result<NumExpr, String> {
     eat_open_paren(tokens)?;
-    let mut tmp_expr = TmpExpr::new();
+    let expr = parse_numeric_expression(tokens)?;
+    eat_close_paren(tokens)?;
+    Ok(expr)
+}
+
+// This can be re-used to parse the `charges` value for path talents
+fn parse_numeric_expression(tokens: &mut Tokens) -> Result<NumExpr, String> {
+    let init = parse_num_operand(tokens)?;
+    let mut rest: Vec<(NumOperator, NumOperand)> = Vec::new();
+
+    let mut op: Option<NumOperator> = None;
 
     loop {
-        let token = ut(tokens.next())?;
-        match token {
-            Token::CloseParen => break,
-
-            // Operand values
-            Token::Identifier(text) => {
-                let match_text = text.to_uppercase();
-                let value = match match_text.as_str() {
-                    "DEF" => ExprValue::Defense,
-                    "DMG" => ExprValue::Dmg,
-                    "LEVEL" => ExprValue::Level,
-                    "HEALTH" => ExprValue::Health,
-                    _ => {
-                        return Err(format!(
-                            "Unknown identifier '{text}' while parsing expression"
-                        ));
-                    }
-                };
-                tmp_expr.push_value(value)?;
-            }
-            Token::Number(value) => {
-                let num = ExprValue::Number(value);
-                tmp_expr.push_value(num)?;
-            }
-
-            // Operators
-            Token::Equals => {
-                tmp_expr.push_op(ExprOp::Eq)?;
-            }
-            Token::Gt => {
-                tmp_expr.push_op(ExprOp::Gt)?;
-            }
-            Token::GtEq => {
-                tmp_expr.push_op(ExprOp::GtEq)?;
-            }
-            Token::Lt => {
-                tmp_expr.push_op(ExprOp::Lt)?;
-            }
-            Token::LtEq => {
-                tmp_expr.push_op(ExprOp::LtEq)?;
-            }
-            Token::Slash => {
-                tmp_expr.push_op(ExprOp::Div)?;
-            }
-
-            other_token => {
-                return Err(format!(
-                    "Unexpected token '{other_token:?}' while parsing expression"
-                ));
-            }
-        };
+        match tokens.peek().as_deref() {
+            None | Some(Ok(Token::CloseParen)) => break,
+            _ => {}
+        }
+        if op.is_none() {
+            op = Some(parse_num_operator(tokens)?);
+        } else {
+            let right = parse_num_operand(tokens)?;
+            rest.push((op.take().unwrap(), right));
+        }
     }
 
-    tmp_expr.to_expr()
+    Ok(NumExpr { init, rest })
 }
 
 fn parse_slot_target(tokens: &mut Tokens) -> Result<ApplySlotsTarget, String> {

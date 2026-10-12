@@ -378,16 +378,12 @@ The syntax as additive to the base MOD, and if the condition holds, the MOD appl
 In many cases, you may need to have multiple MODs together where one MOD is applied when a specific condition is met, and another MOD is applied when the inverse of that condition is met. For example, the Hydromancy talent `Sea Heart` gives you the `Slippery` trait, but if you already have it, then it increases your speed by 2 instead:
 
 ```
-GRANT.PERM.SpeedTrait.Slippery@HASNOT.SpeedTrait.Slippery ; GRANT.PERM.Speed.2@HAS.SpeedTrait.Slippery ;
+GRANT.PERM.SpeedTrait.Slippery ; GRANT.PERM.Speed.2@HAS.SpeedTrait.Slippery ;
 ```
 
-This grants the slippery trait if the PC does not have it already. This can be shortened slightly using a shorthand: if you're granting something only if the PC doesn't already have it, you can just write the `@HASNOT` condition without a Category or Value:
+This grants the slippery trait if the PC does not have it already. Giving a trait that a player already has has no effect as all like traits collapse. Senses and speed traits with units are only identical when the amounts are the same, so in the case of granting both `Squeeze 6` and `Squeeze 1/2`, both will show up.
 
-```
-GRANT.PERM.SpeedTrait.Slippery@HASNOT ; GRANT.PERM.Speed.2@HAS.SpeedTrait.Slippery ;
-```
-
-A condition can check more than whether the the PC has or doesn't have a trait. There are situations where the level or the value of a stat can alter selections. The `Hunter's Senses` trait grants one of 3 sense traits. At level 3, it grants another one of those traits (distinct from the first). At level 7, it grants the last unchosen trait. In order to make this work, the MOD for the talent uses 3 separate CHOICEs, all pointing to the same list but with different conditions against the level:
+A condition can check more than whether the the PC has a trait. There are situations where the level or defense can alter selections. The `Hunter's Senses` trait grants one of 3 sense traits. At level 3, it grants another one of those traits (distinct from the first). At level 7, it grants the last unchosen trait. In order to make this work, the MOD for the talent uses 3 separate CHOICEs, all pointing to the same list but with different conditions against the level:
 
 ```
 CHOOSE.PERM.Hunter's Senses ; CHOOSE.PERM.Hunter's Senses.DISTINCT@IF(LEVEL >= 3) ; CHOOSE.PERM.Hunter's Senses.DISTINCT@IF(LEVEL >= 7) ;

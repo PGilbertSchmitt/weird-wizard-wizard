@@ -163,9 +163,6 @@ pub enum Token {
     #[token("IF")]
     IfCase,
 
-    #[token("HASNOT")]
-    HasNotCase,
-
     #[regex("HAS")]
     HasCase,
 
@@ -201,8 +198,14 @@ pub enum Token {
     #[token("+")]
     Plus,
 
+    #[token("-", priority = 3)]
+    Minus,
+
     #[token("*")]
     Times,
+
+    #[token("%")]
+    Modulo,
 }
 
 fn extract_quote_string(lexer: &mut Lexer<Token>) -> String {

@@ -232,7 +232,13 @@ pub fn modifier_tree_first_pass(
  * biggest factor to time in this function is from DB queries to spells, talents, and choice
  * selection tables. Caching all of those records in advance like we do with the effect cache would
  * be excessive for getting the user, BUT if I really need to improve the speed of this function,
- * it could be solved by implementing a caching layer for the individual queries used here. */
+ * it could be solved by implementing a caching layer for the individual queries used here.
+ *
+ * TODO: Implement ordered recursion. This function is deterministic, but the order in which it
+ * recurses is not ideal. Rather than recursing directly, calls to itself should be replaced with
+ * work items pushed into a priority queue. The priority of items should be determined by origin.
+ *
+ * TODO: Add Losses from the first pass here so path talents / magic talents can be culled. */
 pub fn modifier_tree_second_pass(
     db: Pool<Sqlite>,
     modifier: FullModifier,

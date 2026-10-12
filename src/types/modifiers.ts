@@ -31,28 +31,32 @@ export type ChooseTarget =
   | { type: 'Slots'; data: ChooseSlotTarget }
   | { type: 'MagicTalent'; data: [number, Array<string>] };
 
-export type Condition =
-  | { type: 'None' }
-  | { type: 'HasNot' }
-  | { type: 'Has'; data: HasCategory }
-  | { type: 'If'; data: SimpleExpr };
+export type CondExpr = {
+  left: CondOperand;
+  op: CondOperator;
+  right: CondOperand;
+};
 
-export type Dice = { die_size: number; die_count: number };
-
-export type ExprOp =
-  | { type: 'Lt' }
-  | { type: 'Gt' }
-  | { type: 'LtEq' }
-  | { type: 'GtEq' }
-  | { type: 'Eq' }
-  | { type: 'Div' };
-
-export type ExprValue =
+export type CondOperand =
   | { type: 'Health' }
   | { type: 'Dmg' }
   | { type: 'Level' }
   | { type: 'Defense' }
   | { type: 'Number'; data: number };
+
+export type CondOperator =
+  | { type: 'Lt' }
+  | { type: 'Gt' }
+  | { type: 'LtEq' }
+  | { type: 'GtEq' }
+  | { type: 'Eq' };
+
+export type Condition =
+  | { type: 'None' }
+  | { type: 'Has'; data: HasCategory }
+  | { type: 'If'; data: CondExpr };
+
+export type Dice = { die_size: number; die_count: number };
 
 export type FullModifier = {
   path_node: ModifierPathNode;
@@ -82,7 +86,7 @@ export type HasCategory =
 
 export type HealAmount =
   | { type: 'Number'; data: number }
-  | { type: 'Expr'; data: SimpleExpr }
+  | { type: 'Expr'; data: NumExpr }
   | { type: 'Roll'; data: Dice }
   | { type: 'Ask'; data: string };
 
@@ -119,13 +123,32 @@ export type ModifierPathNode =
       data: { name: string; label: string; idx: number };
     };
 
+export type NumExpr = {
+  init: NumOperand;
+  rest: Array<[NumOperator, NumOperand]>;
+};
+
+export type NumOperand =
+  | { type: 'Str' }
+  | { type: 'Agl' }
+  | { type: 'Int' }
+  | { type: 'Will' }
+  | { type: 'Dmg' }
+  | { type: 'Level' }
+  | { type: 'Number'; data: number };
+
+export type NumOperator =
+  | { type: 'Plus' }
+  | { type: 'Minus' }
+  | { type: 'Times' }
+  | { type: 'Div' }
+  | { type: 'Mod' };
+
 export type OverrideTarget =
   | { type: 'Speed'; data: number }
   | { type: 'Defense'; data: number }
   | { type: 'StatBlock'; data: string }
   | { type: 'MergeStatBlock'; data: [string, string] };
-
-export type SimpleExpr = { left: ExprValue; right: [ExprOp, ExprValue] | null };
 
 export type Target =
   | { type: 'Grant'; data: GrantTarget }
