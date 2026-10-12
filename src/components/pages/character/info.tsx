@@ -242,12 +242,20 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
           </Fragment>
         ))}
 
+        <Separator />
+
+        <div className={cn('bg-secondary-background text-foreground p-4')}>
+          <h2>Novice Path: {character.novice_path.name}</h2>
+          <span>({character.novice_path.category})</span>
+          <p>{character.novice_path.description}</p>
+        </div>
+
         {character.expert_path && (
           <>
             <Separator />
 
             <div className={cn('bg-secondary-background text-foreground p-4')}>
-              <h2>Novice Path: {character.expert_path.name}</h2>
+              <h2>Expert Path: {character.expert_path.name}</h2>
               <span>({character.expert_path.category})</span>
               <p>{character.expert_path.description}</p>
             </div>
@@ -259,7 +267,7 @@ export const CharacterInfo = ({ character }: CharacterInfoProps) => {
             <Separator />
 
             <div className={cn('bg-secondary-background text-foreground p-4')}>
-              <h2>Profession: {character.master_path.name}</h2>
+              <h2>Master Path: {character.master_path.name}</h2>
               <span>({character.master_path.category})</span>
               <p>{character.master_path.description}</p>
             </div>

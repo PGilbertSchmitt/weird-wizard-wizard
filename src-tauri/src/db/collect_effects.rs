@@ -704,13 +704,15 @@ fn handle_choice(
     let mut results = Vec::new();
     let mut choice_required = false;
 
+    // TODO: Handle conditions here. Only permanent choices are required, and only choices with
+    // conditions that are met can propagate effects.
+
     for key in modifier.keys() {
         match effect_cache.get(&key) {
             Some(effect) => {
                 results.push(effect.clone());
             }
             None => {
-                // TODO: Handle conditions here
                 if modifier.required() {
                     choice_required = true;
                 }
@@ -720,7 +722,7 @@ fn handle_choice(
 
     if choice_required {
         selections.required_choices.push(modifier.clone());
-    } else if results.len() > 1 {
+    } else if results.len() > 0 {
         selections
             .selected_choices
             .push((modifier.clone(), results.clone()));
