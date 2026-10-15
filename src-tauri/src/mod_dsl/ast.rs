@@ -1,5 +1,4 @@
 use std::{
-    collections::HashSet,
     fmt::{Debug, Display, Formatter, Result as FmtResult, Write},
 };
 
@@ -39,15 +38,6 @@ impl Target {
             Self::Apply(_) => Vec::new(),
         }
     }
-
-    // pub fn replace_choice_strings(&mut self, new_strings: Vec<String>) {
-    //     match self {
-    //         Self::Choose(_, old_strings) => {
-    //             *old_strings = new_strings;
-    //         }
-    //         _ => {}
-    //     }
-    // }
 }
 
 #[derive(TS, Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -365,9 +355,9 @@ pub struct CondExpr {
 }
 
 impl CondExpr {
-    fn condition_eval(&self, health: i64, damage: i64, level: i64, defense: i64) -> bool {
-        let left_value = self.left.eval(health, damage, level, defense);
-        let right_value = self.right.eval(health, damage, level, defense);
+    pub fn condition_eval(&self, level: i64, defense: i64) -> bool {
+        let left_value = self.left.eval(level, defense);
+        let right_value = self.right.eval(level, defense);
         match self.op {
             CondOperator::Lt => left_value < right_value,
             CondOperator::Gt => left_value > right_value,
@@ -382,8 +372,6 @@ impl CondExpr {
 #[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
 #[serde(tag = "type", content = "data")]
 pub enum CondOperand {
-    Health,
-    Dmg,
     Level,
     Defense,
     Number(i64),
@@ -392,8 +380,6 @@ pub enum CondOperand {
 impl Display for CondOperand {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         match self {
-            Self::Health => f.write_str("HEALTH"),
-            Self::Dmg => f.write_str("DMG"),
             Self::Level => f.write_str("LEVEL"),
             Self::Defense => f.write_str("DEF"),
             Self::Number(x) => f.write_str(&x.to_string()),
@@ -402,10 +388,8 @@ impl Display for CondOperand {
 }
 
 impl CondOperand {
-    fn eval(&self, health: i64, damage: i64, level: i64, defense: i64) -> i64 {
+    fn eval(&self, level: i64, defense: i64) -> i64 {
         match self {
-            Self::Health => health,
-            Self::Dmg => damage,
             Self::Level => level,
             Self::Defense => defense,
             Self::Number(x) => *x,
@@ -436,15 +420,6 @@ impl Display for CondOperator {
     }
 }
 
-pub struct ConditionContext {
-    pub senses: HashSet<String>,
-    pub speed_traits: HashSet<String>,
-    pub health: i64,
-    pub damage: i64,
-    pub level: i64,
-    pub defense: i64,
-}
-
 #[derive(TS, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
 #[serde(tag = "type", content = "data")]
@@ -459,15 +434,6 @@ impl Condition {
         match self {
             Self::None => true,
             _ => false,
-        }
-    }
-
-    pub fn eval(&self, ctx: &ConditionContext) -> bool {
-        match self {
-            Self::None => true,
-            Self::Has(HasCategory::Sense(sense)) => ctx.senses.contains(sense),
-            Self::Has(HasCategory::SpeedTrait(st)) => ctx.speed_traits.contains(st),
-            Self::If(expr) => expr.condition_eval(ctx.health, ctx.damage, ctx.level, ctx.defense),
         }
     }
 }

@@ -8,6 +8,7 @@ pub mod character_effects;
 pub mod characters;
 pub mod choice_selections;
 pub mod collect_effects;
+pub mod collection_priority;
 pub mod etc;
 pub mod immunities;
 pub mod info_tables;

@@ -550,9 +550,7 @@ fn parse_cond_operand(tokens: &mut Tokens) -> Result<CondOperand, String> {
             let match_text = text.to_uppercase();
             let value = match match_text.as_str() {
                 "DEF" => CondOperand::Defense,
-                "DMG" => CondOperand::Dmg,
                 "LEVEL" => CondOperand::Level,
-                "HEALTH" => CondOperand::Health,
                 _ => {
                     return Err(format!(
                         "Unknown identifier '{text}' while parsing conditional expression operand"
