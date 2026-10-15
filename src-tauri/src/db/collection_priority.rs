@@ -2,7 +2,7 @@
 #[derive(PartialEq, PartialOrd, Eq, Ord, Clone)]
 pub enum PriorityItem {
     // Lowest priority
-    Language,    
+    Language,
     ChoiceSelection,
     Spell,
     MagicTalent,
@@ -16,7 +16,7 @@ pub enum PriorityItem {
 #[derive(PartialEq, PartialOrd, Eq, Clone)]
 pub struct CollectionPriority {
     level: i64,
-    items: Vec<PriorityItem>
+    items: Vec<PriorityItem>,
 }
 
 impl CollectionPriority {
@@ -34,7 +34,7 @@ impl CollectionPriority {
     }
 }
 
-// The lower level, 
+// The lower level,
 impl Ord for CollectionPriority {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // Lower level has higher priority, and is the most important factor

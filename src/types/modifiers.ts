@@ -38,11 +38,7 @@ export type CondExpr = {
 };
 
 export type CondOperand =
-  | { type: 'Health' }
-  | { type: 'Dmg' }
-  | { type: 'Level' }
-  | { type: 'Defense' }
-  | { type: 'Number'; data: number };
+  { type: 'Level' } | { type: 'Defense' } | { type: 'Number'; data: number };
 
 export type CondOperator =
   | { type: 'Lt' }

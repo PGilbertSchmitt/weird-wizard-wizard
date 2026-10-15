@@ -6,14 +6,29 @@ use sqlx::{types::chrono::NaiveDateTime, Pool, Sqlite};
 use ts_rs::TS;
 
 use crate::{
-    WWResult, db::{
-        ancestries::{self, FullAncestry}, character_effects::{self, CharacterEffect}, collect_effects::{
-            Losses, ModifierSelections, SlotMod, modifier_tree_first_pass, modifier_tree_second_pass,
-        }, collection_priority::{CollectionPriority as Priority, PriorityItem as PItem}, etc::{PathKind, Size}, languages, levels::FullLevel, paths::{self, FullPath}, professions::{self, Profession}, senses, speed_traits,
-    }, mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod}, modifiers::{FullModifier, ModifierPathNode}, selection_types::{
+    db::{
+        ancestries::{self, FullAncestry},
+        character_effects::{self, CharacterEffect},
+        collect_effects::{
+            modifier_tree_first_pass, modifier_tree_second_pass, Losses, ModifierSelections,
+            SlotMod,
+        },
+        collection_priority::{CollectionPriority as Priority, PriorityItem as PItem},
+        etc::{PathKind, Size},
+        languages,
+        levels::FullLevel,
+        paths::{self, FullPath},
+        professions::{self, Profession},
+        senses, speed_traits,
+    },
+    mod_dsl::ast::{ChooseTarget, Condition, Modifier, Target, WhenMod},
+    modifiers::{FullModifier, ModifierPathNode},
+    selection_types::{
         GainedImmunity, GainedLanguage, GainedMagicTalent, GainedPathTalent, GainedProfession,
         GainedSense, GainedSpeedTrait, GainedSpell, GainedTradition,
-    }, util::clamp,
+    },
+    util::clamp,
+    WWResult,
 };
 
 #[derive(TS, Debug, Serialize, Deserialize)]
@@ -271,7 +286,7 @@ pub async fn get(db: &Pool<Sqlite>, id: i64) -> WWResult<FullCharacter> {
             }
         }
     }
-    
+
     // TODO: Delete all effects for character not found in this dashset
     let mut processed_effects = HashSet::new();
     let size = fields.size.clone();
@@ -464,24 +479,26 @@ impl CumulativeFields {
 
         // All paths at level 3 get 2 score increases
         if level.level == 3 {
-            self.modifiers.push(
-                FieldModifier::Other(level_choice(
+            self.modifiers.push(FieldModifier::Other(
+                level_choice(
                     ModifierPathNode::LevelScore { level: level.level },
                     ChooseTarget::Score(2),
                     0,
-                ), Priority::new(3, PItem::Score)),
-            );
+                ),
+                Priority::new(3, PItem::Score),
+            ));
         }
 
         // All paths at level 7 get 3 score increases
         if level.level == 7 {
-            self.modifiers.push(
-                FieldModifier::Other(level_choice(
+            self.modifiers.push(FieldModifier::Other(
+                level_choice(
                     ModifierPathNode::LevelScore { level: level.level },
                     ChooseTarget::Score(3),
                     0,
-                ), Priority::new(7, PItem::Score))
-            );
+                ),
+                Priority::new(7, PItem::Score),
+            ));
         }
 
         let level_source = format!("{path_name} level {}", level.level);
@@ -514,14 +531,17 @@ impl CumulativeFields {
             });
 
             let target = ChooseTarget::MagicTalent(1, vec![tradition.name.clone()]);
-            self.modifiers.push(FieldModifier::Other(level_choice(
-                ModifierPathNode::LevelMagicTalent {
-                    path_name: path_name.to_string(),
-                    level: level.level,
-                },
-                target,
-                idx,
-            ), Priority::new(level.level, PItem::TraditionTalent)));
+            self.modifiers.push(FieldModifier::Other(
+                level_choice(
+                    ModifierPathNode::LevelMagicTalent {
+                        path_name: path_name.to_string(),
+                        level: level.level,
+                    },
+                    target,
+                    idx,
+                ),
+                Priority::new(level.level, PItem::TraditionTalent),
+            ));
         }
 
         for talent in &level.path_talents {
@@ -542,62 +562,77 @@ impl CumulativeFields {
 
         if level.lang_choices > 0 {
             let target = ChooseTarget::Language(level.lang_choices as u32);
-            self.modifiers.push(FieldModifier::Other(level_choice(
-                ModifierPathNode::LevelLanguage {
-                    path_name: path_name.to_string(),
-                    level: level.level,
-                },
-                target,
-                0,
-            ), Priority::new(level.level, PItem::Language)));
+            self.modifiers.push(FieldModifier::Other(
+                level_choice(
+                    ModifierPathNode::LevelLanguage {
+                        path_name: path_name.to_string(),
+                        level: level.level,
+                    },
+                    target,
+                    0,
+                ),
+                Priority::new(level.level, PItem::Language),
+            ));
         }
 
         if level.trad_choices > 0 {
             let target = ChooseTarget::Tradition(level.trad_choices as u32);
-            self.modifiers.push(FieldModifier::Other(level_choice(
-                ModifierPathNode::LevelTradition {
-                    path_name: path_name.to_string(),
-                    level: level.level,
-                },
-                target,
-                0,
-            ), Priority::new(level.level, PItem::PickTradition)));
+            self.modifiers.push(FieldModifier::Other(
+                level_choice(
+                    ModifierPathNode::LevelTradition {
+                        path_name: path_name.to_string(),
+                        level: level.level,
+                    },
+                    target,
+                    0,
+                ),
+                Priority::new(level.level, PItem::PickTradition),
+            ));
         }
 
         if level.novice_spells > 0 {
             let target = ChooseTarget::NoviceSpell(level.novice_spells as u32);
-            self.modifiers.push(FieldModifier::Other(level_choice(
-                ModifierPathNode::LevelNoviceSpell {
-                    path_name: path_name.to_string(),
-                    level: level.level,
-                },
-                target,
-                0,
-            ), Priority::new(level.level, PItem::Spell)));
+            self.modifiers.push(FieldModifier::Other(
+                level_choice(
+                    ModifierPathNode::LevelNoviceSpell {
+                        path_name: path_name.to_string(),
+                        level: level.level,
+                    },
+                    target,
+                    0,
+                ),
+                Priority::new(level.level, PItem::Spell),
+            ));
         }
 
         if level.expert_spells > 0 {
             let target = ChooseTarget::ExpertSpell(level.expert_spells as u32);
-            self.modifiers.push(FieldModifier::Other(level_choice(
-                ModifierPathNode::LevelExpertSpell {
-                    path_name: path_name.to_string(),
-                    level: level.level,
-                },
-                target,
-                0,
-            ), Priority::new(level.level, PItem::Spell)));
+            self.modifiers.push(FieldModifier::Other(
+                level_choice(
+                    ModifierPathNode::LevelExpertSpell {
+                        path_name: path_name.to_string(),
+                        level: level.level,
+                    },
+                    target,
+                    0,
+                ),
+                Priority::new(level.level, PItem::Spell),
+            ));
         }
 
         if level.master_spells > 0 {
             let target = ChooseTarget::MasterSpell(level.master_spells as u32);
-            self.modifiers.push(FieldModifier::Other(level_choice(
-                ModifierPathNode::LevelMasterSpell {
-                    path_name: path_name.to_string(),
-                    level: level.level,
-                },
-                target,
-                0,
-            ), Priority::new(level.level, PItem::Spell)));
+            self.modifiers.push(FieldModifier::Other(
+                level_choice(
+                    ModifierPathNode::LevelMasterSpell {
+                        path_name: path_name.to_string(),
+                        level: level.level,
+                    },
+                    target,
+                    0,
+                ),
+                Priority::new(level.level, PItem::Spell),
+            ));
         }
 
         Ok(())

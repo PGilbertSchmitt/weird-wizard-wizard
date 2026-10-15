@@ -1,6 +1,4 @@
-use std::{
-    fmt::{Debug, Display, Formatter, Result as FmtResult, Write},
-};
+use std::fmt::{Debug, Display, Formatter, Result as FmtResult, Write};
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;

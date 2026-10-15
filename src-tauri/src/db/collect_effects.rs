@@ -10,12 +10,30 @@ use sqlx::{Pool, Sqlite};
 use ts_rs::TS;
 
 use crate::{
-    WWError::Generic, WWResult, db::{
-        character_effects::CharacterEffect, characters::{CumulativeFields, RawCharacter}, choice_selections, collection_priority::{CollectionPriority, PriorityItem}, languages::Language, magic_talents::{self, FullMagicTalent}, path_talents, professions, senses::{FullSense, RawSense}, speed_traits::{FullSpeedTrait, RawSpeedTrait}, spells::{self, FullSpell}, traditions::{self, PartialTradition},
-    }, mod_dsl::ast::{ChooseTarget, Condition, GrantTarget, HasCategory, LoseTarget, Modifier, OverrideTarget, Target, WhenMod}, modifiers::{FullModifier, HasModifiers}, selection_types::{
+    db::{
+        character_effects::CharacterEffect,
+        characters::{CumulativeFields, RawCharacter},
+        choice_selections,
+        collection_priority::{CollectionPriority, PriorityItem},
+        languages::Language,
+        magic_talents::{self, FullMagicTalent},
+        path_talents, professions,
+        senses::{FullSense, RawSense},
+        speed_traits::{FullSpeedTrait, RawSpeedTrait},
+        spells::{self, FullSpell},
+        traditions::{self, PartialTradition},
+    },
+    mod_dsl::ast::{
+        ChooseTarget, Condition, GrantTarget, HasCategory, LoseTarget, Modifier, OverrideTarget,
+        Target, WhenMod,
+    },
+    modifiers::{FullModifier, HasModifiers},
+    selection_types::{
         GainedImmunity, GainedLanguage, GainedMagicTalent, GainedPathTalent, GainedProfession,
         GainedSense, GainedSpeedTrait, GainedSpell, GainedTradition,
     },
+    WWError::Generic,
+    WWResult,
 };
 
 const DISCLAIMER: &'static str = "If you're getting this error, this is a bug with the system. You did nothing wrong (probably).";
@@ -211,19 +229,19 @@ pub async fn modifier_tree_second_pass(
 
     let condition_met = match &modifier.mod_details.condition {
         Condition::None => true,
-        Condition::Has(HasCategory::Sense(sense)) => {
-            selections.gained_senses.iter().any(|gained| gained.sense.name == *sense)
-        }
-        Condition::Has(HasCategory::SpeedTrait(speed_trait)) => {
-            selections.gained_speed_traits.iter().any(|gained| gained.speed_trait.name == *speed_trait)
-        }
-        Condition::If(expr) => {
-            expr.condition_eval(selections.level, selections.arm_def)
-        }
+        Condition::Has(HasCategory::Sense(sense)) => selections
+            .gained_senses
+            .iter()
+            .any(|gained| gained.sense.name == *sense),
+        Condition::Has(HasCategory::SpeedTrait(speed_trait)) => selections
+            .gained_speed_traits
+            .iter()
+            .any(|gained| gained.speed_trait.name == *speed_trait),
+        Condition::If(expr) => expr.condition_eval(selections.level, selections.arm_def),
     };
 
     if !condition_met {
-        return Ok(())
+        return Ok(());
     }
 
     let is_permanent = modifier.mod_details.condition.unconditional();
@@ -240,7 +258,7 @@ pub async fn modifier_tree_second_pass(
             if !is_permanent && effect_id.is_none() {
                 return Ok(());
             }
-                
+
             match override_target {
                 OverrideTarget::StatBlock(block_name) => {
                     // TODO: Will need statblocks to be ordered by cast hour
@@ -355,7 +373,9 @@ pub async fn modifier_tree_second_pass(
                                 cast_hour,
                             });
                         } else {
-                            return Err(Generic(format!("Cannot find speed trait with name {name}")));
+                            return Err(Generic(format!(
+                                "Cannot find speed trait with name {name}"
+                            )));
                         }
                     }
                 }
@@ -382,45 +402,57 @@ pub async fn modifier_tree_second_pass(
                             },
                         };
 
-                        modifier_queue.push(constructed_magic_talent_modifier, priority.next(PriorityItem::TraditionTalent));
+                        modifier_queue.push(
+                            constructed_magic_talent_modifier,
+                            priority.next(PriorityItem::TraditionTalent),
+                        );
                     }
                 }
                 GrantTarget::Talent(source, talent) => {
                     println!("Groont Toot: {talent:?}");
-                    if !losses.path_talents.contains(&(source.clone(), talent.clone())) {
+                    if !losses
+                        .path_talents
+                        .contains(&(source.clone(), talent.clone()))
+                    {
                         println!("Goot");
                         let talent =
                             path_talents::get_by_name_and_source(&db, &talent, &source, &origin)
                                 .await?;
 
                         let talent_modifiers = talent.modifiers();
-    
+
                         selections.gained_path_talents.push(GainedPathTalent {
                             talent,
                             source: origin.clone(),
                             cast_hour,
                         });
-    
+
                         for sub_modifier in talent_modifiers {
-                            modifier_queue.push(sub_modifier, priority.next(PriorityItem::PathTalent));
+                            modifier_queue
+                                .push(sub_modifier, priority.next(PriorityItem::PathTalent));
                         }
                     }
                 }
                 GrantTarget::MagicTalent(tradition, talent) => {
-                    if !losses.magic_talents.contains(&(tradition.clone(), talent.clone())) {
+                    if !losses
+                        .magic_talents
+                        .contains(&(tradition.clone(), talent.clone()))
+                    {
                         let talent =
-                            magic_talents::get_by_name_and_tradition(&db, &tradition, &talent).await?;
-    
+                            magic_talents::get_by_name_and_tradition(&db, &tradition, &talent)
+                                .await?;
+
                         let talent_modifiers = talent.modifiers();
-    
+
                         selections.gained_magic_talents.push(GainedMagicTalent {
                             talent,
                             source: origin.clone(),
                             cast_hour,
                         });
-    
+
                         for sub_modifier in talent_modifiers {
-                            modifier_queue.push(sub_modifier, priority.next(PriorityItem::MagicTalent));
+                            modifier_queue
+                                .push(sub_modifier, priority.next(PriorityItem::MagicTalent));
                         }
                     }
                 }
@@ -474,7 +506,8 @@ pub async fn modifier_tree_second_pass(
 
                         if let Some(talent) = talent {
                             for sub_modifier in talent.modifiers.clone() {
-                                modifier_queue.push(sub_modifier, priority.next(PriorityItem::MagicTalent));
+                                modifier_queue
+                                    .push(sub_modifier, priority.next(PriorityItem::MagicTalent));
                             }
 
                             selections.gained_magic_talents.push(GainedMagicTalent {
@@ -486,7 +519,8 @@ pub async fn modifier_tree_second_pass(
 
                         if let Some(spell) = spell {
                             for sub_modifier in spell.modifiers.clone() {
-                                modifier_queue.push(sub_modifier, priority.next(PriorityItem::Spell));
+                                modifier_queue
+                                    .push(sub_modifier, priority.next(PriorityItem::Spell));
                             }
 
                             selections.gained_spells.push(GainedSpell {
@@ -504,7 +538,8 @@ pub async fn modifier_tree_second_pass(
 
                         if let Some(talent) = talent {
                             for sub_modifier in talent.modifiers.clone() {
-                                modifier_queue.push(sub_modifier, priority.next(PriorityItem::MagicTalent));
+                                modifier_queue
+                                    .push(sub_modifier, priority.next(PriorityItem::MagicTalent));
                             }
 
                             selections.gained_magic_talents.push(GainedMagicTalent {
@@ -516,7 +551,8 @@ pub async fn modifier_tree_second_pass(
 
                         if let Some(spell) = spell {
                             for sub_modifier in spell.modifiers.clone() {
-                                modifier_queue.push(sub_modifier, priority.next(PriorityItem::Spell));
+                                modifier_queue
+                                    .push(sub_modifier, priority.next(PriorityItem::Spell));
                             }
 
                             selections.gained_spells.push(GainedSpell {
@@ -550,7 +586,8 @@ pub async fn modifier_tree_second_pass(
                         .await?;
                         for sub_modifier in choice_selection.modifiers() {
                             println!("Mod from a choice: {:?}", sub_modifier.mod_details);
-                            modifier_queue.push(sub_modifier, priority.next(PriorityItem::ChoiceSelection));
+                            modifier_queue
+                                .push(sub_modifier, priority.next(PriorityItem::ChoiceSelection));
                         }
                     }
                 }
