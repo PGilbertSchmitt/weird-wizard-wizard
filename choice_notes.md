@@ -2,16 +2,16 @@
 
 (note: These notes were written before and during the implementation of the Mod DSL parser, and may be out of date. The parser itself is a better source of truth for the intended behavior of the DSL language.)
 
-A paper pad for toying with the MOD DSL, which is a simple _**D**omain **S**pecific **L**anguage_ that is used by certain abilities to augment the player character's STTs (stat/trait/talent). These are provided by talents and spells via a `mod` column in the database, and can do things like increase ability scores, provide access to languages and immunities, alter previously acquired talents, etc. Theres a large element of complexity involved, as a lot of these require choices to be made by the player, either when selecting the talent (_"you must now pick a new spell from a specific tradition"_), or when casting an ability (_"on casting this spell, pick a benefit from this table"_). Some of these choices are permanent (at least, permanent in the sense that _"as long as you have this talent on your character, you gain this benefit"_), some last a specific amount of time, and some can be dispelled manually or toggled at-will. Because of this complexity, it was decided to use a DSL to encode this behavior.
+A paper pad for toying with the MOD DSL, which is a simple _**D**omain **S**pecific **L**anguage_ that is used by certain abilities to augment the player character's STTs (stat/trait/talent). These are provided by talents and spells via a `mod` column in the database, and can do things like increase ability scores, provide languages and immunities, alter previously acquired talents, etc. Theres a large element of complexity involved, as a lot of these require choices to be made by the player, either when selecting the talent (_"you must now pick a new spell from a specific tradition"_), or when casting an ability (_"on casting this spell, pick a benefit from this table"_). Some of these choices are permanent (at least, permanent in the sense that _"as long as you have this talent on your character, you gain this benefit"_), some last a specific amount of time, and some can be dispelled manually or toggled at-will. Because of this complexity, it was decided to use a DSL to encode this behavior.
 
 There are several base MOD types:
 
 - `NONE` - The null case, useful when I need to explicitly provide a MOD that does nothing (which helps with finding holes during import).
-- `GRANT` - provides an STT alteration to the PC. This is a terminal MOD.
-- `LOSE` - similar to GRANT, but removes an STT (useful for talents that replace other talents). A LOSE MOD has higher priority than a GRANT. This is a terminal MOD.
-- `OVERRIDE` - similar to GRANT, but rather than adding something, it replaces it. Some are dismissable, but not always. This is how transformations are performed. Because it's not additive, OVERRIDEs have higher priority than LOSE. This is a terminal MOD.
+- `GRANT` - provides an STT alteration to the PC. Most instances of GRANT are a terminal MOD, though granting Traditions will trigger a choice to pick a magic talent/novice spell.
+- `LOSE` - similar to GRANT, but removes an STT (useful for talents that replace other talents).
+- `OVERRIDE` - similar to GRANT, but for whole statblocks. This is how transformations are performed.
 - `CHOOSE` - associates the player with a choice that must be resolved. These are tracked in the database. To resolve a choice, it must be paired with another MOD. Usually, this is a GRANT, but some choice options will allow you to make another choice, which means that this is NOT a terminal MOD. A CHOOSE MOD effectively forms a tree of possibilities, and the leaves of this tree must all be terminal mods in order for the choices to be resolved.
-- `APPLY` - provides an immediate effect once, such as healing or restoring spell slots. This is a terminal MOD, and is either attached to a cast ability, or is placed on a `CAST` choice (because a `PERM` choice providing a one-off effect doesn't really make any sense).
+- `APPLY` - provides an immediate effect once, such as healing or restoring spell slots. This is a terminal MOD.
 
 There is also the WHEN MOD, though this isn't a base MOD. Rather it's the first element of a group of sub-MODs within a single MOD entry (except for APPLY). The WHEN MOD details when the GRANT/LOSE/OVERRIDE/CHOOSE is applied. There are 4 kinds of WHEN:
 
@@ -40,9 +40,9 @@ The pattern for a GRANT is `GRANT.WHEN.{Category}.{Value}`. A single GRANT is in
 [PERM] GRANT.Language.Sylvan ;
 [PERM] GRANT.Tradition.War ;
 [PERM] GRANT.Talent.Fighter.Brute ;
-[PERM] GRANT.MagicTalent.Illusion.Illusiary Image - Alter Reality ;
+[PERM] GRANT.MagicTalent.'Illusion.Illusiary Image - Alter Reality' ;
 [PERM] GRANT.SpeedTrait.Slippery ;
-[PERM] GRANT.Sense.Keen Sight ;
+[PERM] GRANT.Sense.'Keen Sight' ;
 [PERM] GRANT.Immunity.exposure ;
 [PERM] GRANT.BonusDamage.1 ;
 ```
@@ -65,14 +65,14 @@ These are shown in this document ending with a semicolon, but that is not strict
 There are additional GRANT categories that use a longer pattern to add an extra sub-category. One kind is the `Spell` category, because it's possible for 2 spells in different traditions to have the same name. There is only 1 official entry where this is true (called 'My Spying Eye', found in both the Skullduggery and Technomancy traditions), and it would be cool to also support unofficial entries which share the same circumstances.
 
 ```
-[PERM] GRANT.Spell.Technomancy.My Spying Eye ;
-[PERM] GRANT.Spell.Cryomancy.Ice Barrier ;
+[PERM] GRANT.Spell.Technomancy.'My Spying Eye' ;
+[PERM] GRANT.Spell.Cryomancy.'Ice Barrier' ;
 ```
 
 This also applies to the `Talent` category, which requires providing the source (either an Ancestry or Path):
 
 ```
-[PERM] GRANT.Talent.Fighter.Fighting Style: Brute ;
+[PERM] GRANT.Talent.Fighter.'Fighting Style: Brute' ;
 ```
 
 The `Tradition` GRANT category is one which necessitates an additional choice (picking a talent from that Tradition), so it's not likely to be found without a separate CHOOSE entry unless the option granting a tradition does so with the express intent that the character does NOT pick a talent from this tradition (which would effectively just say "you can now pick spells from this tradition"). I do not yet know if any official options will require this, so you should expect any normal tradition choice to be accompanied by its equivalent CHOOSE:
@@ -114,7 +114,7 @@ The possible time values are:
 If a CAST can be manually dismissed **and** has a time limit, then a `!` can be added to the CAST:
 
 ```
-GRANT.CAST!(1h).Sense.Dark Vision,Keen Hearing ;
+GRANT.CAST!(1h).Sense.'Dark Vision','Keen Hearing' ;
 ```
 
 ## LOSE
@@ -122,7 +122,7 @@ GRANT.CAST!(1h).Sense.Dark Vision,Keen Hearing ;
 A LOSE MOD is just like a GRANT, except it takes away something. Currently, this is only used for talents that are replaced with other talents, so you'll often find it combined with a GRANT for the updated talent:
 
 ```
-[PERM] LOSE.Talent.Luminous Symbiote ; GRANT.Talent.Durable Luminous Symbiote ;
+[PERM] LOSE.Talent.'Luminous Symbiote' ; GRANT.Talent.'Durable Luminous Symbiote' ;
 ```
 
 The benefit of using LOSE to replace talents instead of OVERRIDE is that any talents lost in this way will no longer be active. They may show up on the sheet still, though I'm still debating that.
@@ -135,32 +135,28 @@ IMPORTANT: There is a lot of complexity in calculating the tree of all effects o
 
 The resolution of the character effect tree works as follows:
 
-1. A first pass evaluates a minimal tree looking for LOSE modifiers. This minimal tree ignores conditionals and non-permanent modifiers, and only looks at path talents, magic talents, and choice selections.
+1. A first pass evaluates a minimal tree looking for LOSE modifiers. This minimal tree does not branch into conditional or non-permanent modifiers, and only looks at path talents, magic talents, and choice selections.
 2. A second pass evaluates the full tree, skipping resolution of any talents marked by the first pass.
+
+If talent X has a LOSE modifier targeting talent Y on it, as long as it follows the rules above (permanent and unconditional), then that LOSE will always apply, and talent Y will not appear in the player's talent list. If talent Z has a LOSE modifier for talent X, the player will not see talent X in their talent list, but talent X's own LOSE modifier still applies, so talent Y will still be missing from the list.
 
 ## OVERRIDE
 
-These are a terminal option similar to GRANTs, except instead of adding something, something is overriden. Sometimes, it's a single stat like defense changing to a new value, but the bigger usage of this MOD is to temporarily replace the sheet with a statblock during a transformation. Some transformations are dismissable, but not all. The dismissable nature of the OVERRIDE is part of the definition. For example, for OVERRIDEs that can't be dismissed, the pattern is simply `[PERM] OVERRIDE.{Category}.{Value}`, since a WHEN of `PERM` means the OVERRIDE is applied to the player immediately, and these are not directly dismissable (though they could still be dismissed if a parent CHOOSE was itself dismissed). This example is for the `Bone Carapace`, which overrides the defense to 18:
-
-```
-[PERM] OVERRIDE.Defense.18 ;
-```
-
-(NOTE: This spell also has a condition attached to the override, but this has been omitted for this example. See [conditions](#conditions) section for more details)
+An OVERRIDE modifier is how spells, talents, or choice selections can let the player take a different form with explicit stats. The player's sheet is temporarily replaced with a new sheet containing stats, traits, talents, etc. Some can be dismissed, but not all, and this nature is part of the definition of the OVERRIDE modifier.
 
 The Warg can enter and leave its `Wolf Form` as an action, which means it's freely dismissable. This is denoted by using WHEN of `CAST` without a time value:
 
 ```
-OVERRIDE.StatBlock.Wolf From ;
+[CAST] OVERRIDE.StatBlock.'Wolf From' ;
 ```
 
 The transformation from the primal spell `Howl of the Beast` cannot be dismissed manually and only goes away after 1 hour has passed, so it requires a WHEN of `CAST` with a time value:
 
 ```
-OVERRIDE.StatBlock.Howl of the Beast ;
+[CAST 1h] OVERRIDE.StatBlock.'Howl of the Beast' ;
 ```
 
-An uncommon case for an OVERRIDE is to alter a statblock that the player is expected to have in some form. Many instances of this are more easily performed as a LOSE+GRANT (eg a choice includes a LOSE for an old talent with a statblock, and a GRANT for a talent with an updated statblock). However, the Beastfriend path at level 4 asks the player to make a choice that alters the statblock of a beast companion. There are 5 possible configurations of the companion at level 4, and levels 6 and 9 further update the stats. With the initial statblock at level 3, there would need to be 16 total versions of the talent (one for each possible statblock) depending on level and decisions. Rather than tracking all that with LOSE+GRANT (which would be possible but very tedious), it's a lot easier to define 1 CHOOSE block that results in a single OVERRIDE, then a couple more overrides at levels 6 and 9.
+An uncommon case for an OVERRIDE is to alter a statblock that the player is expected to have in some form. Many instances of this are more easily performed as a LOSE+GRANT (eg a choice includes a LOSE for an old talent with a statblock, and a GRANT for a talent with an updated statblock). However, the Beastfriend path at level 4 asks the player to make a choice that alters the statblock of a beast companion. There are 5 possible configurations of the companion at level 4, and levels 6 and 9 further update the stats. With the initial statblock at level 3, there would need to be 16 total versions of the talent (one for each statblock permutation) depending on level and decisions. Rather than tracking all that with LOSE+GRANT (which would be possible but very tedious), it's a lot easier to define 1 CHOOSE block that results in a single OVERRIDE, then a couple more overrides at levels 6 and 9.
 
 For a simpler contrived example, let's say a path talent is associated with a statblock defined as:
 

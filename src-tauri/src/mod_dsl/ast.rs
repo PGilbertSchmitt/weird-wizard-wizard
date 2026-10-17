@@ -200,13 +200,11 @@ impl LoseTarget {
     }
 }
 
-// Override - Only Speed, Defense, the unique StatBlock target, and the unique MergeStatBlock target
+// Override - Only StatBlock target and MergeStatBlock target
 #[derive(TS, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "modifiers.ts", tag = "type", content = "data")]
 #[serde(tag = "type", content = "data")]
 pub enum OverrideTarget {
-    Speed(i32),
-    Defense(i32),
     StatBlock(String),
     MergeStatBlock(String, String),
 }
@@ -214,8 +212,6 @@ pub enum OverrideTarget {
 impl OverrideTarget {
     pub fn keys(&self) -> Vec<String> {
         match self {
-            Self::Speed(_) => vec!["OVERRIDE_SPEED".into()],
-            Self::Defense(_) => vec!["OVERRIDE_DEFENSE".into()],
             Self::StatBlock(_) => vec!["OVERRIDE_STATBLOCK".into()],
             Self::MergeStatBlock(..) => vec!["OVERRIDE_MERGESTATBLOCK".into()],
         }

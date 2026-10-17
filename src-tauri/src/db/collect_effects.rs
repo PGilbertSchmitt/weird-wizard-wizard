@@ -211,7 +211,13 @@ pub fn modifier_tree_first_pass(
  * be excessive for getting the user, BUT if I really need to improve the speed of this function,
  * it could be solved by implementing a caching layer for the individual queries used here.
  *
- * TODO: Add Losses from the first pass here so path talents / magic talents can be culled. */
+ * TODO: Add Losses from the first pass here so path talents / magic talents can be culled.
+ * 
+ * IDEA: An ideal version of this process would be:
+ * - First pass: collect ALL possible modifiers into a priority queue, ignoring conditions while
+ *      paying attention to storage rules for non-permanent modifiers.
+ * - Second pass: Iterate through the priority queue, handling conditions.
+ * */
 pub async fn modifier_tree_second_pass(
     db: Pool<Sqlite>,
     modifier: FullModifier,

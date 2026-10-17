@@ -244,14 +244,6 @@ fn parse_lose_target(tokens: &mut Tokens) -> Result<LoseTarget, String> {
 fn parse_override_target(tokens: &mut Tokens) -> Result<OverrideTarget, String> {
     eat_dot(tokens)?;
     match ut(tokens.next())? {
-        Token::Speed => {
-            eat_dot(tokens)?;
-            Ok(OverrideTarget::Speed(parse_number(tokens)?))
-        }
-        Token::Defense => {
-            eat_dot(tokens)?;
-            Ok(OverrideTarget::Defense(parse_number(tokens)?))
-        }
         Token::StatBlock => {
             eat_dot(tokens)?;
             Ok(OverrideTarget::StatBlock(parse_ident(tokens)?))
